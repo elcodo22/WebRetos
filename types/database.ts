@@ -1,4 +1,5 @@
 export type EstadoObra = "pendiente" | "aprobado" | "rechazado" | "cuarentena";
+export type EstadoReto = "activo" | "en_cola" | "finalizado" | "eliminado";
 
 export type Json =
   | string
@@ -42,22 +43,31 @@ export interface Database {
         Row: {
           id: string;
           titulo: string;
-          fecha_inicio: string;
-          fecha_fin: string;
+          descripcion: string;
+          estado: EstadoReto;
+          orden_cola: number | null;
+          fecha_inicio: string | null;
+          fecha_fin: string | null;
           creado_en: string;
         };
         Insert: {
           id?: string;
           titulo: string;
-          fecha_inicio: string;
-          fecha_fin: string;
+          descripcion?: string;
+          estado?: EstadoReto;
+          orden_cola?: number | null;
+          fecha_inicio?: string | null;
+          fecha_fin?: string | null;
           creado_en?: string;
         };
         Update: {
           id?: string;
           titulo?: string;
-          fecha_inicio?: string;
-          fecha_fin?: string;
+          descripcion?: string;
+          estado?: EstadoReto;
+          orden_cola?: number | null;
+          fecha_inicio?: string | null;
+          fecha_fin?: string | null;
           creado_en?: string;
         };
         Relationships: [];
@@ -154,6 +164,7 @@ export interface Database {
     Functions: Record<string, never>;
     Enums: {
       estado_obra: EstadoObra;
+      estado_reto: EstadoReto;
     };
     CompositeTypes: Record<string, never>;
   };
