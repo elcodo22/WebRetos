@@ -1,47 +1,86 @@
+import { Suspense } from "react";
+import { ArchivosSection } from "@/components/archivos/archivos-section";
+import { HomeSnap } from "@/components/layout/home-snap";
 import { SiteHeader } from "@/components/layout/site-header";
-import { RetoActivoCard } from "@/components/reto/reto-activo-card";
-import { getPerfil } from "@/lib/supabase/auth";
-import { getRetoActivo } from "@/lib/supabase/retos";
+import { RetoHero } from "@/components/reto/reto-hero";
+import { getRetoActivo, getRetosArchivo } from "@/lib/supabase/retos";
 import { createClient } from "@/lib/supabase/server";
+
+function formatearNumeroReto(totalAnteriores: number) {
+  return (totalAnteriores + 1).toString().padStart(3, "0");
+}
 
 export default async function Home() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const perfil = user ? await getPerfil(user.id) : null;
 
-  let retoActivo = null;
+  let user = null;
   try {
-    retoActivo = await getRetoActivo(supabase);
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
   } catch {
-    retoActivo = null;
+    user = null;
   }
 
-  return (
-    <div className="flex min-h-full flex-col bg-zinc-50 dark:bg-black">
-      <SiteHeader user={user} perfil={perfil} />
+  let retoActivo = null;
+  let numeroReto = "000";
+  let retosArchivo: Awaited<ReturnType<typeof getRetosArchivo>> = [];
 
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        {retoActivo?.fecha_fin ? (
-          <RetoActivoCard
-            reto={{
-              titulo: retoActivo.titulo,
-              descripcion: retoActivo.descripcion,
-              fecha_fin: retoActivo.fecha_fin,
-            }}
-          />
-        ) : (
-          <section className="w-full max-w-2xl rounded-2xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-              No hay reto activo
-            </h1>
-            <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-              Vuelve pronto. El próximo reto se publicará aquí.
-            </p>
-          </section>
-        )}
-      </main>
-    </div>
+  try {
+    retoActivo = await getRetoActivo(supabase);
+    retosArchivo = await getRetosArchivo(supabase);
+
+    if (retoActivo) {
+      const { count } = await supabase
+        .from("retos")
+        .select("id", { count: "exact", head: true })
+        .lte("creado_en", retoActivo.creado_en ?? new Date().toISOString())
+        .in("estado", ["activo", "en_cola", "finalizado"]);
+
+      numeroReto = formatearNumeroReto(Math.max((count ?? 1) - 1, 0));
+    }
+  } catch {
+    retoActivo = null;
+    retosArchivo = [];
+  }
+
+  const hero = retoActivo ? (
+    <RetoHero
+      numero={numeroReto}
+      titulo={retoActivo.titulo}
+      descripcion={retoActivo.descripcion}
+      participarHref={user ? "/subir" : "/login"}
+    />
+  ) : (
+    <section className="site-grid w-full items-start">
+      <p className="col-start-2 col-span-1 pt-1 text-[24px] font-normal leading-none">
+        #---
+      </p>
+      <div className="col-start-3 col-span-4">
+        <h1 className="text-[32px] font-medium leading-tight tracking-wide">
+          Sin reto activo
+        </h1>
+        <p className="mt-6 text-[20px] font-normal leading-relaxed tracking-wide">
+          Vuelve pronto. El próximo reto aparecerá aquí.
+        </p>
+      </div>
+    </section>
+  );
+
+  return (
+    <Suspense
+      fallback={
+        <div className="h-dvh bg-[var(--background)] text-white">
+          <SiteHeader user={user} fechaFin={retoActivo?.fecha_fin} />
+        </div>
+      }
+    >
+      <HomeSnap
+        header={<SiteHeader user={user} fechaFin={retoActivo?.fecha_fin} />}
+        hero={hero}
+        archivos={<ArchivosSection retos={retosArchivo} />}
+      />
+    </Suspense>
   );
 }

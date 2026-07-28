@@ -1,0 +1,234 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+const TRANSITION_MS = 480;
+const WHEEL_THRESHOLD = 12;
+const PAUSE_ON_HERO_MS = 80;
+const STORAGE_KEY = "animate-to-archivos";
+
+type HomeSnapProps = {
+  header: ReactNode;
+  hero: ReactNode;
+  archivos: ReactNode;
+};
+
+export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [panel, setPanel] = useState(0);
+  const [animate, setAnimate] = useState(true);
+  const panelRef = useRef(0);
+  const lockedRef = useRef(false);
+  const archivosScrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+  const runningEntranceRef = useRef(false);
+
+  const goTo = useCallback((next: number) => {
+    if (lockedRef.current) return;
+    if (next === panelRef.current) return;
+    if (next < 0 || next > 1) return;
+
+    lockedRef.current = true;
+    setAnimate(true);
+    panelRef.current = next;
+    setPanel(next);
+
+    const hash = next === 1 ? "#archivos" : "#reto";
+    window.history.replaceState(null, "", `/${hash}`);
+
+    window.setTimeout(() => {
+      lockedRef.current = false;
+    }, TRANSITION_MS + 50);
+  }, []);
+
+  /** Principal visible → animación hacia archivos. */
+  const goToArchivosFromTop = useCallback(() => {
+    if (lockedRef.current || runningEntranceRef.current) return;
+    // Ya estamos en archivos: no hacer nada
+    if (panelRef.current === 1) return;
+
+    window.setTimeout(() => goTo(1), PAUSE_ON_HERO_MS);
+  }, [goTo]);
+
+  /** Entrada desde otra ruta (login, etc.): enseñar hero y bajar. */
+  const playEntranceFromOtherPage = useCallback(() => {
+    if (runningEntranceRef.current) return;
+    runningEntranceRef.current = true;
+
+    lockedRef.current = true;
+    setAnimate(false);
+    panelRef.current = 0;
+    setPanel(0);
+    window.history.replaceState(null, "", "/#reto");
+    router.replace("/", { scroll: false });
+
+    window.requestAnimationFrame(() => {
+      setAnimate(true);
+      lockedRef.current = false;
+      goTo(1);
+      window.setTimeout(() => {
+        runningEntranceRef.current = false;
+      }, TRANSITION_MS + 40);
+    });
+  }, [goTo, router]);
+
+  useEffect(() => {
+    panelRef.current = panel;
+  }, [panel]);
+
+  useEffect(() => {
+    if (pathname !== "/") return;
+
+    const fromQuery = searchParams.get("to") === "archivos";
+    const fromStorage = sessionStorage.getItem(STORAGE_KEY) === "1";
+
+    if (!fromQuery && !fromStorage) return;
+
+    sessionStorage.removeItem(STORAGE_KEY);
+    playEntranceFromOtherPage();
+  }, [pathname, searchParams, playEntranceFromOtherPage]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      if (window.location.hash === "#archivos") goToArchivosFromTop();
+      else goTo(0);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [goTo, goToArchivosFromTop]);
+
+  useEffect(() => {
+    const onNavigate = () => goToArchivosFromTop();
+    window.addEventListener("navigate-archivos-from-top", onNavigate);
+    return () =>
+      window.removeEventListener("navigate-archivos-from-top", onNavigate);
+  }, [goToArchivosFromTop]);
+
+  useEffect(() => {
+    const onWheel = (event: WheelEvent) => {
+      if (lockedRef.current) {
+        event.preventDefault();
+        return;
+      }
+
+      const delta = event.deltaY;
+      if (Math.abs(delta) < WHEEL_THRESHOLD) return;
+
+      if (panelRef.current === 0) {
+        if (delta > 0) {
+          event.preventDefault();
+          goTo(1);
+        }
+        return;
+      }
+
+      const box = archivosScrollRef.current;
+      if (!box) return;
+
+      const atTop = box.scrollTop <= 0;
+      const atBottom =
+        box.scrollTop + box.clientHeight >= box.scrollHeight - 2;
+
+      if (delta < 0 && atTop) {
+        event.preventDefault();
+        goTo(0);
+        return;
+      }
+
+      if (delta > 0 && atBottom) {
+        event.preventDefault();
+        return;
+      }
+
+      event.preventDefault();
+      box.scrollTop += delta;
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [goTo]);
+
+  useEffect(() => {
+    const onTouchStart = (event: TouchEvent) => {
+      touchStartY.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (touchStartY.current == null || lockedRef.current) return;
+      const endY = event.changedTouches[0]?.clientY;
+      if (endY == null) return;
+
+      const delta = touchStartY.current - endY;
+      touchStartY.current = null;
+      if (Math.abs(delta) < 50) return;
+
+      if (panelRef.current === 0 && delta > 0) {
+        goTo(1);
+        return;
+      }
+
+      if (panelRef.current === 1 && delta < 0) {
+        const box = archivosScrollRef.current;
+        if (box && box.scrollTop <= 0) goTo(0);
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [goTo]);
+
+  return (
+    <div className="relative h-dvh overflow-hidden bg-[var(--background)] text-white">
+      <div className="fixed inset-x-0 top-0 z-50 bg-[var(--background)]">
+        {header}
+      </div>
+
+      <div
+        className="h-full will-change-transform"
+        style={{
+          transform: `translate3d(0, -${panel * 100}%, 0)`,
+          transition: animate
+            ? `transform ${TRANSITION_MS}ms cubic-bezier(0.33, 1, 0.32, 1)`
+            : "none",
+        }}
+      >
+        <section className="flex h-dvh flex-col overflow-hidden pt-[88px]">
+          <div className="min-h-0 flex-1 overflow-hidden pt-[161px] pb-16">
+            {hero}
+          </div>
+        </section>
+
+        <section className="flex h-dvh flex-col overflow-hidden pt-[88px]">
+          <div
+            ref={archivosScrollRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          >
+            {archivos}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #1307ff;
+  --foreground: #ffffff;
+  --font-display: var(--font-bitcount);
+  --grid-gutter: 16px;
+  --grid-margin: 18px;
+  --grid-columns: 10;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-bitcount);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
+html,
 body {
+  width: 100%;
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-bitcount), monospace;
+  cursor: url("/xp_arrow_xl.cur"), auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+a,
+button,
+[role="button"],
+label,
+select,
+summary,
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: url("/xp_link_xl.cur"), pointer;
+}
+
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+input:not([type]),
+textarea,
+[contenteditable="true"],
+label:has(
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="url"],
+  input[type="tel"],
+  input[type="number"],
+  input:not([type]),
+  textarea
+) {
+  cursor: url("/beam_m.png") 15 15, text;
+}
+
+.cursor-loupe,
+.cursor-loupe * {
+  cursor: none !important;
+}
+
+.cursor-stopwatch {
+  cursor: url("/cursors/stopwatch/frame_00.png") 16 19, auto;
+}
+
+.cursor-stopwatch * {
+  cursor: inherit;
+}
+
+/*
+  Cuadrícula Figma:
+  - 10 columnas (stretch / ancho automático)
+  - margen lateral: 18px
+  - gutter: 16px
+  Las columnas se reparten a partes iguales el espacio restante.
+*/
+.site-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  column-gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+  padding-inline: 18px;
+}
+
+.site-dots {
+  display: block;
+  width: 100%;
+  height: 1.1em;
+  background-image: radial-gradient(circle, currentColor 1.1px, transparent 1.2px);
+  background-size: 10px 100%;
+  background-repeat: repeat-x;
+  background-position: left center;
 }

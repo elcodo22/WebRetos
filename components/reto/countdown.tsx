@@ -9,25 +9,20 @@ function calcularTiempoRestante(fechaFin: string) {
     return { finalizado: true, dias: 0, horas: 0, minutos: 0, segundos: 0 };
   }
 
-  const segundos = Math.floor(diferencia / 1000);
-  const minutos = Math.floor(segundos / 60);
-  const horas = Math.floor(minutos / 60);
-  const dias = Math.floor(horas / 24);
+  const totalSegundos = Math.floor(diferencia / 1000);
+  const dias = Math.floor(totalSegundos / 86400);
+  const horas = Math.floor((totalSegundos % 86400) / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
 
-  return {
-    finalizado: false,
-    dias,
-    horas: horas % 24,
-    minutos: minutos % 60,
-    segundos: segundos % 60,
-  };
+  return { finalizado: false, dias, horas, minutos, segundos };
 }
 
-function formatearUnidad(valor: number) {
+function pad(valor: number) {
   return valor.toString().padStart(2, "0");
 }
 
-export function Countdown({ fechaFin }: { fechaFin: string }) {
+export function CountdownCompact({ fechaFin }: { fechaFin: string }) {
   const [tiempo, setTiempo] = useState(() => calcularTiempoRestante(fechaFin));
 
   useEffect(() => {
@@ -38,36 +33,29 @@ export function Countdown({ fechaFin }: { fechaFin: string }) {
     return () => clearInterval(intervalo);
   }, [fechaFin]);
 
-  if (tiempo.finalizado) {
-    return (
-      <p className="text-lg font-medium text-zinc-600 dark:text-zinc-400">
-        El reto ha finalizado
-      </p>
-    );
-  }
+  const dias = pad(tiempo.finalizado ? 0 : tiempo.dias);
+  const horas = pad(tiempo.finalizado ? 0 : tiempo.horas);
+  const minutos = pad(tiempo.finalizado ? 0 : tiempo.minutos);
+  const segundos = pad(tiempo.finalizado ? 0 : tiempo.segundos);
 
   return (
-    <div className="grid grid-cols-4 gap-3 sm:gap-4">
-      {[
-        { label: "Días", value: tiempo.dias },
-        { label: "Horas", value: tiempo.horas },
-        { label: "Min", value: tiempo.minutos },
-        { label: "Seg", value: tiempo.segundos },
-      ].map((unidad) => (
-        <div
-          key={unidad.label}
-          className="flex flex-col items-center rounded-xl border border-zinc-200 bg-white px-3 py-4 dark:border-zinc-700 dark:bg-zinc-900"
-        >
-          <span className="text-2xl font-semibold tabular-nums tracking-tight sm:text-3xl">
-            {unidad.label === "Días"
-              ? unidad.value
-              : formatearUnidad(unidad.value)}
-          </span>
-          <span className="mt-1 text-xs uppercase tracking-wide text-zinc-500">
-            {unidad.label}
-          </span>
-        </div>
-      ))}
-    </div>
+    <span className="inline-flex items-baseline gap-3 tabular-nums tracking-wide">
+      <span>
+        {dias}
+        <span className="text-[28px]">d</span>
+      </span>
+      <span>
+        {horas}
+        <span className="text-[28px]">h</span>
+      </span>
+      <span>
+        {minutos}
+        <span className="text-[28px]">m</span>
+      </span>
+      <span>
+        {segundos}
+        <span className="text-[28px]">s</span>
+      </span>
+    </span>
   );
 }
