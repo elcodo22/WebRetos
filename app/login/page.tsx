@@ -30,7 +30,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="relative flex h-dvh flex-col overflow-hidden bg-[var(--background)] text-white">
+    <div className="relative flex h-full flex-col overflow-hidden bg-[var(--background)] text-white">
       <div className="shrink-0">
         <SiteHeader user={null} fechaFin={fechaFin} />
       </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Bitcount_Grid_Single } from "next/font/google";
+import { CrtShell } from "@/components/layout/crt-shell";
 import "./globals.css";
 
 const bitcount = Bitcount_Grid_Single({
@@ -20,8 +21,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${bitcount.variable} h-full`}>
-      <body className={`${bitcount.className} flex min-h-full flex-col antialiased`}>
-        {children}
+      <body className={`${bitcount.className} crt-body antialiased`}>
+        <CrtShell>{children}</CrtShell>
       </body>
     </html>
   );

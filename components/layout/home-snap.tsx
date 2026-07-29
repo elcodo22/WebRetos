@@ -200,7 +200,7 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
   }, [goTo]);
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-[var(--background)] text-white">
+    <div className="relative h-full overflow-hidden bg-[var(--background)] text-white">
       <div className="fixed inset-x-0 top-0 z-50 bg-[var(--background)]">
         {header}
       </div>
@@ -214,13 +214,13 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
             : "none",
         }}
       >
-        <section className="flex h-dvh flex-col overflow-hidden pt-[88px]">
+        <section className="flex h-full flex-col overflow-hidden pt-[88px]">
           <div className="min-h-0 flex-1 overflow-hidden pt-[161px] pb-16">
             {hero}
           </div>
         </section>
 
-        <section className="flex h-dvh flex-col overflow-hidden pt-[88px]">
+        <section className="flex h-full flex-col overflow-hidden pt-[88px]">
           <div
             ref={archivosScrollRef}
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain"

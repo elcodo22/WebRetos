@@ -71,7 +71,7 @@ export default async function Home() {
   return (
     <Suspense
       fallback={
-        <div className="h-dvh bg-[var(--background)] text-white">
+        <div className="h-full bg-[var(--background)] text-white">
           <SiteHeader user={user} fechaFin={retoActivo?.fecha_fin} />
         </div>
       }
