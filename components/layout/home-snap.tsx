@@ -13,6 +13,9 @@ const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
 const PAUSE_ON_HERO_MS = 80;
 const STORAGE_KEY = "animate-to-archivos";
+const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
+const HERO_REQUEST_EVENT = "carousel-request-hero";
+const ARCHIVO_WHEEL_LOCK_MS = 380;
 
 type HomeSnapProps = {
   header: ReactNode;
@@ -29,7 +32,7 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
   const [animate, setAnimate] = useState(true);
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
-  const archivosScrollRef = useRef<HTMLDivElement>(null);
+  const archivoWheelLockRef = useRef(false);
   const touchStartY = useRef<number | null>(null);
   const runningEntranceRef = useRef(false);
 
@@ -54,13 +57,11 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
   /** Principal visible → animación hacia archivos. */
   const goToArchivosFromTop = useCallback(() => {
     if (lockedRef.current || runningEntranceRef.current) return;
-    // Ya estamos en archivos: no hacer nada
     if (panelRef.current === 1) return;
-
     window.setTimeout(() => goTo(1), PAUSE_ON_HERO_MS);
   }, [goTo]);
 
-  /** Entrada desde otra ruta (login, etc.): enseñar hero y bajar. */
+  /** Entrada desde otra ruta: enseñar hero y bajar. */
   const playEntranceFromOtherPage = useCallback(() => {
     if (runningEntranceRef.current) return;
     runningEntranceRef.current = true;
@@ -82,18 +83,26 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
     });
   }, [goTo, router]);
 
+  const dispatchArchivoWheel = useCallback((direction: number) => {
+    if (archivoWheelLockRef.current) return;
+    archivoWheelLockRef.current = true;
+    window.setTimeout(() => {
+      archivoWheelLockRef.current = false;
+    }, ARCHIVO_WHEEL_LOCK_MS);
+    window.dispatchEvent(
+      new CustomEvent(ARCHIVO_WHEEL_EVENT, { detail: { direction } }),
+    );
+  }, []);
+
   useEffect(() => {
     panelRef.current = panel;
   }, [panel]);
 
   useEffect(() => {
     if (pathname !== "/") return;
-
     const fromQuery = searchParams.get("to") === "archivos";
     const fromStorage = sessionStorage.getItem(STORAGE_KEY) === "1";
-
     if (!fromQuery && !fromStorage) return;
-
     sessionStorage.removeItem(STORAGE_KEY);
     playEntranceFromOtherPage();
   }, [pathname, searchParams, playEntranceFromOtherPage]);
@@ -123,6 +132,12 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
   }, [goToArchivosFromTop]);
 
   useEffect(() => {
+    const onHeroRequest = () => goTo(0);
+    window.addEventListener(HERO_REQUEST_EVENT, onHeroRequest);
+    return () => window.removeEventListener(HERO_REQUEST_EVENT, onHeroRequest);
+  }, [goTo]);
+
+  useEffect(() => {
     const onWheel = (event: WheelEvent) => {
       if (lockedRef.current) {
         event.preventDefault();
@@ -140,31 +155,15 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
         return;
       }
 
-      const box = archivosScrollRef.current;
-      if (!box) return;
-
-      const atTop = box.scrollTop <= 0;
-      const atBottom =
-        box.scrollTop + box.clientHeight >= box.scrollHeight - 2;
-
-      if (delta < 0 && atTop) {
+      if (panelRef.current === 1) {
         event.preventDefault();
-        goTo(0);
-        return;
+        dispatchArchivoWheel(delta > 0 ? 1 : -1);
       }
-
-      if (delta > 0 && atBottom) {
-        event.preventDefault();
-        return;
-      }
-
-      event.preventDefault();
-      box.scrollTop += delta;
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
-  }, [goTo]);
+  }, [goTo, dispatchArchivoWheel]);
 
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {
@@ -185,9 +184,8 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
         return;
       }
 
-      if (panelRef.current === 1 && delta < 0) {
-        const box = archivosScrollRef.current;
-        if (box && box.scrollTop <= 0) goTo(0);
+      if (panelRef.current === 1) {
+        dispatchArchivoWheel(delta > 0 ? 1 : -1);
       }
     };
 
@@ -197,7 +195,7 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [goTo]);
+  }, [goTo, dispatchArchivoWheel]);
 
   return (
     <div className="relative h-full overflow-hidden bg-[var(--background)] text-white">
@@ -221,10 +219,7 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
         </section>
 
         <section className="flex h-full flex-col overflow-hidden pt-[88px]">
-          <div
-            ref={archivosScrollRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
-          >
+          <div className="relative min-h-0 flex-1 overflow-hidden">
             {archivos}
           </div>
         </section>

@@ -1,10 +1,13 @@
 import { Suspense } from "react";
-import { ArchivosSection } from "@/components/archivos/archivos-section";
+import { ArchivosCarousel } from "@/components/archivos/archivos-carousel";
 import { HomeSnap } from "@/components/layout/home-snap";
 import { SiteHeader } from "@/components/layout/site-header";
 import { RetoHero } from "@/components/reto/reto-hero";
+import { generarRetosArchivoMock } from "@/lib/mocks/retos-archivo";
 import { getRetoActivo, getRetosArchivo } from "@/lib/supabase/retos";
 import { createClient } from "@/lib/supabase/server";
+
+const MOSTRAR_MOCKS_ARCHIVO = true;
 
 function formatearNumeroReto(totalAnteriores: number) {
   return (totalAnteriores + 1).toString().padStart(3, "0");
@@ -45,6 +48,16 @@ export default async function Home() {
     retosArchivo = [];
   }
 
+  if (MOSTRAR_MOCKS_ARCHIVO) {
+    const mocks = generarRetosArchivoMock();
+    retosArchivo = [...mocks, ...retosArchivo]
+      .sort((a, b) => a.fechaOrden - b.fechaOrden)
+      .map((reto, i) => ({
+        ...reto,
+        numero: (i + 1).toString().padStart(2, "0"),
+      }));
+  }
+
   const hero = retoActivo ? (
     <RetoHero
       numero={numeroReto}
@@ -72,14 +85,24 @@ export default async function Home() {
     <Suspense
       fallback={
         <div className="h-full bg-[var(--background)] text-white">
-          <SiteHeader user={user} fechaFin={retoActivo?.fecha_fin} />
+          <SiteHeader
+            user={user}
+            fechaFin={retoActivo?.fecha_fin}
+            retosArchivo={retosArchivo}
+          />
         </div>
       }
     >
       <HomeSnap
-        header={<SiteHeader user={user} fechaFin={retoActivo?.fecha_fin} />}
+        header={
+          <SiteHeader
+            user={user}
+            fechaFin={retoActivo?.fecha_fin}
+            retosArchivo={retosArchivo}
+          />
+        }
         hero={hero}
-        archivos={<ArchivosSection retos={retosArchivo} />}
+        archivos={<ArchivosCarousel retos={retosArchivo} />}
       />
     </Suspense>
   );
