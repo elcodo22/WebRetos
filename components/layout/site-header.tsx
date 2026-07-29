@@ -5,13 +5,19 @@ import { StopwatchCursorZone } from "@/components/layout/stopwatch-cursor-zone";
 import { CountdownCompact } from "@/components/reto/countdown";
 import { ArchivosSearch } from "@/components/archivos/archivos-search";
 
+type SiteHeaderVariant = "default" | "login" | "registro";
+
 export function SiteHeader({
   user,
   fechaFin,
+  variant = "default",
 }: {
   user: User | null;
   fechaFin?: string | null;
+  variant?: SiteHeaderVariant;
 }) {
+  const isAuthPage = variant === "login" || variant === "registro";
+
   return (
     <header className="site-grid relative items-center py-6 text-white">
       <Link
@@ -22,44 +28,52 @@ export function SiteHeader({
         <LogoIcon />
       </Link>
 
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[40px] font-normal leading-none tracking-wide">
-        <StopwatchCursorZone>
-          {fechaFin ? (
-            <CountdownCompact fechaFin={fechaFin} />
-          ) : (
-            <span className="inline-flex items-baseline gap-3 tabular-nums">
-              <span>
-                00<span className="text-[28px]">d</span>
+      {!isAuthPage && (
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[40px] font-normal leading-none tracking-wide">
+          <StopwatchCursorZone>
+            {fechaFin ? (
+              <CountdownCompact fechaFin={fechaFin} />
+            ) : (
+              <span className="inline-flex items-baseline gap-3 tabular-nums">
+                <span>
+                  00<span className="text-[28px]">d</span>
+                </span>
+                <span>
+                  00<span className="text-[28px]">h</span>
+                </span>
+                <span>
+                  00<span className="text-[28px]">m</span>
+                </span>
+                <span>
+                  00<span className="text-[28px]">s</span>
+                </span>
               </span>
-              <span>
-                00<span className="text-[28px]">h</span>
-              </span>
-              <span>
-                00<span className="text-[28px]">m</span>
-              </span>
-              <span>
-                00<span className="text-[28px]">s</span>
-              </span>
-            </span>
-          )}
-        </StopwatchCursorZone>
-      </div>
+            )}
+          </StopwatchCursorZone>
+        </div>
+      )}
 
       <nav className="absolute right-[18px] top-1/2 flex -translate-y-1/2 items-center gap-4 text-[20px] font-normal leading-none">
-        <ArchivosLink />
-        {user ? (
-          <form action="/auth/signout" method="post" className="inline">
-            <button type="submit" className="cursor-pointer">
-              [Salir]
-            </button>
-          </form>
-        ) : (
+        {variant === "login" && <Link href="/registro">[Registro]</Link>}
+        {variant === "registro" && <Link href="/login">[Login]</Link>}
+        {variant === "default" && (
           <>
-            <Link href="/login">[Login]</Link>
-            <Link href="/registro">[Registro]</Link>
+            <ArchivosLink />
+            {user ? (
+              <form action="/auth/signout" method="post" className="inline">
+                <button type="submit" className="cursor-pointer">
+                  [Salir]
+                </button>
+              </form>
+            ) : (
+              <>
+                <Link href="/login">[Login]</Link>
+                <Link href="/registro">[Registro]</Link>
+              </>
+            )}
+            <ArchivosSearch />
           </>
         )}
-        <ArchivosSearch />
       </nav>
     </header>
   );

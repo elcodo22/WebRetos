@@ -1,4 +1,4 @@
-import { LoginForm } from "@/components/auth/login-form";
+import { RegistroForm } from "@/components/auth/registro-form";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getRetoActivo } from "@/lib/supabase/retos";
 import { createClient } from "@/lib/supabase/server";
@@ -32,9 +32,9 @@ export default async function RegistroPage() {
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-[var(--background)] text-white">
       <div className="shrink-0">
-        <SiteHeader user={null} fechaFin={fechaFin} />
+        <SiteHeader user={null} fechaFin={fechaFin} variant="registro" />
       </div>
-      <LoginForm />
+      <RegistroForm />
     </div>
   );
 }

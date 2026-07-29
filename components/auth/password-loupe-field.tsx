@@ -17,12 +17,18 @@ type PasswordLoupeFieldProps = {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  placeholder?: string;
+  autoComplete?: string;
+  "aria-label"?: string;
 };
 
 export function PasswordLoupeField({
   value,
   onChange,
   className,
+  placeholder = "contraseña",
+  autoComplete = "current-password",
+  "aria-label": ariaLabel = "contraseña",
 }: PasswordLoupeFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [hovering, setHovering] = useState(false);
@@ -58,15 +64,15 @@ export function PasswordLoupeField({
         ref={inputRef}
         type="password"
         required
-        autoComplete="current-password"
+        autoComplete={autoComplete}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder="contraseña"
+        placeholder={placeholder}
         className={className}
         style={showLoupe ? { cursor: "none" } : undefined}
-        aria-label="contraseña"
+        aria-label={ariaLabel}
       />
 
       {showLoupe && (
