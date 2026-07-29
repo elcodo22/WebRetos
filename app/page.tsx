@@ -85,21 +85,13 @@ export default async function Home() {
     <Suspense
       fallback={
         <div className="h-full bg-[var(--background)] text-white">
-          <SiteHeader
-            user={user}
-            fechaFin={retoActivo?.fecha_fin}
-            retosArchivo={retosArchivo}
-          />
+          <SiteHeader user={user} fechaFin={retoActivo?.fecha_fin} />
         </div>
       }
     >
       <HomeSnap
         header={
-          <SiteHeader
-            user={user}
-            fechaFin={retoActivo?.fecha_fin}
-            retosArchivo={retosArchivo}
-          />
+          <SiteHeader user={user} fechaFin={retoActivo?.fecha_fin} />
         }
         hero={hero}
         archivos={<ArchivosCarousel retos={retosArchivo} />}

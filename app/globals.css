@@ -118,6 +118,15 @@ label:has(
   background-position: left center;
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ——— Efecto CRT (sin borde ni viñeta) ——— */
 .crt-shell {
   position: relative;
@@ -285,11 +294,107 @@ label:has(
   }
 }
 
+/* ——— Overlay de búsqueda (push derecha → izquierda) ——— */
+.search-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.search-stage {
+  width: 100%;
+  height: 100%;
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+  transition:
+    transform 340ms cubic-bezier(0.4, 0, 0.7, 0.2),
+    opacity 340ms cubic-bezier(0.4, 0, 0.7, 0.2);
+  will-change: transform, opacity;
+}
+
+.search-stage--pushed {
+  transform: translate3d(-14%, 0, 0);
+  opacity: 0.35;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.search-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--background);
+  color: #fff;
+  box-shadow: -18px 0 48px rgba(0, 0, 0, 0.35);
+  will-change: transform;
+}
+
+.search-panel--in {
+  animation: search-panel-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.search-panel--out {
+  animation: search-panel-out 340ms cubic-bezier(0.4, 0, 0.7, 0.2) both;
+}
+
+.search-panel--in .search-panel-content {
+  animation: search-content-in 380ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both;
+}
+
+@keyframes search-panel-in {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes search-panel-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes search-content-in {
+  from {
+    opacity: 0;
+    transform: translate3d(28px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .crt-scanlines-move,
   .crt-grain,
   .crt-beam,
   .crt-glitch-band {
+    animation: none;
+  }
+
+  .search-stage,
+  .search-stage--pushed {
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
+
+  .search-panel--in,
+  .search-panel--out,
+  .search-panel--in .search-panel-content {
     animation: none;
   }
 }

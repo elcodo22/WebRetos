@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
@@ -15,7 +16,6 @@ const PAUSE_ON_HERO_MS = 80;
 const STORAGE_KEY = "animate-to-archivos";
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
 const HERO_REQUEST_EVENT = "carousel-request-hero";
-const ARCHIVO_WHEEL_LOCK_MS = 380;
 
 type HomeSnapProps = {
   header: ReactNode;
@@ -27,14 +27,19 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isOpen: searchOpen } = useSearchOverlay();
+  const searchOpenRef = useRef(searchOpen);
 
   const [panel, setPanel] = useState(0);
   const [animate, setAnimate] = useState(true);
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
-  const archivoWheelLockRef = useRef(false);
   const touchStartY = useRef<number | null>(null);
   const runningEntranceRef = useRef(false);
+
+  useEffect(() => {
+    searchOpenRef.current = searchOpen;
+  }, [searchOpen]);
 
   const goTo = useCallback((next: number) => {
     if (lockedRef.current) return;
@@ -83,14 +88,9 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
     });
   }, [goTo, router]);
 
-  const dispatchArchivoWheel = useCallback((direction: number) => {
-    if (archivoWheelLockRef.current) return;
-    archivoWheelLockRef.current = true;
-    window.setTimeout(() => {
-      archivoWheelLockRef.current = false;
-    }, ARCHIVO_WHEEL_LOCK_MS);
+  const dispatchArchivoWheel = useCallback((delta: number) => {
     window.dispatchEvent(
-      new CustomEvent(ARCHIVO_WHEEL_EVENT, { detail: { direction } }),
+      new CustomEvent(ARCHIVO_WHEEL_EVENT, { detail: { delta } }),
     );
   }, []);
 
@@ -139,6 +139,9 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
 
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
+      // Con la búsqueda abierta, no interceptar: deja scrollear el overlay.
+      if (searchOpenRef.current) return;
+
       if (lockedRef.current) {
         event.preventDefault();
         return;
@@ -157,7 +160,7 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
 
       if (panelRef.current === 1) {
         event.preventDefault();
-        dispatchArchivoWheel(delta > 0 ? 1 : -1);
+        dispatchArchivoWheel(delta);
       }
     };
 
@@ -167,10 +170,12 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
 
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {
+      if (searchOpenRef.current) return;
       touchStartY.current = event.touches[0]?.clientY ?? null;
     };
 
     const onTouchEnd = (event: TouchEvent) => {
+      if (searchOpenRef.current) return;
       if (touchStartY.current == null || lockedRef.current) return;
       const endY = event.changedTouches[0]?.clientY;
       if (endY == null) return;
@@ -185,7 +190,7 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
       }
 
       if (panelRef.current === 1) {
-        dispatchArchivoWheel(delta > 0 ? 1 : -1);
+        dispatchArchivoWheel(delta);
       }
     };
 
