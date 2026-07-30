@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #1307ff;
+  --background: #006eff;
   --foreground: #ffffff;
   --font-display: var(--font-bitcount);
   --grid-gutter: 16px;
