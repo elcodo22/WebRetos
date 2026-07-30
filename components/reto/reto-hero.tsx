@@ -410,10 +410,15 @@ export function RetoHero({
         {/* [PARTICIPAR] columna 8 (6 del subgrid) */}
         <Link
           href={participarHref}
-          className="col-start-6 self-end pb-[0.15em] text-[24px] font-semibold leading-none"
+          className={[
+            "col-start-6 self-end pb-[0.15em] text-[24px] font-semibold leading-none",
+            state.phase === "done" ? "participar-bulb" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           aria-hidden={state.b === 0 ? true : undefined}
           tabIndex={state.b === 0 ? -1 : undefined}
-          style={{ opacity: state.b === 0 ? 0 : 1 }}
+          style={state.b === 0 ? { opacity: 0 } : undefined}
         >
           <span>{typedBtn}</span>
           {state.phase === "boton" && showCursor ? <Caret /> : null}
