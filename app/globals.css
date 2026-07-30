@@ -171,15 +171,13 @@ label:has(
   display: none;
 }
 
-/* ——— Efecto CRT: visible pero barato (capas estáticas + 1 animación) ——— */
+/* ——— Efecto CRT ligero: scanlines estáticas + 2 barridos con transform ——— */
 .crt-shell {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: #000;
-  transform: translateZ(0);
-  isolation: isolate;
 }
 
 .crt-screen {
@@ -200,8 +198,6 @@ label:has(
 }
 
 .crt-scanlines,
-.crt-vignette,
-.crt-beams,
 .crt-beam {
   pointer-events: none;
   position: absolute;
@@ -209,30 +205,17 @@ label:has(
   z-index: 40;
 }
 
-/*
- * Scanlines digitales: líneas claras finas (no un velo negro).
- * El scroll usa background-position con el mismo periodo del patrón → sin salto.
- */
+/* Estáticas: se ven y no animan (barato) */
 .crt-scanlines {
   z-index: 40;
-  opacity: 1;
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 2px,
-      rgba(255, 255, 255, 0.07) 2px,
-      rgba(255, 255, 255, 0.07) 3px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      rgba(0, 0, 0, 0.06) 0px,
-      rgba(0, 0, 0, 0.06) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-  background-size: 100% 3px, 100% 3px;
-  animation: crt-scanlines-scroll 2.4s linear infinite;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(255, 255, 255, 0.065) 2px,
+    rgba(255, 255, 255, 0.065) 3px
+  );
+  background-size: 100% 3px;
 }
 
 .crt-shell--black .crt-scanlines {
@@ -240,281 +223,113 @@ label:has(
     to bottom,
     transparent 0px,
     transparent 2px,
-    rgba(255, 255, 255, 0.055) 2px,
-    rgba(255, 255, 255, 0.055) 3px
+    rgba(255, 255, 255, 0.05) 2px,
+    rgba(255, 255, 255, 0.05) 3px
   );
-  background-size: 100% 3px;
-  opacity: 0.7;
+  opacity: 0.75;
 }
 
-/* Viñeta: solo oscurece abajo. */
-.crt-vignette {
-  z-index: 41;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.42) 0%,
-    rgba(0, 0, 0, 0.18) 18%,
-    transparent 42%
-  );
-}
-
-.crt-shell--black .crt-vignette {
-  background: linear-gradient(
-    to top,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(255, 255, 255, 0.03) 18%,
-    transparent 42%
-  );
-}
-
-/* Varios barridos (anchos distintos + ritmos desfasados ≈ aleatorio) */
-.crt-beams {
-  z-index: 42;
-  overflow: hidden;
-}
-
+/*
+ * Barridos: capa pequeña + translate3d (composited).
+ * Evita animar background-position a pantalla completa.
+ */
 .crt-beam {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.04) 46%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0.04) 54%,
-    transparent 100%
-  );
-  background-size: 100% 22%;
-  background-repeat: no-repeat;
+  inset: auto;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 18vh;
+  z-index: 42;
   opacity: 0;
-}
-
-.crt-beam--mid {
-  background-size: 100% 20%;
-  animation: crt-beam-a 26s ease-in-out infinite;
-}
-
-.crt-beam--wide {
-  background-size: 100% 28%;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(255, 255, 255, 0.035) 44%,
+    rgba(255, 255, 255, 0.05) 45%,
     rgba(255, 255, 255, 0.12) 50%,
-    rgba(255, 255, 255, 0.035) 56%,
+    rgba(255, 255, 255, 0.05) 55%,
     transparent 100%
   );
-  background-size: 100% 28%;
-  background-repeat: no-repeat;
-  animation: crt-beam-b 34s ease-in-out 8s infinite;
+  transform: translate3d(0, -100%, 0);
 }
 
-.crt-beam--thin {
+.crt-beam--a {
+  height: 20vh;
+  animation: crt-beam-sweep-a 28s linear infinite;
+}
+
+.crt-beam--b {
+  height: 8vh;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(255, 255, 255, 0.05) 48%,
+    rgba(255, 255, 255, 0.06) 48%,
     rgba(255, 255, 255, 0.14) 50%,
-    rgba(255, 255, 255, 0.05) 52%,
+    rgba(255, 255, 255, 0.06) 52%,
     transparent 100%
   );
-  background-size: 100% 9%;
-  background-repeat: no-repeat;
-  animation: crt-beam-c 22s ease-in-out 3.5s infinite;
+  animation: crt-beam-sweep-b 36s linear 10s infinite;
 }
 
-.crt-beam--thin-b {
-  animation: crt-beam-d 30s ease-in-out 14s infinite;
-  background-size: 100% 7%;
-}
-
-.crt-beam--hair {
+.crt-shell--black .crt-beam--a {
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(255, 255, 255, 0.08) 49%,
-    rgba(255, 255, 255, 0.16) 50%,
-    rgba(255, 255, 255, 0.08) 51%,
-    transparent 100%
-  );
-  background-size: 100% 4%;
-  background-repeat: no-repeat;
-  animation: crt-beam-e 24s linear 1.2s infinite;
-}
-
-.crt-shell--black .crt-beams {
-  opacity: 0.55;
-}
-
-.crt-shell--black .crt-beam--mid {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.035) 46%,
+    rgba(255, 255, 255, 0.035) 45%,
     rgba(255, 255, 255, 0.09) 50%,
-    rgba(255, 255, 255, 0.035) 54%,
+    rgba(255, 255, 255, 0.035) 55%,
     transparent 100%
   );
-  background-size: 100% 20%;
-  background-repeat: no-repeat;
 }
 
-.crt-shell--black .crt-beam--wide {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.03) 44%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0.03) 56%,
-    transparent 100%
-  );
-  background-size: 100% 28%;
-  background-repeat: no-repeat;
-}
-
-.crt-shell--black .crt-beam--thin,
-.crt-shell--black .crt-beam--thin-b {
+.crt-shell--black .crt-beam--b {
   background: linear-gradient(
     to bottom,
     transparent 0%,
     rgba(255, 255, 255, 0.04) 48%,
-    rgba(255, 255, 255, 0.11) 50%,
+    rgba(255, 255, 255, 0.1) 50%,
     rgba(255, 255, 255, 0.04) 52%,
     transparent 100%
   );
-  background-repeat: no-repeat;
 }
 
-.crt-shell--black .crt-beam--thin {
-  background-size: 100% 9%;
-}
-
-.crt-shell--black .crt-beam--thin-b {
-  background-size: 100% 7%;
-}
-
-.crt-shell--black .crt-beam--hair {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.05) 49%,
-    rgba(255, 255, 255, 0.12) 50%,
-    rgba(255, 255, 255, 0.05) 51%,
-    transparent 100%
-  );
-  background-size: 100% 4%;
-  background-repeat: no-repeat;
-}
-
-.crt-shell--perf .crt-scanlines {
-  animation: none;
-}
-
-.crt-shell--perf .crt-beams {
+.crt-shell--perf .crt-beam {
   display: none;
 }
 
-@keyframes crt-scanlines-scroll {
-  from {
-    background-position: 0 0, 0 0;
-  }
-  to {
-    /* Mismo periodo que background-size (3px) → loop invisible */
-    background-position: 0 3px, 0 3px;
-  }
-}
-
-@keyframes crt-beam-a {
+@keyframes crt-beam-sweep-a {
   0%,
-  12% {
-    background-position: 0 -40%;
+  18% {
+    transform: translate3d(0, -100%, 0);
     opacity: 0;
   }
-  18% {
+  22% {
     opacity: 0.55;
   }
   55% {
-    opacity: 0.7;
-  }
-  68%,
-  100% {
-    background-position: 0 140%;
-    opacity: 0;
-  }
-}
-
-@keyframes crt-beam-b {
-  0%,
-  40% {
-    background-position: 0 -45%;
-    opacity: 0;
-  }
-  48% {
-    opacity: 0.5;
-  }
-  78% {
     opacity: 0.65;
   }
-  88%,
+  62%,
   100% {
-    background-position: 0 145%;
+    transform: translate3d(0, 110vh, 0);
     opacity: 0;
   }
 }
 
-@keyframes crt-beam-c {
+@keyframes crt-beam-sweep-b {
   0%,
-  8% {
-    background-position: 0 -30%;
+  45% {
+    transform: translate3d(0, -100%, 0);
     opacity: 0;
   }
-  14% {
+  50% {
+    opacity: 0.5;
+  }
+  72% {
     opacity: 0.6;
   }
-  42% {
-    opacity: 0.75;
-  }
-  52%,
+  78%,
   100% {
-    background-position: 0 130%;
-    opacity: 0;
-  }
-}
-
-@keyframes crt-beam-d {
-  0%,
-  55% {
-    background-position: 0 -35%;
-    opacity: 0;
-  }
-  62% {
-    opacity: 0.55;
-  }
-  82% {
-    opacity: 0.7;
-  }
-  90%,
-  100% {
-    background-position: 0 135%;
-    opacity: 0;
-  }
-}
-
-@keyframes crt-beam-e {
-  0%,
-  25% {
-    background-position: 0 -20%;
-    opacity: 0;
-  }
-  28% {
-    opacity: 0.45;
-  }
-  48% {
-    opacity: 0.55;
-  }
-  52%,
-  100% {
-    background-position: 0 120%;
+    transform: translate3d(0, 110vh, 0);
     opacity: 0;
   }
 }
@@ -578,7 +393,6 @@ label:has(
   width: 100%;
   height: 100%;
   transform-origin: 50% 50%;
-  will-change: transform, filter, opacity;
 }
 
 .crt-power-frame--off {
@@ -677,12 +491,7 @@ label:has(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crt-scanlines,
   .crt-beam {
-    animation: none;
-  }
-
-  .crt-beams {
     display: none;
   }
 

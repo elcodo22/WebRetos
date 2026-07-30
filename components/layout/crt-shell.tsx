@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
-/** Solo fuerza CRT ligero si el dispositivo lo pide de verdad. */
+/** CRT ligero en equipos justos / ahorro de datos / reduced-motion. */
 function shouldUsePerfCrt() {
   if (typeof window === "undefined") return false;
 
@@ -12,10 +12,10 @@ function shouldUsePerfCrt() {
   }
 
   const nav = navigator as Navigator & { deviceMemory?: number };
-  const lowMem = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 2;
+  const lowMem = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4;
   const lowCpu =
     typeof nav.hardwareConcurrency === "number" &&
-    nav.hardwareConcurrency <= 2;
+    nav.hardwareConcurrency <= 4;
   const saveData = Boolean(
     (
       navigator as Navigator & {
@@ -24,7 +24,7 @@ function shouldUsePerfCrt() {
     ).connection?.saveData,
   );
 
-  return saveData || (lowMem && lowCpu);
+  return saveData || lowMem || lowCpu;
 }
 
 export function CrtShell({ children }: { children: React.ReactNode }) {
@@ -47,16 +47,14 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={shellClass}>
       <div className="crt-screen">{children}</div>
+      {/* Estático: sin animación = casi gratis */}
       <div className="crt-scanlines" aria-hidden />
-      <div className="crt-vignette" aria-hidden />
+      {/* Solo 2 barridos con transform (GPU), no background-position */}
       {!perf ? (
-        <div className="crt-beams" aria-hidden>
-          <div className="crt-beam crt-beam--mid" />
-          <div className="crt-beam crt-beam--thin" />
-          <div className="crt-beam crt-beam--thin crt-beam--thin-b" />
-          <div className="crt-beam crt-beam--wide" />
-          <div className="crt-beam crt-beam--hair" />
-        </div>
+        <>
+          <div className="crt-beam crt-beam--a" aria-hidden />
+          <div className="crt-beam crt-beam--b" aria-hidden />
+        </>
       ) : null}
     </div>
   );
