@@ -171,7 +171,7 @@ label:has(
   display: none;
 }
 
-/* ——— Efecto CRT (sin borde ni viñeta) ——— */
+/* ——— Efecto CRT: visible pero barato (capas estáticas + 1 animación) ——— */
 .crt-shell {
   position: relative;
   width: 100%;
@@ -199,119 +199,339 @@ label:has(
   background: #000;
 }
 
-/* En negro: scanlines claras casi imperceptibles */
-.crt-shell--black .crt-scanlines-move {
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.02) 0px,
-    rgba(255, 255, 255, 0.02) 1px,
-    transparent 1px,
-    transparent 5px
-  );
-  opacity: 0.55;
-}
-
-.crt-shell--black .crt-grain {
-  opacity: 0.025;
-}
-
-.crt-shell--black .crt-beam {
-  opacity: 0.22;
-}
-
 .crt-scanlines,
-.crt-grain,
+.crt-vignette,
+.crt-beams,
 .crt-beam {
   pointer-events: none;
   position: absolute;
   inset: 0;
   z-index: 40;
+}
+
+/*
+ * Scanlines digitales: líneas claras finas (no un velo negro).
+ * El scroll usa background-position con el mismo periodo del patrón → sin salto.
+ */
+.crt-scanlines {
+  z-index: 40;
+  opacity: 1;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(255, 255, 255, 0.07) 2px,
+      rgba(255, 255, 255, 0.07) 3px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.06) 0px,
+      rgba(0, 0, 0, 0.06) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  background-size: 100% 3px, 100% 3px;
+  animation: crt-scanlines-scroll 2.4s linear infinite;
+}
+
+.crt-shell--black .crt-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(255, 255, 255, 0.055) 2px,
+    rgba(255, 255, 255, 0.055) 3px
+  );
+  background-size: 100% 3px;
+  opacity: 0.7;
+}
+
+/* Viñeta suave: curva de tubo, coste ~0.
+ * Máscara superior: no oscurece el header. */
+.crt-vignette {
+  z-index: 41;
+  background: radial-gradient(
+    ellipse 78% 72% at 50% 48%,
+    transparent 42%,
+    rgba(0, 0, 0, 0.18) 80%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 5rem,
+    rgba(0, 0, 0, 0.4) 6.25rem,
+    #000 8rem
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 5rem,
+    rgba(0, 0, 0, 0.4) 6.25rem,
+    #000 8rem
+  );
+}
+
+.crt-shell--black .crt-vignette {
+  /* En fondo negro la viñeta oscura no se ve: borde ligeramente claro */
+  background: radial-gradient(
+    ellipse 78% 72% at 50% 48%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.03) 78%,
+    rgba(255, 255, 255, 0.07) 100%
+  );
+}
+
+/* Varios barridos (anchos distintos + ritmos desfasados ≈ aleatorio) */
+.crt-beams {
+  z-index: 42;
   overflow: hidden;
 }
 
-/* Scanlines finas, drift lento */
-.crt-scanlines-move {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -6px;
-  height: calc(100% + 12px);
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.09) 0px,
-    rgba(0, 0, 0, 0.09) 1px,
-    transparent 1px,
-    transparent 5px
-  );
-  opacity: 0.55;
-  animation: crt-scanlines-move 2.8s linear infinite;
-}
-
-/* Haz suave que cruza despacio */
 .crt-beam {
-  z-index: 41;
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(255, 255, 255, 0.03) 42%,
-    rgba(255, 255, 255, 0.07) 50%,
-    rgba(255, 255, 255, 0.03) 58%,
+    rgba(255, 255, 255, 0.04) 46%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.04) 54%,
+    transparent 100%
+  );
+  background-size: 100% 22%;
+  background-repeat: no-repeat;
+  opacity: 0;
+}
+
+.crt-beam--mid {
+  background-size: 100% 20%;
+  animation: crt-beam-a 26s ease-in-out infinite;
+}
+
+.crt-beam--wide {
+  background-size: 100% 28%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.035) 44%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.035) 56%,
     transparent 100%
   );
   background-size: 100% 28%;
   background-repeat: no-repeat;
-  animation: crt-beam 9s ease-in-out infinite;
-  opacity: 0.4;
+  animation: crt-beam-b 34s ease-in-out 8s infinite;
 }
 
-.crt-grain {
-  z-index: 42;
-  opacity: 0.028;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
-  background-size: 220px 220px;
-  animation: crt-grain 1.6s steps(2) infinite;
+.crt-beam--thin {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 48%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.05) 52%,
+    transparent 100%
+  );
+  background-size: 100% 9%;
+  background-repeat: no-repeat;
+  animation: crt-beam-c 22s ease-in-out 3.5s infinite;
 }
 
-/* Modo rendimiento: scanlines fijas, sin extras */
-.crt-shell--perf .crt-scanlines-move {
+.crt-beam--thin-b {
+  animation: crt-beam-d 30s ease-in-out 14s infinite;
+  background-size: 100% 7%;
+}
+
+.crt-beam--hair {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 49%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.08) 51%,
+    transparent 100%
+  );
+  background-size: 100% 4%;
+  background-repeat: no-repeat;
+  animation: crt-beam-e 24s linear 1.2s infinite;
+}
+
+.crt-shell--black .crt-beams {
+  opacity: 0.55;
+}
+
+.crt-shell--black .crt-beam--mid {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.035) 46%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.035) 54%,
+    transparent 100%
+  );
+  background-size: 100% 20%;
+  background-repeat: no-repeat;
+}
+
+.crt-shell--black .crt-beam--wide {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 44%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.03) 56%,
+    transparent 100%
+  );
+  background-size: 100% 28%;
+  background-repeat: no-repeat;
+}
+
+.crt-shell--black .crt-beam--thin,
+.crt-shell--black .crt-beam--thin-b {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 48%,
+    rgba(255, 255, 255, 0.11) 50%,
+    rgba(255, 255, 255, 0.04) 52%,
+    transparent 100%
+  );
+  background-repeat: no-repeat;
+}
+
+.crt-shell--black .crt-beam--thin {
+  background-size: 100% 9%;
+}
+
+.crt-shell--black .crt-beam--thin-b {
+  background-size: 100% 7%;
+}
+
+.crt-shell--black .crt-beam--hair {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 49%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.05) 51%,
+    transparent 100%
+  );
+  background-size: 100% 4%;
+  background-repeat: no-repeat;
+}
+
+.crt-shell--perf .crt-scanlines {
   animation: none;
-  opacity: 0.4;
 }
 
-.crt-shell--perf .crt-beam,
-.crt-shell--perf .crt-grain {
+.crt-shell--perf .crt-beams {
   display: none;
 }
 
-@keyframes crt-scanlines-move {
+@keyframes crt-scanlines-scroll {
   from {
-    transform: translate3d(0, 0, 0);
+    background-position: 0 0, 0 0;
   }
   to {
-    transform: translate3d(0, 5px, 0);
+    /* Mismo periodo que background-size (3px) → loop invisible */
+    background-position: 0 3px, 0 3px;
   }
 }
 
-@keyframes crt-beam {
-  0% {
+@keyframes crt-beam-a {
+  0%,
+  12% {
+    background-position: 0 -40%;
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.55;
+  }
+  55% {
+    opacity: 0.7;
+  }
+  68%,
+  100% {
+    background-position: 0 140%;
+    opacity: 0;
+  }
+}
+
+@keyframes crt-beam-b {
+  0%,
+  40% {
+    background-position: 0 -45%;
+    opacity: 0;
+  }
+  48% {
+    opacity: 0.5;
+  }
+  78% {
+    opacity: 0.65;
+  }
+  88%,
+  100% {
+    background-position: 0 145%;
+    opacity: 0;
+  }
+}
+
+@keyframes crt-beam-c {
+  0%,
+  8% {
     background-position: 0 -30%;
-    opacity: 0.22;
+    opacity: 0;
   }
-  50% {
-    opacity: 0.42;
+  14% {
+    opacity: 0.6;
   }
+  42% {
+    opacity: 0.75;
+  }
+  52%,
   100% {
     background-position: 0 130%;
-    opacity: 0.22;
+    opacity: 0;
   }
 }
 
-@keyframes crt-grain {
-  0% {
-    background-position: 0 0;
+@keyframes crt-beam-d {
+  0%,
+  55% {
+    background-position: 0 -35%;
+    opacity: 0;
   }
+  62% {
+    opacity: 0.55;
+  }
+  82% {
+    opacity: 0.7;
+  }
+  90%,
   100% {
-    background-position: 220px -110px;
+    background-position: 0 135%;
+    opacity: 0;
+  }
+}
+
+@keyframes crt-beam-e {
+  0%,
+  25% {
+    background-position: 0 -20%;
+    opacity: 0;
+  }
+  28% {
+    opacity: 0.45;
+  }
+  48% {
+    opacity: 0.55;
+  }
+  52%,
+  100% {
+    background-position: 0 120%;
+    opacity: 0;
   }
 }
 
@@ -441,11 +661,13 @@ label:has(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crt-scanlines-move,
-  .crt-grain,
-  .crt-beam,
-  .crt-glitch-band {
+  .crt-scanlines,
+  .crt-beam {
     animation: none;
+  }
+
+  .crt-beams {
+    display: none;
   }
 
   .search-stage,

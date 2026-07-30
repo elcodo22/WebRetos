@@ -3,27 +3,28 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 
+/** Solo fuerza CRT ligero si el dispositivo lo pide de verdad. */
 function shouldUsePerfCrt() {
   if (typeof window === "undefined") return false;
 
-  const reducedMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
-  if (reducedMotion) return true;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return true;
+  }
 
   const nav = navigator as Navigator & { deviceMemory?: number };
-  const lowMem = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4;
+  const lowMem = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 2;
   const lowCpu =
     typeof nav.hardwareConcurrency === "number" &&
-    nav.hardwareConcurrency <= 4;
-  const saveData =
-    "connection" in navigator &&
-    Boolean(
-      (navigator as Navigator & { connection?: { saveData?: boolean } })
-        .connection?.saveData,
-    );
+    nav.hardwareConcurrency <= 2;
+  const saveData = Boolean(
+    (
+      navigator as Navigator & {
+        connection?: { saveData?: boolean };
+      }
+    ).connection?.saveData,
+  );
 
-  return lowMem || lowCpu || saveData;
+  return saveData || (lowMem && lowCpu);
 }
 
 export function CrtShell({ children }: { children: React.ReactNode }) {
@@ -46,14 +47,16 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={shellClass}>
       <div className="crt-screen">{children}</div>
-      <div className="crt-scanlines" aria-hidden>
-        <div className="crt-scanlines-move" />
-      </div>
+      <div className="crt-scanlines" aria-hidden />
+      <div className="crt-vignette" aria-hidden />
       {!perf ? (
-        <>
-          <div className="crt-beam" aria-hidden />
-          <div className="crt-grain" aria-hidden />
-        </>
+        <div className="crt-beams" aria-hidden>
+          <div className="crt-beam crt-beam--mid" />
+          <div className="crt-beam crt-beam--thin" />
+          <div className="crt-beam crt-beam--thin crt-beam--thin-b" />
+          <div className="crt-beam crt-beam--wide" />
+          <div className="crt-beam crt-beam--hair" />
+        </div>
       ) : null}
     </div>
   );
