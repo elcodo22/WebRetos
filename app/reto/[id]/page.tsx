@@ -3,8 +3,8 @@ import { RetoFeed } from "@/components/reto/reto-feed";
 import { RetoSnap } from "@/components/reto/reto-snap";
 import { SiteHeader } from "@/components/layout/site-header";
 import { generarFeedRetoMock } from "@/lib/mocks/reto-feed";
+import { getCurrentUser } from "@/lib/home-data";
 import { getRetoArchivoById } from "@/lib/retos-archivo-data";
-import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -12,20 +12,13 @@ type PageProps = {
 
 export default async function RetoArchivoPage({ params }: PageProps) {
   const { id } = await params;
-  const reto = await getRetoArchivoById(id);
+
+  const [reto, user] = await Promise.all([
+    getRetoArchivoById(id),
+    getCurrentUser(),
+  ]);
+
   if (!reto) notFound();
-
-  const supabase = await createClient();
-
-  let user = null;
-  try {
-    const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
-    user = authUser;
-  } catch {
-    user = null;
-  }
 
   const feed = generarFeedRetoMock(reto.id);
 
@@ -38,7 +31,13 @@ export default async function RetoArchivoPage({ params }: PageProps) {
           <span className="min-w-0">{reto.titulo}</span>
         </h1>
       }
-      feed={<RetoFeed items={feed} />}
+      feed={
+        <RetoFeed
+          items={feed}
+          retoNumero={reto.numero}
+          retoTitulo={reto.titulo}
+        />
+      }
     />
   );
 }

@@ -1,9 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { activarSiguienteEnCola, reordenarCola } from "@/lib/supabase/retos";
+
+function revalidatePublicRetos() {
+  revalidateTag("reto-activo", "max");
+  revalidateTag("retos-archivo", "max");
+  revalidatePath("/");
+}
 
 export type AdminActionState = {
   error?: string;
@@ -60,6 +66,7 @@ export async function crearReto(
     }
 
     revalidatePath("/admin");
+    revalidatePublicRetos();
     return {
       success: `Reto añadido a la cola (posición ${ordenCola}). Se activará cuando termine el reto actual.`,
     };
@@ -83,6 +90,7 @@ export async function crearReto(
   }
 
   revalidatePath("/admin");
+  revalidatePublicRetos();
   return { success: "Reto creado y activado correctamente." };
 }
 
@@ -130,6 +138,7 @@ export async function actualizarReto(
   }
 
   revalidatePath("/admin");
+  revalidatePublicRetos();
   return { success: "Reto actualizado correctamente." };
 }
 
@@ -181,6 +190,7 @@ export async function eliminarReto(
     const siguiente = await activarSiguienteEnCola(supabase);
 
     revalidatePath("/admin");
+    revalidatePublicRetos();
     return siguiente
       ? {
           success: `Reto marcado como eliminado. "${siguiente.titulo}" se ha activado automáticamente.`,
@@ -191,5 +201,6 @@ export async function eliminarReto(
   await reordenarCola(supabase);
 
   revalidatePath("/admin");
+  revalidatePublicRetos();
   return { success: "Reto marcado como eliminado." };
 }

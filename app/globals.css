@@ -48,6 +48,50 @@ a:hover {
   opacity: 0.8;
 }
 
+/* Carga: azul completo + rueda de puntos */
+.page-loading {
+  position: relative;
+  min-height: 100%;
+}
+
+.page-loading-wheel {
+  --wheel-size: 56px;
+  position: relative;
+  width: var(--wheel-size);
+  height: var(--wheel-size);
+  animation: page-loading-spin 0.85s linear infinite;
+}
+
+.page-loading-dot {
+  --dot: 7px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--dot);
+  height: var(--dot);
+  margin: calc(var(--dot) / -2) 0 0 calc(var(--dot) / -2);
+  border-radius: 50%;
+  background: currentColor;
+  opacity: calc(0.18 + (var(--i) / 12) * 0.82);
+  transform: rotate(calc(var(--i) * 30deg)) translateY(calc(var(--wheel-size) / -2 + 4px));
+}
+
+@keyframes page-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loading-wheel {
+    animation: none;
+  }
+
+  .page-loading-dot {
+    opacity: 0.65;
+  }
+}
+
 a,
 button,
 [role="button"],
@@ -402,7 +446,7 @@ label:has(
 }
 
 .crt-power-frame--on {
-  animation: crt-power-on 750ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: crt-power-on 380ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes crt-power-off {

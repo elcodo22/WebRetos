@@ -29,6 +29,8 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
   const searchOpenRef = useRef(searchOpen);
 
   const [panel, setPanel] = useState(0);
+  /** Padding bajo header en el feed; su altura anima a la par del snap. */
+  const [feedHeaderPad, setFeedHeaderPad] = useState(false);
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
   const feedScrollRef = useRef<HTMLDivElement>(null);
@@ -47,11 +49,12 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
     panelRef.current = next;
     setPanel(next);
 
-    if (next === 1) {
-      // Al entrar al feed, partir siempre desde arriba.
-      const node = feedScrollRef.current;
-      if (node) node.scrollTop = 0;
-    }
+    const node = feedScrollRef.current;
+    if (node) node.scrollTop = 0;
+
+    // Padding del header: se anima con la misma duración que el snap
+    // (si se quita al final, las miniaturas del peek aparecen de golpe).
+    setFeedHeaderPad(next === 1);
 
     window.setTimeout(() => {
       lockedRef.current = false;
@@ -69,7 +72,6 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
       const delta = event.deltaY;
       if (Math.abs(delta) < WHEEL_THRESHOLD) return;
 
-      // Panel título → bajar al feed
       if (panelRef.current === 0) {
         if (delta > 0) {
           event.preventDefault();
@@ -78,7 +80,6 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
         return;
       }
 
-      // Panel feed: scroll normal; solo subir al título si estamos arriba
       const feedEl = feedScrollRef.current;
       if (!feedEl) return;
 
@@ -135,21 +136,16 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
       </div>
 
       <div
-        className="h-full transition-transform ease-out"
+        className="h-full will-change-transform"
         style={{
           transform:
             panel === 0
               ? `translate3d(0, -${PEEK_VH}vh, 0)`
               : "translate3d(0, -100%, 0)",
-          transitionDuration: `${TRANSITION_MS}ms`,
+          transition: `transform ${TRANSITION_MS}ms cubic-bezier(0.33, 1, 0.32, 1)`,
         }}
       >
         <section className="relative h-full px-[18px]">
-          {/*
-           * Con el peek del feed, el bloque visible del título es (100% - PEEK).
-           * Centramos ahí: top = 50% + PEEK/2 en coords de la sección
-           * (compensa el translateY(-PEEK) del contenedor).
-           */}
           <div
             className="absolute inset-x-0 flex -translate-y-1/2 items-center justify-center px-[18px]"
             style={{ top: `calc(50% + ${PEEK_VH / 2}vh)` }}
@@ -161,27 +157,29 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
         <section className="h-full overflow-hidden">
           <div
             ref={feedScrollRef}
-            className="h-full overflow-y-auto overscroll-contain scrollbar-none px-[18px] pb-16"
+            className="h-full overflow-y-auto overscroll-none scrollbar-none px-[18px] pb-16"
           >
-            {/* Espacio bajo el header solo en el feed completo; en el peek no,
-                para que se asomen miniaturas de verdad. */}
             <div
               aria-hidden
-              className={panel === 1 ? "h-24 shrink-0" : "h-0 shrink-0"}
+              className="shrink-0"
+              style={{
+                height: feedHeaderPad ? 96 : 0,
+                transition: `height ${TRANSITION_MS}ms cubic-bezier(0.33, 1, 0.32, 1)`,
+              }}
             />
             {feed}
           </div>
         </section>
       </div>
 
-      {/* Degradado suave sobre el peek para que se lea como pista, no como feed */}
-      {panel === 0 && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black via-black/75 to-transparent"
-          style={{ height: `${PEEK_VH + 6}vh` }}
-        />
-      )}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black via-black/75 to-transparent transition-opacity duration-300"
+        style={{
+          height: `${PEEK_VH + 6}vh`,
+          opacity: panel === 0 ? 1 : 0,
+        }}
+      />
     </div>
   );
 }

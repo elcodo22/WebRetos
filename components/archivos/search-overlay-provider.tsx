@@ -55,7 +55,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
   const ensureRetos = useCallback(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
-    fetch("/api/retos-archivo", { cache: "no-store" })
+    fetch("/api/retos-archivo")
       .then((res) => (res.ok ? res.json() : []))
       .then((data: RetoArchivo[]) => setRetos(Array.isArray(data) ? data : []))
       .catch(() => setRetos([]));

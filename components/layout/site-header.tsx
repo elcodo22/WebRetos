@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ArchivosLink } from "@/components/layout/archivos-link";
+import { HomeLogoLink } from "@/components/layout/home-logo-link";
 import { StopwatchCursorZone } from "@/components/layout/stopwatch-cursor-zone";
 import { CountdownCompact } from "@/components/reto/countdown";
 import { ArchivosSearch } from "@/components/archivos/archivos-search";
@@ -27,13 +28,9 @@ export function SiteHeader({
 
   return (
     <header className="site-grid relative items-center bg-transparent py-6 text-white">
-      <Link
-        href="/"
-        aria-label="Ir a la pantalla principal"
-        className="col-start-1 col-span-1 inline-flex items-center leading-none"
-      >
+      <HomeLogoLink>
         <LogoIcon />
-      </Link>
+      </HomeLogoLink>
 
       {center != null && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 max-w-[min(52vw,640px)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-[20px] font-normal leading-none tracking-wide">
@@ -41,30 +38,13 @@ export function SiteHeader({
         </div>
       )}
 
-      {showTimer && (
+      {showTimer && fechaFin ? (
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[40px] font-normal leading-none tracking-wide">
           <StopwatchCursorZone>
-            {fechaFin ? (
-              <CountdownCompact fechaFin={fechaFin} />
-            ) : (
-              <span className="inline-flex items-baseline gap-3 tabular-nums">
-                <span>
-                  00<span className="text-[28px]">d</span>
-                </span>
-                <span>
-                  00<span className="text-[28px]">h</span>
-                </span>
-                <span>
-                  00<span className="text-[28px]">m</span>
-                </span>
-                <span>
-                  00<span className="text-[28px]">s</span>
-                </span>
-              </span>
-            )}
+            <CountdownCompact fechaFin={fechaFin} />
           </StopwatchCursorZone>
         </div>
-      )}
+      ) : null}
 
       <nav className="absolute right-[18px] top-1/2 flex -translate-y-1/2 items-center gap-4 text-[20px] font-normal leading-none">
         {variant === "login" && <Link href="/registro">[Registro]</Link>}

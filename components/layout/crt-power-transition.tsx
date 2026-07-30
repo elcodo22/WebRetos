@@ -13,7 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 const STORAGE_KEY = "crt-power-on";
 const POWER_OFF_MS = 700;
-const POWER_ON_MS = 750;
+const POWER_ON_MS = 380;
 
 type Ctx = {
   /** Apaga la pantalla CRT y navega a `href` al terminar. */
