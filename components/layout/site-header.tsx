@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ArchivosLink } from "@/components/layout/archivos-link";
 import { StopwatchCursorZone } from "@/components/layout/stopwatch-cursor-zone";
@@ -11,15 +12,21 @@ export function SiteHeader({
   user,
   fechaFin,
   variant = "default",
+  showCountdown = true,
+  center,
 }: {
   user: User | null;
   fechaFin?: string | null;
   variant?: SiteHeaderVariant;
+  showCountdown?: boolean;
+  /** Contenido centrado (sustituye al temporizador si se pasa). */
+  center?: ReactNode;
 }) {
   const isAuthPage = variant === "login" || variant === "registro";
+  const showTimer = !isAuthPage && showCountdown && center == null;
 
   return (
-    <header className="site-grid relative items-center py-6 text-white">
+    <header className="site-grid relative items-center bg-transparent py-6 text-white">
       <Link
         href="/"
         aria-label="Ir a la pantalla principal"
@@ -28,7 +35,13 @@ export function SiteHeader({
         <LogoIcon />
       </Link>
 
-      {!isAuthPage && (
+      {center != null && (
+        <div className="pointer-events-none absolute left-1/2 top-1/2 max-w-[min(52vw,640px)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-[20px] font-normal leading-none tracking-wide">
+          {center}
+        </div>
+      )}
+
+      {showTimer && (
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[40px] font-normal leading-none tracking-wide">
           <StopwatchCursorZone>
             {fechaFin ? (

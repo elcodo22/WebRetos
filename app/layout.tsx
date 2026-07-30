@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bitcount_Grid_Single } from "next/font/google";
 import { CrtShell } from "@/components/layout/crt-shell";
+import { CrtPowerProvider } from "@/components/layout/crt-power-transition";
 import { SearchOverlayProvider } from "@/components/archivos/search-overlay-provider";
 import "./globals.css";
 
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="es" className={`${bitcount.variable} h-full`}>
       <body className={`${bitcount.className} crt-body antialiased`}>
         <CrtShell>
-          <SearchOverlayProvider>{children}</SearchOverlayProvider>
+          <CrtPowerProvider>
+            <SearchOverlayProvider>{children}</SearchOverlayProvider>
+          </CrtPowerProvider>
         </CrtShell>
       </body>
     </html>

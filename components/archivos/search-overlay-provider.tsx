@@ -12,7 +12,7 @@ import {
 import type { RetoArchivo } from "@/lib/supabase/retos";
 import { ArchivosSearchScreen } from "./archivos-search-screen";
 
-const EXIT_MS = 340;
+const EXIT_MS = 180;
 
 type Ctx = {
   isOpen: boolean;
@@ -39,8 +39,8 @@ export function useSearchOverlay(): Ctx {
 type Phase = "closed" | "open" | "closing";
 
 /**
- * Overlay de búsqueda pantalla completa con transición push:
- * la página se desplaza a la izquierda y el panel entra desde la derecha.
+ * Overlay de búsqueda pantalla completa: al abrir, la página actual desaparece
+ * y solo queda la pantalla de búsqueda.
  */
 export function SearchOverlayProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase>("closed");
@@ -100,7 +100,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
       <div className="search-root">
         <div
           className={
-            isOpen ? "search-stage search-stage--pushed" : "search-stage"
+            isVisible ? "search-stage search-stage--hidden" : "search-stage"
           }
           inert={isVisible ? true : undefined}
         >

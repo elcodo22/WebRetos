@@ -3,11 +3,9 @@ import { ArchivosCarousel } from "@/components/archivos/archivos-carousel";
 import { HomeSnap } from "@/components/layout/home-snap";
 import { SiteHeader } from "@/components/layout/site-header";
 import { RetoHero } from "@/components/reto/reto-hero";
-import { generarRetosArchivoMock } from "@/lib/mocks/retos-archivo";
-import { getRetoActivo, getRetosArchivo } from "@/lib/supabase/retos";
+import { loadRetosArchivo } from "@/lib/retos-archivo-data";
+import { getRetoActivo } from "@/lib/supabase/retos";
 import { createClient } from "@/lib/supabase/server";
-
-const MOSTRAR_MOCKS_ARCHIVO = true;
 
 function formatearNumeroReto(totalAnteriores: number) {
   return (totalAnteriores + 1).toString().padStart(3, "0");
@@ -28,11 +26,10 @@ export default async function Home() {
 
   let retoActivo = null;
   let numeroReto = "000";
-  let retosArchivo: Awaited<ReturnType<typeof getRetosArchivo>> = [];
+  let retosArchivo: Awaited<ReturnType<typeof loadRetosArchivo>> = [];
 
   try {
     retoActivo = await getRetoActivo(supabase);
-    retosArchivo = await getRetosArchivo(supabase);
 
     if (retoActivo) {
       const { count } = await supabase
@@ -45,17 +42,12 @@ export default async function Home() {
     }
   } catch {
     retoActivo = null;
-    retosArchivo = [];
   }
 
-  if (MOSTRAR_MOCKS_ARCHIVO) {
-    const mocks = generarRetosArchivoMock();
-    retosArchivo = [...mocks, ...retosArchivo]
-      .sort((a, b) => a.fechaOrden - b.fechaOrden)
-      .map((reto, i) => ({
-        ...reto,
-        numero: (i + 1).toString().padStart(2, "0"),
-      }));
+  try {
+    retosArchivo = await loadRetosArchivo();
+  } catch {
+    retosArchivo = [];
   }
 
   const hero = retoActivo ? (

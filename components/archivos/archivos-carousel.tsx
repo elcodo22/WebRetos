@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RetoArchivo } from "@/lib/supabase/retos";
+import { useCrtPower } from "@/components/layout/crt-power-transition";
 
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
 const HERO_REQUEST_EVENT = "carousel-request-hero";
@@ -29,6 +30,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
      el reto más reciente primero. */
   const items = useMemo(() => [...retos].reverse(), [retos]);
   const total = items.length;
+  const { powerOffTo } = useCrtPower();
 
   const [index, setIndex] = useState(0);
   const [isSettled, setIsSettled] = useState(true);
@@ -246,9 +248,20 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                 }}
               >
                 <div className="relative">
-                  <FolderIcon />
+                  {isFocus ? (
+                    <button
+                      type="button"
+                      className="pointer-events-auto block border-0 bg-transparent p-0 text-inherit"
+                      aria-label={`Abrir reto #${item.numero}: ${item.titulo}`}
+                      onClick={() => powerOffTo(`/reto/${item.id}`)}
+                    >
+                      <FolderIcon />
+                    </button>
+                  ) : (
+                    <FolderIcon />
+                  )}
                   <div
-                    className="absolute inset-x-0 top-full mt-4 text-center text-[20px] leading-none tracking-wide"
+                    className="pointer-events-none absolute inset-x-0 top-full mt-4 text-center text-[20px] leading-none tracking-wide"
                     style={{
                       opacity: isFocus && isSettled ? 1 : 0,
                       transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,

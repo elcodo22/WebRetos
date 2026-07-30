@@ -1,6 +1,13 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 export function CrtShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const blackScreen = pathname.startsWith("/reto/");
+
   return (
-    <div className="crt-shell">
+    <div className={blackScreen ? "crt-shell crt-shell--black" : "crt-shell"}>
       <div className="crt-screen">{children}</div>
       <div className="crt-scanlines" aria-hidden>
         <div className="crt-scanlines-move" />
