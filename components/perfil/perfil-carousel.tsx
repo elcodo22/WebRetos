@@ -188,9 +188,11 @@ export function PerfilCarousel({ obras, onFocusChange }: PerfilCarouselProps) {
 
   if (total === 0) {
     return (
-      <p className="px-[18px] text-[16px] tracking-wide text-white/70">
-        Sin participaciones todavía.
-      </p>
+      <div className="flex min-h-0 w-full flex-1 items-center justify-center px-[18px]">
+        <p className="text-center text-[16px] tracking-wide text-white/70">
+          Sin participaciones todavía.
+        </p>
+      </div>
     );
   }
 

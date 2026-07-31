@@ -31,23 +31,38 @@ const RETOS_FALLBACK = [
   { numero: "12", titulo: "Bosque ácido" },
 ];
 
-const NOMBRES: Record<string, string> = {
-  "luna.verde": "LUNA VERDE",
-  pixelmar: "MARÍA PIXELS",
-  cinta_vhs: "CARLOS VHS",
-  "neon.rio": "NEÓN RÍO",
-  sombra_azul: "SOMBRA AZUL",
-  faro_roto: "FARO ROTO",
-  "vinilo.crudo": "VINILO CRUDO",
-  "astro.papel": "ASTRO PAPEL",
-  trennocturno: "TREN NOCTURNO",
-  cristal_humo: "CRISTAL HUMO",
-  "mar.cobre": "MAR COBRE",
-  relojvacio: "RELOJ VACÍO",
-  "bosque.acido": "BOSQUE ÁCIDO",
-  puerto_rojo: "PUERTO ROJO",
-  "memoria.lata": "MEMORIA LATA",
+/** Nombre realista + nº de participaciones (coincide con obras mostradas). */
+const PERFILES: Record<string, { nombre: string; count: number }> = {
+  "luna.verde": { nombre: "LAURA MENDOZA", count: 6 },
+  pixelmar: { nombre: "MARÍA PAREDES", count: 1 },
+  cinta_vhs: { nombre: "CARLOS IBÁÑEZ", count: 0 },
+  "neon.rio": { nombre: "DIEGO NAVARRO", count: 9 },
+  sombra_azul: { nombre: "SOFÍA RAMÍREZ", count: 3 },
+  faro_roto: { nombre: "ANDRÉS MOLINA", count: 1 },
+  "vinilo.crudo": { nombre: "ELENA CASTRO", count: 0 },
+  "astro.papel": { nombre: "PABLO SERRANO", count: 4 },
+  trennocturno: { nombre: "NURIA VEGA", count: 8 },
+  cristal_humo: { nombre: "JAVIER ORTEGA", count: 2 },
+  "mar.cobre": { nombre: "ANA BELÉN RUIZ", count: 5 },
+  relojvacio: { nombre: "HUGO DELGADO", count: 0 },
+  "bosque.acido": { nombre: "IRENE CAMPOS", count: 12 },
+  puerto_rojo: { nombre: "TOMÁS HERRERA", count: 1 },
+  "memoria.lata": { nombre: "CLARA FUENTES", count: 7 },
 };
+
+const NOMBRES_EXTRA = [
+  "ALEJANDRO CODOÑER",
+  "LUCÍA FERNÁNDEZ",
+  "MIGUEL ÁNGEL TORRES",
+  "CARMEN GIL",
+  "ROBERTO SAINZ",
+  "PATRICIA LEÓN",
+  "DANIEL PRIETO",
+  "BEATRIZ MORALES",
+];
+
+/** Conteos variados para usuarios sin ficha fija. */
+const COUNT_PATTERNS = [0, 0, 1, 1, 2, 3, 4, 5, 8, 10];
 
 /** Quita @ y normaliza para URL / lookup. */
 export function slugUsername(username: string) {
@@ -63,10 +78,29 @@ export function formatUsername(username: string) {
   return slug ? `@${slug}` : "@";
 }
 
+function hashSeed(value: string) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function perfilMeta(username: string): { nombre: string; count: number } {
+  const fixed = PERFILES[username];
+  if (fixed) return fixed;
+
+  const h = hashSeed(username);
+  return {
+    nombre: NOMBRES_EXTRA[h % NOMBRES_EXTRA.length],
+    count: COUNT_PATTERNS[h % COUNT_PATTERNS.length],
+  };
+}
+
 type RetoRef = { numero: string; titulo: string; id?: string };
 
 /**
- * Perfil mock: obras del usuario. El texto del póster usa el título del reto.
+ * Perfil mock: obras del usuario. participaciones === obras.length.
  */
 export function getPerfilMock(
   usernameRaw: string,
@@ -74,6 +108,8 @@ export function getPerfilMock(
 ): PerfilData | null {
   const username = slugUsername(usernameRaw);
   if (!username) return null;
+
+  const meta = perfilMeta(username);
 
   const retos: RetoRef[] =
     retosArchivo.length > 0
@@ -85,47 +121,39 @@ export function getPerfilMock(
       : RETOS_FALLBACK;
 
   const obras: PerfilObra[] = [];
+  const target = Math.min(meta.count, Math.max(retos.length, meta.count));
 
-  for (let r = 0; r < retos.length; r++) {
-    const reto = retos[r];
-    const seed = reto.id ?? `perfil-${reto.numero}-${username}`;
-    const feed = generarFeedRetoMock(seed, 15);
-    const match = feed.find(
-      (item) => slugUsername(item.username) === username,
-    );
-    if (!match) continue;
+  if (target > 0 && retos.length > 0) {
+    const pool = [...retos];
+    // Mezcla determinista por usuario
+    const h = hashSeed(username);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = (h + i * 17) % (i + 1);
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
 
-    obras.push({
-      ...match,
-      id: `${username}-obra-${reto.numero}`,
-      username: formatUsername(username),
-      retoNumero: reto.numero,
-      retoTitulo: reto.titulo,
-    });
-  }
+    const take = Math.min(target, pool.length);
+    for (let i = 0; i < take; i++) {
+      const reto = pool[i];
+      const seed = `${reto.id ?? reto.numero}-${username}-obra`;
+      const feed = generarFeedRetoMock(seed, 8);
+      const frame = feed[i % feed.length];
 
-  if (obras.length === 0) {
-    const feed = generarFeedRetoMock(`perfil-fallback-${username}`, 8);
-    for (let i = 0; i < feed.length; i++) {
-      const reto = retos[i % retos.length];
       obras.push({
-        ...feed[i],
-        id: `${username}-obra-${i}`,
+        ...frame,
+        id: `${username}-obra-${reto.numero}`,
         username: formatUsername(username),
+        imageUrl: frame.imageUrl,
         retoNumero: reto.numero,
         retoTitulo: reto.titulo,
       });
     }
   }
 
-  const nombreCompleto =
-    NOMBRES[username] ??
-    username.replace(/[._]/g, " ").toUpperCase();
-
   return {
     username,
-    nombreCompleto,
-    participaciones: Math.max(obras.length, 12) * 12 + obras.length,
+    nombreCompleto: meta.nombre,
+    participaciones: obras.length,
     obras,
   };
 }
