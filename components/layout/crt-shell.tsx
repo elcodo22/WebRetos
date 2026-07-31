@@ -29,7 +29,8 @@ function shouldUsePerfCrt() {
 
 export function CrtShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const blackScreen = pathname.startsWith("/reto/");
+  const blackScreen =
+    pathname.startsWith("/reto/") || pathname.startsWith("/u/");
   const [perf, setPerf] = useState(false);
 
   useEffect(() => {

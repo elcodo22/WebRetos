@@ -8,7 +8,9 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import type { RetoFeedItem } from "@/lib/mocks/reto-feed";
+import { perfilHref } from "@/lib/mocks/perfil";
 
 const CONTROLS_HIDE_MS = 2200;
 /** Sin movimiento del ratón en pausa → ocultar UI. */
@@ -387,14 +389,21 @@ export function RetoVideoPlayer({
       </div>
 
       <div
-        className={`pointer-events-none absolute bottom-[22%] left-[18px] z-20 max-w-[min(52vw,560px)] pr-6 transition-opacity duration-500 ${
-          showSheet ? "opacity-100" : "opacity-0"
+        className={`absolute bottom-[22%] left-[18px] z-20 max-w-[min(52vw,560px)] pr-6 transition-opacity duration-500 ${
+          showSheet
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
         }`}
         aria-hidden={!showSheet}
+        onClick={(event) => event.stopPropagation()}
       >
-        <p className="text-[18px] font-normal leading-none tracking-wide">
+        <Link
+          href={perfilHref(item.username)}
+          className="inline-block text-[18px] font-normal leading-none tracking-wide hover:underline"
+          onClick={(event) => event.stopPropagation()}
+        >
           {item.username}
-        </p>
+        </Link>
         <h2 className="mt-3 text-[32px] font-normal leading-tight tracking-wide">
           {item.titulo}
         </h2>
