@@ -23,11 +23,11 @@ export function RetoFeed({ items, retoNumero, retoTitulo }: RetoFeedProps) {
     <>
       <ul className="grid w-full grid-cols-5 gap-x-8 gap-y-14 px-6">
         {items.map((item) => (
-          <li key={item.id} className="group relative min-w-0">
+          <li key={item.id} className="relative min-w-0">
             <button
               type="button"
               onClick={() => setActive(item)}
-              className="relative z-0 block w-full cursor-pointer overflow-visible text-left group-hover:z-10"
+              className="group relative z-0 block w-full cursor-pointer overflow-visible text-left hover:z-10"
               aria-label={`Ver ${item.titulo} de ${item.username}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
