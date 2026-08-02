@@ -80,7 +80,7 @@ export function PerfilLiftOverlay({
       armedRef.current = true;
     }, 80);
 
-    let finishTimer: ReturnType<typeof setTimeout> | null = null;
+    let finishTimer: number | null = null;
 
     const hitTarget = (clientX: number, clientY: number) => {
       const el = targetRef.current;
