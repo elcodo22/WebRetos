@@ -137,13 +137,11 @@ export function PerfilCajaOverlay({
   const onLiftCancel = useCallback(() => setLift(null), []);
 
   const onRemoveDrop = useCallback(() => {
-    setLift((current) => {
-      if (current) removeObraFromCaja(current.obra.id);
-      return null;
-    });
-    // Dejar que React pinte el cierre del overlay antes de sincronizar la carpeta
+    const id = lift?.obra.id;
+    setLift(null);
+    if (id) removeObraFromCaja(id);
     window.setTimeout(() => syncOpenFolder(), 0);
-  }, [syncOpenFolder]);
+  }, [lift, syncOpenFolder]);
 
   const breadcrumb = openFolder ? (
     <p className="truncate px-24 text-center text-[20px] font-normal leading-snug tracking-wide">

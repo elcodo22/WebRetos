@@ -37,6 +37,7 @@ const DRAG_LIFT_PX = 8;
 export type PerfilFocusMeta = {
   retoNumero: string;
   retoTitulo: string;
+  retoId?: string;
 } | null;
 
 type CarouselItem =
@@ -75,24 +76,24 @@ export function PerfilCarousel({
 
   const total = items.length;
 
-  /** Índice inicial: último póster (tras la caja) o la caja si no hay obras. */
-  const initialIndex =
-    cajas.length > 0 && obras.length > 0 ? 1 : 0;
+  /** Índice de la última participación (obras van invertidas en el carrusel). */
+  const lastParticipationIndex =
+    obras.length > 0 ? (cajas.length > 0 ? 1 : 0) : 0;
 
-  const [index, setIndex] = useState(initialIndex);
+  const [index, setIndex] = useState(lastParticipationIndex);
   const [active, setActive] = useState<PerfilObra | null>(null);
   const [openGuardados, setOpenGuardados] = useState(false);
   const [lift, setLift] = useState<LiftState | null>(null);
   const [renderMin, setRenderMin] = useState(() =>
-    Math.max(0, initialIndex - REST_RANGE),
+    Math.max(0, lastParticipationIndex - REST_RANGE),
   );
   const [renderMax, setRenderMax] = useState(() =>
-    Math.min(REST_RANGE + initialIndex, Math.max(0, total - 1)),
+    Math.min(REST_RANGE + lastParticipationIndex, Math.max(0, total - 1)),
   );
 
-  const positionRef = useRef(initialIndex);
-  const targetRef = useRef(initialIndex);
-  const indexRef = useRef(initialIndex);
+  const positionRef = useRef(lastParticipationIndex);
+  const targetRef = useRef(lastParticipationIndex);
+  const indexRef = useRef(lastParticipationIndex);
   const rafRef = useRef<number | null>(null);
   const ribbonRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -132,34 +133,48 @@ export function PerfilCarousel({
     onFocusChange?.({
       retoNumero: item.obra.retoNumero,
       retoTitulo: item.obra.retoTitulo,
+      retoId: item.obra.retoId,
     });
   }, [index, items, onFocusChange]);
 
   useEffect(() => {
     totalRef.current = total;
-    const start = cajas.length > 0 && obras.length > 0 ? 1 : 0;
     if (total > 0 && indexRef.current >= total) {
+      const start = lastParticipationIndex;
       indexRef.current = start;
       positionRef.current = start;
       targetRef.current = start;
       setIndex(start);
     }
-  }, [total, cajas.length, obras.length]);
+  }, [total, lastParticipationIndex]);
 
-  // Al montar / cuando aparece la caja con pósters: centrar el último póster (índice 1)
+  // Al montar / cambiar layout / volver al perfil: centrar última participación
   const layoutKey = `${cajas.length > 0 ? 1 : 0}-${obras.length}`;
-  const prevLayoutKey = useRef(layoutKey);
+  const prevLayoutKey = useRef("");
   useEffect(() => {
     if (total === 0) return;
-    const start = cajas.length > 0 && obras.length > 0 ? 1 : 0;
-    if (prevLayoutKey.current !== layoutKey || indexRef.current !== start) {
-      // Solo forzar al cambiar layout (p. ej. primera vez con caja+obras)
-      if (prevLayoutKey.current !== layoutKey) {
-        goToRef.current(start);
-      }
-    }
+    const start = lastParticipationIndex;
+    const layoutChanged = prevLayoutKey.current !== layoutKey;
     prevLayoutKey.current = layoutKey;
-  }, [layoutKey, total, cajas.length, obras.length]);
+    if (!layoutChanged) return;
+    const id = window.requestAnimationFrame(() => {
+      goToRef.current(start);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [layoutKey, total, lastParticipationIndex]);
+
+  useEffect(() => {
+    function onGoHome() {
+      setOpenGuardados(false);
+      setLift(null);
+      setActive(null);
+      window.requestAnimationFrame(() => {
+        goToRef.current(lastParticipationIndex);
+      });
+    }
+    window.addEventListener("perfil-go-home", onGoHome);
+    return () => window.removeEventListener("perfil-go-home", onGoHome);
+  }, [lastParticipationIndex]);
 
   const clearDrag = useCallback(() => {
     dragStartRef.current = null;

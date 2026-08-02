@@ -8,6 +8,7 @@ import {
   PerfilCarousel,
   type PerfilFocusMeta,
 } from "@/components/perfil/perfil-carousel";
+import { useCrtPower } from "@/components/layout/crt-power-transition";
 import { readSavedCajas, type SavedCaja } from "@/lib/perfil-caja";
 
 const EMPTY_CAJAS: SavedCaja[] = [];
@@ -21,14 +22,17 @@ export function PerfilScreen({
   isOwnProfile?: boolean;
   user?: User | null;
 }) {
-  const [focus, setFocus] = useState<PerfilFocusMeta>(
-    perfil.obras[0]
+  const { powerOffTo } = useCrtPower();
+  const [focus, setFocus] = useState<PerfilFocusMeta>(() => {
+    const last = perfil.obras[perfil.obras.length - 1];
+    return last
       ? {
-          retoNumero: perfil.obras[0].retoNumero,
-          retoTitulo: perfil.obras[0].retoTitulo,
+          retoNumero: last.retoNumero,
+          retoTitulo: last.retoTitulo,
+          retoId: last.retoId,
         }
-      : null,
-  );
+      : null;
+  });
   const [copied, setCopied] = useState(false);
   const [lifting, setLifting] = useState(false);
   const [cajas, setCajas] = useState<SavedCaja[]>([]);
@@ -157,9 +161,19 @@ export function PerfilScreen({
 
         <div className="col-span-4 min-w-0 px-2 text-center">
           {focus ? (
-            <p className="truncate text-[20px] font-normal leading-snug tracking-wide">
-              #{focus.retoNumero} {focus.retoTitulo}
-            </p>
+            focus.retoId ? (
+              <button
+                type="button"
+                onClick={() => powerOffTo(`/reto/${focus.retoId}`)}
+                className="max-w-full truncate text-[20px] font-normal leading-snug tracking-wide transition-opacity hover:opacity-80"
+              >
+                #{focus.retoNumero} {focus.retoTitulo}
+              </button>
+            ) : (
+              <p className="truncate text-[20px] font-normal leading-snug tracking-wide">
+                #{focus.retoNumero} {focus.retoTitulo}
+              </p>
+            )
           ) : null}
         </div>
 

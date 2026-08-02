@@ -192,6 +192,18 @@ export function saveObraToCaja(obra: PerfilObra) {
   }
 }
 
+/** True si el vídeo ya está en guardados. */
+export function isObraSaved(obraId: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return readSavedCajas().some((caja) =>
+      caja.obras.some((obra) => obra.id === obraId),
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Quita un vídeo de guardados. Si la carpeta del reto queda vacía, se elimina. */
 export function removeObraFromCaja(obraId: string) {
   if (typeof window === "undefined") return;

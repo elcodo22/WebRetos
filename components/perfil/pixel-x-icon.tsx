@@ -1,6 +1,5 @@
 /**
- * X pixel-art limpia (estilo close de iconos pixel).
- * Rejilla 12×12, trazo de 2 celdas.
+ * X pixel-art simétrica y fina (patrón 9×9, trazo de 1 celda).
  */
 export function PixelXIcon({
   className,
@@ -9,29 +8,26 @@ export function PixelXIcon({
   className?: string;
   size?: number;
 }) {
-  const cols = 12;
+  const pattern = [
+    [1, 0, 0, 0, 0, 0, 0, 0, 1],
+    [0, 1, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 1, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 1, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 1, 0],
+    [1, 0, 0, 0, 0, 0, 0, 0, 1],
+  ];
+
+  const cols = pattern.length;
   const cell = size / cols;
-
-  // Dos diagonales con grosor 2
   const dots: Array<[number, number]> = [];
-  for (let i = 1; i <= 10; i++) {
-    // diagonal principal \
-    dots.push([i, i]);
-    dots.push([i + 1, i]);
-    // diagonal secundaria /
-    dots.push([11 - i, i]);
-    dots.push([10 - i, i]);
+  for (let r = 0; r < cols; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (pattern[r][c]) dots.push([c, r]);
+    }
   }
-
-  // únicos
-  const seen = new Set<string>();
-  const unique = dots.filter(([c, r]) => {
-    if (c < 0 || c >= cols || r < 0 || r >= cols) return false;
-    const key = `${c},${r}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 
   return (
     <svg
@@ -42,7 +38,7 @@ export function PixelXIcon({
       style={{ shapeRendering: "crispEdges" }}
       aria-hidden
     >
-      {unique.map(([c, r]) => (
+      {dots.map(([c, r]) => (
         <rect
           key={`${c}-${r}`}
           x={c * cell}
