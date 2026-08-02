@@ -6,6 +6,8 @@ export type PerfilObra = RetoFeedItem & {
   retoNumero: string;
   /** Título del reto (no el de la obra). */
   retoTitulo: string;
+  /** Id del reto en archivo (`/reto/[id]`). */
+  retoId?: string;
 };
 
 export type PerfilData = {
@@ -78,6 +80,31 @@ export function formatUsername(username: string) {
   return slug ? `@${slug}` : "@";
 }
 
+/** Username del usuario auth (sin @), o null. */
+export function viewerUsernameFromUser(user: {
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+} | null): string | null {
+  if (!user) return null;
+  const meta = user.user_metadata;
+  const raw =
+    (typeof meta?.nombre_usuario === "string" && meta.nombre_usuario) ||
+    (typeof meta?.username === "string" && meta.username) ||
+    "";
+  const slug = slugUsername(raw);
+  if (slug) return slug;
+  if (user.email) return slugUsername(user.email.split("@")[0] ?? "");
+  return null;
+}
+
+export function isOwnUsername(
+  obraUsername: string,
+  viewerUsername: string | null | undefined,
+) {
+  if (!viewerUsername) return false;
+  return slugUsername(obraUsername) === slugUsername(viewerUsername);
+}
+
 function hashSeed(value: string) {
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
@@ -93,11 +120,17 @@ function perfilMeta(username: string): { nombre: string; count: number } {
   const h = hashSeed(username);
   return {
     nombre: NOMBRES_EXTRA[h % NOMBRES_EXTRA.length],
+    // Por defecto al menos 1 para perfiles “reales” sin ficha; 0 sigue en COUNT_PATTERNS
     count: COUNT_PATTERNS[h % COUNT_PATTERNS.length],
   };
 }
 
 type RetoRef = { numero: string; titulo: string; id?: string };
+
+type GetPerfilMockOptions = {
+  /** Fuerza un mínimo de obras mock (p. ej. perfil propio). */
+  minParticipaciones?: number;
+};
 
 /**
  * Perfil mock: obras del usuario. participaciones === obras.length.
@@ -105,11 +138,14 @@ type RetoRef = { numero: string; titulo: string; id?: string };
 export function getPerfilMock(
   usernameRaw: string,
   retosArchivo: RetoArchivo[] = [],
+  options?: GetPerfilMockOptions,
 ): PerfilData | null {
   const username = slugUsername(usernameRaw);
   if (!username) return null;
 
   const meta = perfilMeta(username);
+  const min = options?.minParticipaciones ?? 0;
+  const desiredCount = Math.max(meta.count, min);
 
   const retos: RetoRef[] =
     retosArchivo.length > 0
@@ -121,7 +157,10 @@ export function getPerfilMock(
       : RETOS_FALLBACK;
 
   const obras: PerfilObra[] = [];
-  const target = Math.min(meta.count, Math.max(retos.length, meta.count));
+  const target = Math.min(
+    Math.max(desiredCount, 0),
+    Math.max(retos.length, desiredCount),
+  );
 
   if (target > 0 && retos.length > 0) {
     const pool = [...retos];
@@ -132,20 +171,22 @@ export function getPerfilMock(
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
 
-    const take = Math.min(target, pool.length);
+    // Si pedimos más obras que retos, repetimos el pool
+    const take = target;
     for (let i = 0; i < take; i++) {
-      const reto = pool[i];
-      const seed = `${reto.id ?? reto.numero}-${username}-obra`;
+      const reto = pool[i % pool.length];
+      const seed = `${reto.id ?? reto.numero}-${username}-obra-${i}`;
       const feed = generarFeedRetoMock(seed, 8);
       const frame = feed[i % feed.length];
 
       obras.push({
         ...frame,
-        id: `${username}-obra-${reto.numero}`,
+        id: `${username}-obra-${reto.numero}-${i}`,
         username: formatUsername(username),
         imageUrl: frame.imageUrl,
         retoNumero: reto.numero,
         retoTitulo: reto.titulo,
+        retoId: reto.id,
       });
     }
   }

@@ -1,18 +1,84 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import type { PerfilData, PerfilObra } from "@/lib/mocks/perfil";
+import { useCallback, useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import type { PerfilData } from "@/lib/mocks/perfil";
 import { formatUsername, perfilHref } from "@/lib/mocks/perfil";
-import { PerfilCarousel } from "@/components/perfil/perfil-carousel";
+import {
+  PerfilCarousel,
+  type PerfilFocusMeta,
+} from "@/components/perfil/perfil-carousel";
+import { readSavedCajas, type SavedCaja } from "@/lib/perfil-caja";
 
-export function PerfilScreen({ perfil }: { perfil: PerfilData }) {
-  const [focus, setFocus] = useState<PerfilObra | null>(
-    perfil.obras[0] ?? null,
+const EMPTY_CAJAS: SavedCaja[] = [];
+
+export function PerfilScreen({
+  perfil,
+  isOwnProfile = false,
+  user = null,
+}: {
+  perfil: PerfilData;
+  isOwnProfile?: boolean;
+  user?: User | null;
+}) {
+  const [focus, setFocus] = useState<PerfilFocusMeta>(
+    perfil.obras[0]
+      ? {
+          retoNumero: perfil.obras[0].retoNumero,
+          retoTitulo: perfil.obras[0].retoTitulo,
+        }
+      : null,
   );
   const [copied, setCopied] = useState(false);
+  const [lifting, setLifting] = useState(false);
+  const [cajas, setCajas] = useState<SavedCaja[]>([]);
 
-  const onFocusChange = useCallback((obra: PerfilObra) => {
-    setFocus(obra);
+  const hasParticipaciones =
+    perfil.participaciones > 0 || perfil.obras.length > 0;
+
+  const refreshCajas = useCallback(() => {
+    if (!isOwnProfile) {
+      setCajas((prev) => (prev.length === 0 ? prev : []));
+      return;
+    }
+    setCajas(readSavedCajas());
+  }, [isOwnProfile]);
+
+  useEffect(() => {
+    refreshCajas();
+    if (!isOwnProfile) return;
+    function onUpdate() {
+      refreshCajas();
+    }
+    window.addEventListener("perfil-caja-updated", onUpdate);
+    window.addEventListener("focus", onUpdate);
+    return () => {
+      window.removeEventListener("perfil-caja-updated", onUpdate);
+      window.removeEventListener("focus", onUpdate);
+    };
+  }, [isOwnProfile, refreshCajas]);
+
+  useEffect(() => {
+    if (!lifting) refreshCajas();
+  }, [lifting, refreshCajas]);
+
+  const hasGuardados = cajas.length > 0;
+  const showCarousel = hasParticipaciones || (isOwnProfile && hasGuardados);
+  const showEmptyMessage = !hasParticipaciones && !hasGuardados;
+
+  const onFocusChange = useCallback((next: PerfilFocusMeta) => {
+    setFocus((prev) => {
+      if (prev == null && next == null) return prev;
+      if (
+        prev &&
+        next &&
+        prev.retoNumero === next.retoNumero &&
+        prev.retoTitulo === next.retoTitulo
+      ) {
+        return prev;
+      }
+      return next;
+    });
   }, []);
 
   const copyProfileUrl = useCallback(async () => {
@@ -31,12 +97,30 @@ export function PerfilScreen({ perfil }: { perfil: PerfilData }) {
   }, [perfil.username]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col text-white">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <PerfilCarousel obras={perfil.obras} onFocusChange={onFocusChange} />
+    <div className="relative flex h-full min-h-0 flex-col text-white">
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {showCarousel ? (
+          <PerfilCarousel
+            obras={perfil.obras}
+            cajas={isOwnProfile ? cajas : EMPTY_CAJAS}
+            user={user}
+            onFocusChange={onFocusChange}
+            onLiftChange={setLifting}
+          />
+        ) : null}
+
+        {showEmptyMessage ? (
+          <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 max-w-md -translate-x-1/2 -translate-y-1/2 text-center text-[20px] font-normal tracking-wide text-white/[0.72]">
+            todavía no hay guardados ni participaciones
+          </p>
+        ) : null}
       </div>
 
-      <div className="site-grid shrink-0 items-center pb-8 pt-3">
+      <div
+        className={`site-grid shrink-0 items-center pb-8 pt-3 transition-opacity duration-200 ${
+          lifting ? "pointer-events-none opacity-0" : "opacity-100"
+        }`}
+      >
         <div className="col-span-3 min-w-0">
           <div className="flex min-w-0 items-center gap-2.5">
             <p className="truncate text-[28px] font-normal leading-none tracking-wide">

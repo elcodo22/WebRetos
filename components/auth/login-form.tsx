@@ -1,72 +1,68 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
-
-type Step = "email" | "code";
-
-const OTP_LENGTH = 6;
+import { SiteHeader } from "@/components/layout/site-header";
 
 const fieldClassName =
   "w-full max-w-xl bg-transparent text-center text-[24px] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
 
+type Mode = "login" | "forgot";
+
 export function LoginForm() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("email");
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(() => {
+    if (searchParams.get("error") === "auth") {
+      const detail = searchParams.get("detail");
+      return detail
+        ? `No se pudo verificar el enlace: ${detail}`
+        : "No se pudo verificar el enlace. Prueba a iniciar sesión o registra de nuevo.";
+    }
+    return null;
+  });
   const [error, setError] = useState<string | null>(null);
 
   const emailOk = email.trim().length > 0 && email.includes("@");
-  const passwordOk = password.trim().length > 0;
-  const codeOk = code.length === OTP_LENGTH;
+  const passwordOk = password.length > 0;
+  const canSubmitLogin = !loading && emailOk && passwordOk;
+  const canSubmitForgot = !loading && emailOk;
 
-  const canSubmit =
-    !loading && (step === "email" ? emailOk && passwordOk : emailOk && codeOk);
-
-  async function handleSiguiente(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (mode === "forgot") {
+      await handleForgotPassword();
+      return;
+    }
+    if (!canSubmitLogin) return;
 
     setLoading(true);
     setError(null);
+    setMessage(null);
 
     const supabase = createClient();
-
-    if (step === "email") {
-      const { error: sendError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { shouldCreateUser: true },
-      });
-
-      setLoading(false);
-
-      if (sendError) {
-        const msg = sendError.message.toLowerCase().includes("confirmation email")
-          ? "No se pudo enviar el email. Revisa la configuración SMTP en Supabase."
-          : sendError.message;
-        setError(msg);
-        return;
-      }
-
-      setStep("code");
-      return;
-    }
-
-    const { error: verifyError } = await supabase.auth.verifyOtp({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email: email.trim(),
-      token: code,
-      type: "email",
+      password,
     });
 
     setLoading(false);
 
-    if (verifyError) {
-      setError(verifyError.message);
+    if (signInError) {
+      const msg = signInError.message.toLowerCase();
+      if (msg.includes("invalid login") || msg.includes("invalid credentials")) {
+        setError("Correo o contraseña incorrectos.");
+      } else if (msg.includes("email not confirmed")) {
+        setError("Confirma tu correo antes de entrar.");
+      } else {
+        setError(signInError.message);
+      }
       return;
     }
 
@@ -74,103 +70,159 @@ export function LoginForm() {
     router.refresh();
   }
 
-  async function handleReenviar() {
-    if (!emailOk) {
-      setError("Introduce primero tu correo electrónico.");
+  async function handleForgotPassword() {
+    if (!canSubmitForgot) {
+      setError("Introduce tu correo electrónico.");
       return;
     }
 
     setLoading(true);
     setError(null);
+    setMessage(null);
 
     const supabase = createClient();
-    const { error: sendError } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { shouldCreateUser: true },
-    });
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : "";
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      { redirectTo: `${origin}/auth/callback?next=/login` },
+    );
 
     setLoading(false);
 
-    if (sendError) {
-      setError(sendError.message);
+    if (resetError) {
+      setError(resetError.message);
       return;
     }
 
-    setStep("code");
-    setCode("");
+    setMessage("Te hemos enviado un enlace para restablecer la contraseña.");
+  }
+
+  function enterForgotMode() {
+    setMode("forgot");
+    setError(null);
+    setMessage(null);
+  }
+
+  function exitForgotMode() {
+    setMode("login");
+    setError(null);
+    setMessage(null);
   }
 
   return (
-    <form
-      onSubmit={handleSiguiente}
-      className="relative flex h-full min-h-0 flex-1 flex-col"
-    >
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-[18px]">
-        <input
-          type="email"
-          required
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="correo electrónico"
-          className={fieldClassName}
-          aria-label="correo electrónico"
+    <>
+      <div className="shrink-0">
+        <SiteHeader
+          user={null}
+          variant={mode === "forgot" ? "forgot" : "login"}
+          onLoginClick={mode === "forgot" ? exitForgotMode : undefined}
         />
+      </div>
 
-        {step === "email" ? (
-          <PasswordLoupeField
-            value={password}
-            onChange={setPassword}
-            className={fieldClassName}
-          />
+      <form
+        onSubmit={handleSubmit}
+        className="relative flex h-full min-h-0 flex-1 flex-col"
+      >
+        {mode === "forgot" ? (
+          <div className="relative flex flex-1 flex-col items-center px-[18px]">
+            <div className="absolute left-1/2 top-[38%] flex w-full max-w-xl -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-8">
+              <p className="text-center text-[18px] font-normal tracking-wide text-white/[0.72]">
+                Ingresa tu email y te enviaremos un enlace para restablecer tu
+                contraseña.
+              </p>
+
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="correo electrónico"
+                className={fieldClassName}
+                aria-label="correo electrónico"
+                autoFocus
+              />
+
+              {error ? (
+                <p className="text-center text-[16px] tracking-wide text-white/[0.72]">
+                  {error}
+                </p>
+              ) : null}
+              {message ? (
+                <p className="text-center text-[16px] tracking-wide text-white/[0.72]">
+                  {message}
+                </p>
+              ) : null}
+            </div>
+          </div>
         ) : (
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={OTP_LENGTH}
-            required
-            autoComplete="one-time-code"
-            value={code}
-            onChange={(event) =>
-              setCode(event.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH))
+          <div className="flex flex-1 flex-col items-center justify-center gap-6 px-[18px]">
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="correo electrónico"
+              className={fieldClassName}
+              aria-label="correo electrónico"
+            />
+
+            <PasswordLoupeField
+              value={password}
+              onChange={setPassword}
+              className={fieldClassName}
+              autoComplete="current-password"
+            />
+
+            {error ? (
+              <p className="max-w-xl text-center text-[16px] tracking-wide text-white/[0.72]">
+                {error}
+              </p>
+            ) : null}
+            {message ? (
+              <p className="max-w-xl text-center text-[16px] tracking-wide text-white/[0.72]">
+                {message}
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        <div className="flex items-end justify-between px-[18px] pb-10 text-[20px] font-normal tracking-wide">
+          {mode === "forgot" ? (
+            <button
+              type="button"
+              onClick={exitForgotMode}
+              disabled={loading}
+              className="text-left text-white disabled:opacity-50"
+            >
+              volver
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={enterForgotMode}
+              disabled={loading}
+              className="text-left text-white disabled:opacity-50"
+            >
+              ¿contraseña olvidada?
+            </button>
+          )}
+
+          <button
+            type="submit"
+            disabled={mode === "forgot" ? !canSubmitForgot : !canSubmitLogin}
+            className={
+              (mode === "forgot" ? canSubmitForgot : canSubmitLogin)
+                ? "text-white"
+                : "cursor-default text-white/[0.72]"
             }
-            placeholder="código"
-            className={fieldClassName}
-            aria-label="código"
-            autoFocus
-          />
-        )}
-
-        {error && (
-          <p className="max-w-xl text-center text-[16px] tracking-wide text-white/[0.72]">
-            {error}
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-end justify-between px-[18px] pb-10 text-[20px] font-normal tracking-wide">
-        <button
-          type="button"
-          onClick={handleReenviar}
-          disabled={loading}
-          className="text-left text-white disabled:opacity-50"
-        >
-          ¿contraseña olvidada?
-        </button>
-
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className={
-            canSubmit
-              ? "text-white"
-              : "cursor-default text-white/[0.72]"
-          }
-        >
-          {loading ? "[...]" : "[Siguiente]"}
-        </button>
-      </div>
-    </form>
+          >
+            {loading ? "[...]" : "[Siguiente]"}
+          </button>
+        </div>
+      </form>
+    </>
   );
 }

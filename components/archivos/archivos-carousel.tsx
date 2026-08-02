@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RetoArchivo } from "@/lib/supabase/retos";
 import { useCrtPower } from "@/components/layout/crt-power-transition";
+import { FolderIcon } from "@/components/archivos/folder-icon";
 
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
 const HERO_REQUEST_EVENT = "carousel-request-hero";
@@ -276,51 +277,5 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
         </div>
       </div>
     </div>
-  );
-}
-
-/**
- * Icono de carpeta pixel-art construido con puntos en malla.
- * Pestaña arriba a la derecha, cuerpo rectangular abajo.
- */
-function FolderIcon() {
-  const cols = 18;
-  const rows = 12;
-  const dotSize = 7;
-  const cellSize = 11;
-  const tabRowEnd = 1;
-  const tabColStart = 11;
-  const tabColEnd = 16;
-
-  const dots: Array<[number, number]> = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const inTab = r <= tabRowEnd && c >= tabColStart && c <= tabColEnd;
-      const inBody = r > tabRowEnd;
-      if (inTab || inBody) {
-        dots.push([c, r]);
-      }
-    }
-  }
-
-  return (
-    <svg
-      width={cols * cellSize}
-      height={rows * cellSize}
-      viewBox={`0 0 ${cols * cellSize} ${rows * cellSize}`}
-      style={{ shapeRendering: "crispEdges" }}
-      aria-hidden
-    >
-      {dots.map(([c, r]) => (
-        <rect
-          key={`${c}-${r}`}
-          x={c * cellSize}
-          y={r * cellSize}
-          width={dotSize}
-          height={dotSize}
-          fill="currentColor"
-        />
-      ))}
-    </svg>
   );
 }

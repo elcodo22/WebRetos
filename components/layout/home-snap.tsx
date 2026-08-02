@@ -204,8 +204,8 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
 
   return (
     <div className="relative h-full overflow-hidden bg-[var(--background)] text-white">
-      <div className="fixed inset-x-0 top-0 z-50 bg-[var(--background)]">
-        {header}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-transparent">
+        <div className="pointer-events-auto bg-transparent">{header}</div>
       </div>
 
       <div

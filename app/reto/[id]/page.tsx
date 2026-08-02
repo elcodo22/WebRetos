@@ -32,6 +32,8 @@ export default async function RetoArchivoPage({ params }: PageProps) {
           items={feed}
           retoNumero={reto.numero}
           retoTitulo={reto.titulo}
+          retoId={reto.id}
+          user={user}
         />
       }
     />

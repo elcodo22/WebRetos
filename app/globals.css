@@ -129,6 +129,20 @@ label:has(
   cursor: url("/beam_m.png") 15 15, text;
 }
 
+/* Autofill del navegador: sin fondo amarillo/gris */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0 1000px var(--background) inset !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+  transition: background-color 99999s ease-in-out 0s;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
 .cursor-loupe,
 .cursor-loupe * {
   cursor: none !important;

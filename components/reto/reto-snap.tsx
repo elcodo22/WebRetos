@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -14,6 +16,25 @@ const WHEEL_THRESHOLD = 12;
 const PEEK_VH = 10;
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
+type RetoFeedNavCtx = {
+  setAtTop: (atTop: boolean) => void;
+  requestExitToTitle: () => boolean;
+  /** Cambia al entrar/salir del feed para fijar el peek en el origen. */
+  feedSession: number;
+  /** Solo true en el panel del feed (pan/rueda activos). */
+  feedActive: boolean;
+};
+
+const RetoFeedNavContext = createContext<RetoFeedNavCtx | null>(null);
+
+export function useRetoFeedNav(): RetoFeedNavCtx {
+  const ctx = useContext(RetoFeedNavContext);
+  if (!ctx) {
+    throw new Error("useRetoFeedNav must be used within RetoSnap");
+  }
+  return ctx;
+}
+
 type RetoSnapProps = {
   header: ReactNode;
   hero: ReactNode;
@@ -21,18 +42,18 @@ type RetoSnapProps = {
 };
 
 /**
- * Snap título ↔ feed (scroll vertical). Sin navegación lateral entre retos.
+ * Snap título ↔ feed. El feed es un lienzo 2D (pan infinito).
  */
 export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
   const { isOpen: searchOpen } = useSearchOverlay();
   const searchOpenRef = useRef(searchOpen);
 
   const [panel, setPanel] = useState(0);
-  const [feedHeaderPad, setFeedHeaderPad] = useState(false);
+  const [feedSession, setFeedSession] = useState(0);
 
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
-  const feedScrollRef = useRef<HTMLDivElement>(null);
+  const atTopRef = useRef(true);
   const touchStartY = useRef<number | null>(null);
 
   useEffect(() => {
@@ -48,14 +69,25 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
     panelRef.current = next;
     setPanel(next);
 
-    const node = feedScrollRef.current;
-    if (node) node.scrollTop = 0;
-    setFeedHeaderPad(next === 1);
+    // Siempre volver al origen del grid: el peek bajo el título se ve igual.
+    setFeedSession((n) => n + 1);
+    atTopRef.current = true;
 
     window.setTimeout(() => {
       lockedRef.current = false;
     }, TRANSITION_MS + 40);
   }, []);
+
+  const setAtTop = useCallback((atTop: boolean) => {
+    atTopRef.current = atTop;
+  }, []);
+
+  const requestExitToTitle = useCallback(() => {
+    if (panelRef.current !== 1 || lockedRef.current) return false;
+    if (!atTopRef.current) return false;
+    goTo(0);
+    return true;
+  }, [goTo]);
 
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
@@ -65,23 +97,15 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
         return;
       }
 
-      const delta = event.deltaY;
-      if (Math.abs(delta) < WHEEL_THRESHOLD) return;
-
       if (panelRef.current === 0) {
+        const delta = event.deltaY;
+        if (Math.abs(delta) < WHEEL_THRESHOLD) return;
         if (delta > 0) {
           event.preventDefault();
           goTo(1);
         }
-        return;
       }
-
-      const feedEl = feedScrollRef.current;
-      if (!feedEl) return;
-      if (delta < 0 && feedEl.scrollTop <= 1) {
-        event.preventDefault();
-        goTo(0);
-      }
+      // Panel feed: el lienzo infinito gestiona la rueda y la salida al título.
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
@@ -91,6 +115,11 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {
       if (searchOpenRef.current) return;
+      // En el feed el pan táctil lo gestiona el lienzo; solo snap desde el título.
+      if (panelRef.current === 1) {
+        touchStartY.current = null;
+        return;
+      }
       touchStartY.current = event.touches[0]?.clientY ?? null;
     };
 
@@ -106,11 +135,6 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
       if (panelRef.current === 0 && delta > 0) {
         goTo(1);
-        return;
-      }
-      if (panelRef.current === 1 && delta < 0) {
-        const feedEl = feedScrollRef.current;
-        if (feedEl && feedEl.scrollTop <= 1) goTo(0);
       }
     };
 
@@ -123,58 +147,60 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
   }, [goTo]);
 
   return (
-    <div className="relative h-full overflow-hidden bg-black text-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-transparent">
-        <div className="pointer-events-auto bg-transparent">{header}</div>
-      </div>
-
-      <div className="relative h-full overflow-hidden">
-        <div
-          className="h-full will-change-transform"
-          style={{
-            transform:
-              panel === 0
-                ? `translate3d(0, -${PEEK_VH}vh, 0)`
-                : "translate3d(0, -100%, 0)",
-            transition: `transform ${TRANSITION_MS}ms ${EASE}`,
-          }}
-        >
-          <section className="relative h-full overflow-hidden px-[18px]">
-            <div
-              className="absolute inset-x-0 flex -translate-y-1/2 items-center justify-center px-[18px]"
-              style={{ top: `calc(50% + ${PEEK_VH / 2}vh)` }}
-            >
-              {hero}
-            </div>
-          </section>
-
-          <section className="h-full overflow-hidden">
-            <div
-              ref={feedScrollRef}
-              className="h-full overflow-y-auto overscroll-none scrollbar-none px-[18px] pb-16"
-            >
-              <div
-                aria-hidden
-                className="shrink-0"
-                style={{
-                  height: feedHeaderPad ? 96 : 0,
-                  transition: `height ${TRANSITION_MS}ms ${EASE}`,
-                }}
-              />
-              {feed}
-            </div>
-          </section>
+    <RetoFeedNavContext.Provider
+      value={{
+        setAtTop,
+        requestExitToTitle,
+        feedSession,
+        feedActive: panel === 1,
+      }}
+    >
+      <div className="relative h-full overflow-hidden bg-black text-white">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-transparent">
+          <div className="pointer-events-auto bg-transparent [&_header]:bg-transparent">
+            {header}
+          </div>
         </div>
-      </div>
 
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black via-black/75 to-transparent transition-opacity duration-300"
-        style={{
-          height: `${PEEK_VH + 6}vh`,
-          opacity: panel === 0 ? 1 : 0,
-        }}
-      />
-    </div>
+        <div className="relative h-full overflow-hidden">
+          <div
+            className="h-full will-change-transform"
+            style={{
+              transform:
+                panel === 0
+                  ? `translate3d(0, -${PEEK_VH}vh, 0)`
+                  : "translate3d(0, -100%, 0)",
+              transition: `transform ${TRANSITION_MS}ms ${EASE}`,
+            }}
+          >
+            <section className="relative h-full overflow-hidden px-[18px]">
+              <div
+                className="absolute inset-x-0 flex -translate-y-1/2 items-center justify-center px-[18px]"
+                style={{ top: `calc(50% + ${PEEK_VH / 2}vh)` }}
+              >
+                {hero}
+              </div>
+            </section>
+
+            <section className="relative h-full overflow-hidden">
+              <div
+                className={`h-full w-full ${panel === 0 ? "pointer-events-none" : ""}`}
+              >
+                {feed}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black via-black/75 to-transparent transition-opacity duration-300"
+          style={{
+            height: `${PEEK_VH + 6}vh`,
+            opacity: panel === 0 ? 1 : 0,
+          }}
+        />
+      </div>
+    </RetoFeedNavContext.Provider>
   );
 }

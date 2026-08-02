@@ -1,56 +1,113 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import type { PerfilObra } from "@/lib/mocks/perfil";
+import {
+  isOwnUsername,
+  viewerUsernameFromUser,
+} from "@/lib/mocks/perfil";
 import type { RetoFeedItem } from "@/lib/mocks/reto-feed";
-import { perfilHref } from "@/lib/mocks/perfil";
+import {
+  PerfilLiftOverlay,
+  type LiftState,
+} from "@/components/perfil/perfil-lift-overlay";
+import { RetoInfiniteFeed } from "@/components/reto/reto-infinite-feed";
 import { RetoVideoPlayer } from "@/components/reto/reto-video-player";
+import { saveObraToCaja } from "@/lib/perfil-caja";
 
 type RetoFeedProps = {
   items: RetoFeedItem[];
   retoNumero: string;
   retoTitulo: string;
+  retoId: string;
+  user?: User | null;
 };
 
+function toPerfilObra(
+  item: RetoFeedItem,
+  retoNumero: string,
+  retoTitulo: string,
+  retoId: string,
+): PerfilObra {
+  return {
+    ...item,
+    retoNumero,
+    retoTitulo,
+    retoId,
+  };
+}
+
 /**
- * Grid de pósters verticales (cine); al pulsar abre el reproductor.
- * El username lleva al perfil.
+ * Feed del reto: lienzo infinito panneable + reproductor + guardar por arrastre.
  */
-export function RetoFeed({ items, retoNumero, retoTitulo }: RetoFeedProps) {
+export function RetoFeed({
+  items,
+  retoNumero,
+  retoTitulo,
+  retoId,
+  user = null,
+}: RetoFeedProps) {
   const [active, setActive] = useState<RetoFeedItem | null>(null);
+  const [lift, setLift] = useState<LiftState | null>(null);
+  const viewerUsername = useMemo(
+    () => viewerUsernameFromUser(user),
+    [user],
+  );
+
+  const onLiftStart = useCallback(
+    (item: RetoFeedItem, el: HTMLElement, clientX: number, clientY: number) => {
+      if (isOwnUsername(item.username, viewerUsername)) return;
+      const rect = el.getBoundingClientRect();
+      setActive(null);
+      setLift({
+        obra: toPerfilObra(item, retoNumero, retoTitulo, retoId),
+        x: rect.left,
+        y: rect.top,
+        w: rect.width,
+        h: rect.height,
+        grabX: clientX - rect.left,
+        grabY: clientY - rect.top,
+      });
+    },
+    [retoId, retoNumero, retoTitulo, viewerUsername],
+  );
+
+  const onLiftCancel = useCallback(() => setLift(null), []);
+
+  const onDropInFolder = useCallback(() => {
+    setLift((current) => {
+      if (
+        current &&
+        !isOwnUsername(current.obra.username, viewerUsername)
+      ) {
+        saveObraToCaja(current.obra);
+      }
+      return null;
+    });
+  }, [viewerUsername]);
 
   return (
     <>
-      <ul className="grid w-full grid-cols-5 gap-x-8 gap-y-14 px-6">
-        {items.map((item) => (
-          <li key={item.id} className="relative min-w-0">
-            <button
-              type="button"
-              onClick={() => setActive(item)}
-              className="group relative z-0 block w-full cursor-pointer overflow-visible text-left hover:z-10"
-              aria-label={`Ver ${item.titulo} de ${item.username}`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.imageUrl}
-                alt=""
-                className="aspect-[2/3] w-full origin-bottom rounded-none object-cover transition-transform duration-200 ease-out group-hover:scale-[1.07]"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </button>
-            <Link
-              href={perfilHref(item.username)}
-              className="relative z-20 mt-2 block truncate text-[14px] font-normal leading-none tracking-wide text-white hover:underline"
-            >
-              {item.username}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className={lift ? "invisible h-full" : "h-full"}>
+        <RetoInfiniteFeed
+          items={items}
+          onOpen={setActive}
+          onLiftStart={onLiftStart}
+          lifting={lift != null}
+          ownUsername={viewerUsername}
+        />
+      </div>
 
-      {active ? (
+      {lift ? (
+        <PerfilLiftOverlay
+          lift={lift}
+          onCancel={onLiftCancel}
+          onDropInFolder={onDropInFolder}
+        />
+      ) : null}
+
+      {active && !lift ? (
         <RetoVideoPlayer
           item={active}
           retoNumero={retoNumero}

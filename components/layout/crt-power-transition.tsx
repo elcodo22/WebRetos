@@ -88,8 +88,6 @@ export function CrtPowerProvider({ children }: { children: ReactNode }) {
   }, [phase, router, clearTimer]);
 
   useEffect(() => {
-    if (!pathname.startsWith("/reto/")) return;
-
     let fromStorage = false;
     try {
       fromStorage = sessionStorage.getItem(STORAGE_KEY) === "1";
