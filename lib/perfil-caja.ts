@@ -59,35 +59,36 @@ function normalizeCajas(raw: unknown): SavedCaja[] {
 
   // Formato cajas
   if (raw.every(isSavedCaja)) {
-    return (raw as SavedCaja[])
-      .map((caja, index) => {
-        const obras = caja.obras.filter(isSavedObra).map((obra, i) => ({
-          ...obra,
-          retoNumero: obra.retoNumero || caja.retoNumero,
-          retoTitulo: obra.retoTitulo || caja.retoTitulo,
-          savedAt:
-            typeof obra.savedAt === "number"
-              ? obra.savedAt
-              : (caja.savedAt ?? index),
-        }));
-        if (obras.length === 0) return null;
-        const savedAt =
-          typeof caja.savedAt === "number"
-            ? caja.savedAt
-            : Math.max(...obras.map((o) => o.savedAt ?? 0), 0);
-        return {
-          retoNumero: caja.retoNumero || obras[0].retoNumero,
-          retoTitulo: caja.retoTitulo || obras[0].retoTitulo,
-          retoId:
-            caja.retoId ||
-            obras.find((o) => o.retoId)?.retoId,
-          obras: [...obras].sort(
-            (a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0),
-          ),
-          savedAt,
-        } satisfies SavedCaja;
-      })
-      .filter((caja): caja is SavedCaja => caja != null);
+    const normalized: SavedCaja[] = [];
+    for (const [index, caja] of (raw as SavedCaja[]).entries()) {
+      const obras = caja.obras.filter(isSavedObra).map((obra) => ({
+        ...obra,
+        retoNumero: obra.retoNumero || caja.retoNumero,
+        retoTitulo: obra.retoTitulo || caja.retoTitulo,
+        savedAt:
+          typeof obra.savedAt === "number"
+            ? obra.savedAt
+            : (caja.savedAt ?? index),
+      }));
+      if (obras.length === 0) continue;
+      const savedAt =
+        typeof caja.savedAt === "number"
+          ? caja.savedAt
+          : Math.max(...obras.map((o) => o.savedAt ?? 0), 0);
+      const retoId =
+        caja.retoId || obras.find((o) => o.retoId)?.retoId;
+      const next: SavedCaja = {
+        retoNumero: caja.retoNumero || obras[0].retoNumero,
+        retoTitulo: caja.retoTitulo || obras[0].retoTitulo,
+        obras: [...obras].sort(
+          (a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0),
+        ),
+        savedAt,
+      };
+      if (retoId) next.retoId = retoId;
+      normalized.push(next);
+    }
+    return normalized;
   }
 
   // Formato plano: SavedObra[]
