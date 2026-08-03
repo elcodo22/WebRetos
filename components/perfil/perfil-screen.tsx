@@ -9,7 +9,7 @@ import {
   type PerfilFocusMeta,
 } from "@/components/perfil/perfil-carousel";
 import { useCrtPower } from "@/components/layout/crt-power-transition";
-import { readSavedCajas, type SavedCaja } from "@/lib/perfil-caja";
+import { readSavedCajasForUi, type SavedCaja } from "@/lib/perfil-caja";
 
 const EMPTY_CAJAS: SavedCaja[] = [];
 
@@ -45,7 +45,7 @@ export function PerfilScreen({
       setCajas((prev) => (prev.length === 0 ? prev : []));
       return;
     }
-    setCajas(readSavedCajas());
+    setCajas(readSavedCajasForUi());
   }, [isOwnProfile]);
 
   useEffect(() => {

@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { RetoFeedItem } from "@/lib/mocks/reto-feed";
 import { perfilHref } from "@/lib/mocks/perfil";
+import { ClickableText } from "@/components/diccionario/clickable-text";
 
 const CONTROLS_HIDE_MS = 2200;
 /** Sin movimiento del ratón en pausa → ocultar UI. */
@@ -371,12 +372,17 @@ export function RetoVideoPlayer({
       />
 
       <div
-        className={`pointer-events-none absolute left-[18px] top-[22px] z-20 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[20px] font-normal leading-none tracking-wide transition-opacity duration-300 ${
-          showUi ? "opacity-100" : "opacity-0"
+        className={`absolute left-[18px] top-[22px] z-20 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[20px] font-normal leading-none tracking-wide transition-opacity duration-300 ${
+          showUi
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
         }`}
+        onClick={(event) => event.stopPropagation()}
       >
         <span>#{retoNumero}</span>
-        <span>{retoTitulo}</span>
+        <span>
+          <ClickableText text={retoTitulo} />
+        </span>
       </div>
 
       <div

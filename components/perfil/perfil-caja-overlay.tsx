@@ -14,13 +14,15 @@ import {
 } from "@/components/perfil/perfil-lift-overlay";
 import { RetoVideoPlayer } from "@/components/reto/reto-video-player";
 import {
-  readSavedCajas,
+  readSavedCajasForUi,
   removeObraFromCaja,
   type SavedCaja,
   type SavedObra,
 } from "@/lib/perfil-caja";
 
 const LIFT_DRAG_PX = 8;
+/** Tiempo sobre la carpeta antes de agrandar / atenuar el resto. */
+const FOLDER_HOVER_DELAY_MS = 420;
 
 function retoKey(numero: string, titulo: string) {
   return `${numero.trim()}::${titulo.trim()}`.toLowerCase();
@@ -54,6 +56,35 @@ export function PerfilCajaOverlay({
   const [openFolder, setOpenFolder] = useState<SavedCaja | null>(null);
   const [active, setActive] = useState<SavedObra | null>(null);
   const [lift, setLift] = useState<LiftState | null>(null);
+  const [hoveredFolderKey, setHoveredFolderKey] = useState<string | null>(null);
+  const folderHoverTimerRef = useRef<number | null>(null);
+
+  const clearFolderHoverTimer = useCallback(() => {
+    if (folderHoverTimerRef.current != null) {
+      window.clearTimeout(folderHoverTimerRef.current);
+      folderHoverTimerRef.current = null;
+    }
+  }, []);
+
+  const onFolderPointerEnter = useCallback(
+    (key: string) => {
+      clearFolderHoverTimer();
+      folderHoverTimerRef.current = window.setTimeout(() => {
+        setHoveredFolderKey(key);
+        folderHoverTimerRef.current = null;
+      }, FOLDER_HOVER_DELAY_MS);
+    },
+    [clearFolderHoverTimer],
+  );
+
+  const onFolderPointerLeave = useCallback(() => {
+    clearFolderHoverTimer();
+    setHoveredFolderKey(null);
+  }, [clearFolderHoverTimer]);
+
+  useEffect(() => {
+    return () => clearFolderHoverTimer();
+  }, [clearFolderHoverTimer]);
 
   const pressRef = useRef<{
     obra: SavedObra;
@@ -73,7 +104,7 @@ export function PerfilCajaOverlay({
     setOpenFolder((current) => {
       if (!current) return null;
       const key = retoKey(current.retoNumero, current.retoTitulo);
-      const next = readSavedCajas().find(
+      const next = readSavedCajasForUi().find(
         (caja) => retoKey(caja.retoNumero, caja.retoTitulo) === key,
       );
       return next ?? null;
@@ -314,23 +345,44 @@ export function PerfilCajaOverlay({
                 </p>
               </div>
             ) : (
-              <ul className="grid w-full grid-cols-5 gap-x-6 gap-y-10 px-[18px] pb-28 pt-[100px]">
+              <ul className="grid w-full grid-cols-5 justify-items-center gap-x-6 gap-y-10 overflow-visible px-[18px] pb-28 pt-[100px]">
                 {cajas.map((caja) => {
+                  const key = retoKey(caja.retoNumero, caja.retoTitulo);
+                  const label = `#${caja.retoNumero} ${caja.retoTitulo}`;
+                  const wrapsTitle = label.length > 24;
                   const count = caja.obras.length;
                   const countLabel =
                     count === 1 ? "1 elemento" : `${count} elementos`;
+                  const focused = hoveredFolderKey === key;
+                  const dimmed =
+                    hoveredFolderKey !== null && hoveredFolderKey !== key;
                   return (
-                    <li key={`${caja.retoNumero}-${caja.retoTitulo}`}>
+                    <li
+                      key={`${caja.retoNumero}-${caja.retoTitulo}`}
+                      className={`relative z-0 flex w-full justify-center overflow-visible transition-opacity duration-500 ease-out ${
+                        dimmed ? "opacity-35" : "opacity-100"
+                      }`}
+                    >
                       <button
                         type="button"
                         onClick={() => setOpenFolder(caja)}
-                        className="flex w-[208px] max-w-full flex-col items-start overflow-hidden text-left text-white transition-opacity hover:opacity-90"
+                        onPointerEnter={() => onFolderPointerEnter(key)}
+                        onPointerLeave={onFolderPointerLeave}
+                        className={`relative flex w-[208px] max-w-full flex-col items-start overflow-visible text-left text-white transition-transform duration-500 ease-out ${
+                          focused ? "z-30 scale-[1.07]" : "scale-100"
+                        }`}
                         aria-label={`Carpeta reto #${caja.retoNumero} ${caja.retoTitulo}`}
                       >
                         <FolderIcon scale={1.05} className="shrink-0" />
                         <div className="mt-1.5 w-full min-w-0 text-left">
-                          <p className="truncate text-[16px] font-normal leading-snug tracking-wide text-white">
-                            #{caja.retoNumero} {caja.retoTitulo}
+                          <p
+                            className={`text-[16px] font-normal leading-snug tracking-wide text-white ${
+                              focused && wrapsTitle
+                                ? "whitespace-normal break-words"
+                                : "truncate whitespace-nowrap"
+                            }`}
+                          >
+                            {label}
                           </p>
                           <p className="mt-0.5 truncate text-[14px] font-normal leading-none tracking-wide text-white/55">
                             {countLabel}

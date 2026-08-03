@@ -529,3 +529,36 @@ input:-webkit-autofill:active {
   }
 
 }
+
+.diccionario-word {
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  text-decoration: none !important;
+  text-decoration-line: none !important;
+  -webkit-text-decoration-line: none !important;
+  box-shadow: none;
+  outline: none;
+  transform-origin: center bottom;
+  transition: transform 180ms ease-out;
+}
+
+.diccionario-word:hover,
+.diccionario-word:focus,
+.diccionario-word:focus-visible,
+.diccionario-word:active {
+  text-decoration: none !important;
+  text-decoration-line: none !important;
+  -webkit-text-decoration-line: none !important;
+  outline: none;
+  box-shadow: none;
+}
+
+.diccionario-word:hover {
+  transform: scale(1.06);
+}

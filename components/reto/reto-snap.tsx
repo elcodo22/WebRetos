@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
+import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
@@ -46,7 +47,9 @@ type RetoSnapProps = {
  */
 export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
   const { isOpen: searchOpen } = useSearchOverlay();
+  const { isOpen: diccionarioOpen } = useDiccionario();
   const searchOpenRef = useRef(searchOpen);
+  const diccionarioOpenRef = useRef(diccionarioOpen);
 
   const [panel, setPanel] = useState(0);
   const [feedSession, setFeedSession] = useState(0);
@@ -59,6 +62,10 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
   useEffect(() => {
     searchOpenRef.current = searchOpen;
   }, [searchOpen]);
+
+  useEffect(() => {
+    diccionarioOpenRef.current = diccionarioOpen;
+  }, [diccionarioOpen]);
 
   const goTo = useCallback((next: number) => {
     if (lockedRef.current) return;
@@ -91,7 +98,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
-      if (searchOpenRef.current) return;
+      if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (lockedRef.current) {
         event.preventDefault();
         return;
@@ -114,7 +121,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {
-      if (searchOpenRef.current) return;
+      if (searchOpenRef.current || diccionarioOpenRef.current) return;
       // En el feed el pan táctil lo gestiona el lienzo; solo snap desde el título.
       if (panelRef.current === 1) {
         touchStartY.current = null;
@@ -124,7 +131,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
     };
 
     const onTouchEnd = (event: TouchEvent) => {
-      if (searchOpenRef.current) return;
+      if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (touchStartY.current == null || lockedRef.current) return;
       const endY = event.changedTouches[0]?.clientY;
       if (endY == null) return;

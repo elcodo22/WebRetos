@@ -9,6 +9,7 @@ import {
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
+import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
@@ -28,7 +29,9 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isOpen: searchOpen } = useSearchOverlay();
+  const { isOpen: diccionarioOpen } = useDiccionario();
   const searchOpenRef = useRef(searchOpen);
+  const diccionarioOpenRef = useRef(diccionarioOpen);
 
   const [panel, setPanel] = useState(0);
   const [animate, setAnimate] = useState(true);
@@ -40,6 +43,10 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
   useEffect(() => {
     searchOpenRef.current = searchOpen;
   }, [searchOpen]);
+
+  useEffect(() => {
+    diccionarioOpenRef.current = diccionarioOpen;
+  }, [diccionarioOpen]);
 
   const goTo = useCallback((next: number) => {
     if (lockedRef.current) return;
@@ -139,8 +146,8 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
 
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
-      // Con la búsqueda abierta, no interceptar: deja scrollear el overlay.
-      if (searchOpenRef.current) return;
+      // Con búsqueda o diccionario abiertos, no interceptar el snap del home.
+      if (searchOpenRef.current || diccionarioOpenRef.current) return;
 
       if (lockedRef.current) {
         event.preventDefault();
@@ -170,12 +177,12 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
 
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {
-      if (searchOpenRef.current) return;
+      if (searchOpenRef.current || diccionarioOpenRef.current) return;
       touchStartY.current = event.touches[0]?.clientY ?? null;
     };
 
     const onTouchEnd = (event: TouchEvent) => {
-      if (searchOpenRef.current) return;
+      if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (touchStartY.current == null || lockedRef.current) return;
       const endY = event.changedTouches[0]?.clientY;
       if (endY == null) return;

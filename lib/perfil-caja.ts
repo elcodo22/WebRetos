@@ -123,6 +123,77 @@ function normalizeCajas(raw: unknown): SavedCaja[] {
   return Array.from(map.values());
 }
 
+/** Temporal: carpetas mock en Guardados (0 = usar sessionStorage real). */
+export const FAKE_SAVED_FOLDER_COUNT = 30;
+
+const FAKE_TITULOS = [
+  "Sol en casa",
+  "Calle sin reloj",
+  "Mapa de ceniza",
+  "Eco de garaje",
+  "Luz de servicio",
+  "Puerto interno frío",
+  "Noche de ensayo",
+  "Cinta olvidada vieja",
+  "Frecuencia baja limpia",
+  "Sombra azul húmeda",
+  "Retrato a contrarreloj",
+  "Señal intermitente rota",
+  "Ventana invertida alta",
+  "Humedad eléctrica densa",
+  "Archivo sin fecha",
+  "Tren nocturno lento",
+  "Bosque ácido quieto",
+  "Memoria lata abierta",
+  "Cristal humo fino",
+  "Faro roto lejano",
+  "Vinilo crudo corto",
+  "Astro papel doblado",
+  "Neon río quieto",
+  "Pixel mar profundo",
+  "Luna verde pálida",
+  "Cinta vhs gastada",
+  "Reloj vacío lento",
+  "Puerto rojo antiguo",
+  "Sombra azul mojada",
+  "Garaje eléctrico húmedo",
+];
+
+const FAKE_POSTERS = Array.from(
+  { length: 28 },
+  (_, i) => `/posters/poster-${String(i + 1).padStart(2, "0")}.png`,
+);
+
+/** Genera carpetas falsas para probar la UI de Guardados. */
+export function buildFakeSavedCajas(count = FAKE_SAVED_FOLDER_COUNT): SavedCaja[] {
+  const now = Date.now();
+  return Array.from({ length: count }, (_, index) => {
+    const n = index + 1;
+    const retoNumero = String(n).padStart(2, "0");
+    const retoTitulo = FAKE_TITULOS[index % FAKE_TITULOS.length];
+    const obrasCount = (index % 5) + 1;
+    const obras: SavedObra[] = Array.from({ length: obrasCount }, (_, oi) => ({
+      id: `fake-caja-${n}-obra-${oi}`,
+      username: `@demo${(oi % 9) + 1}`,
+      titulo: `Obra ${oi + 1}`,
+      descripcion: "Mock de guardado",
+      imageUrl: FAKE_POSTERS[(index + oi) % FAKE_POSTERS.length],
+      videoUrl: "/videos/six-men-getting-sick.mp4",
+      retoNumero,
+      retoTitulo,
+      retoId: `fake-reto-${n}`,
+      savedAt: now - index * 60_000 - oi * 1000,
+    }));
+    return {
+      retoNumero,
+      retoTitulo,
+      retoId: `fake-reto-${n}`,
+      obras,
+      savedAt: now - index * 60_000,
+    };
+  });
+}
+
 /** Cajas ordenadas: la última en la que guardaste sale primero. */
 export function readSavedCajas(): SavedCaja[] {
   if (typeof window === "undefined") return [];
@@ -134,6 +205,14 @@ export function readSavedCajas(): SavedCaja[] {
   } catch {
     return [];
   }
+}
+
+/** Lectura para UI: respeta el mock temporal de carpetas. */
+export function readSavedCajasForUi(): SavedCaja[] {
+  if (FAKE_SAVED_FOLDER_COUNT > 0) {
+    return buildFakeSavedCajas(FAKE_SAVED_FOLDER_COUNT);
+  }
+  return readSavedCajas();
 }
 
 function writeCajas(cajas: SavedCaja[]) {

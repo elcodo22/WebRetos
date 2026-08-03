@@ -7,8 +7,10 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
+import {
+  ClickableText,
+} from "@/components/diccionario/clickable-text";
 
 type RetoHeroProps = {
   numero: string;
@@ -29,7 +31,7 @@ function stripMarkdown(texto: string) {
   return texto.replace(/\*\*([^*]+)\*\*/g, "$1");
 }
 
-function renderDescripcion(texto: string): ReactNode[] {
+function renderDescripcion(texto: string) {
   const parts = texto.split(/(\*\*[^*]+\*\*)/g);
 
   return parts.map((part, index) => {
@@ -341,6 +343,7 @@ export function RetoHero({
   const typedTitulo = titulo.slice(0, state.t);
   const typedBtn = BTN_LABEL.slice(0, state.b);
   const showCursor = state.phase !== "done" && cursorOn;
+  const wordsEnabled = state.phase === "done";
   const descComplete = state.d >= descPlain.length;
   const descVisible = descComplete
     ? renderDescripcion(descripcion)
@@ -361,7 +364,11 @@ export function RetoHero({
       </p>
 
       <h1 className="col-start-3 col-span-4 min-h-[1.2em] text-[32px] font-medium leading-tight tracking-wide">
-        <span>{typedTitulo}</span>
+        {wordsEnabled ? (
+          <ClickableText text={titulo} enabled />
+        ) : (
+          <span>{typedTitulo}</span>
+        )}
         {state.phase === "titulo" && showCursor ? <Caret /> : null}
       </h1>
 

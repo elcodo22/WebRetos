@@ -3,6 +3,7 @@ import { Bitcount_Grid_Single } from "next/font/google";
 import { CrtShell } from "@/components/layout/crt-shell";
 import { CrtPowerProvider } from "@/components/layout/crt-power-transition";
 import { SearchOverlayProvider } from "@/components/archivos/search-overlay-provider";
+import { DiccionarioProvider } from "@/components/diccionario/diccionario-provider";
 import "./globals.css";
 
 const bitcount = Bitcount_Grid_Single({
@@ -26,7 +27,9 @@ export default function RootLayout({
       <body className={`${bitcount.className} crt-body antialiased`}>
         <CrtShell>
           <CrtPowerProvider>
-            <SearchOverlayProvider>{children}</SearchOverlayProvider>
+            <SearchOverlayProvider>
+              <DiccionarioProvider>{children}</DiccionarioProvider>
+            </SearchOverlayProvider>
           </CrtPowerProvider>
         </CrtShell>
       </body>
