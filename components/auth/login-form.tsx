@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { authCallbackUrl } from "@/lib/auth-urls";
 import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
 import { SiteHeader } from "@/components/layout/site-header";
 
@@ -81,11 +82,9 @@ export function LoginForm() {
     setMessage(null);
 
     const supabase = createClient();
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "";
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email.trim(),
-      { redirectTo: `${origin}/auth/callback?next=/login` },
+      { redirectTo: authCallbackUrl("/login") },
     );
 
     setLoading(false);

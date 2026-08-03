@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { authCallbackUrl } from "@/lib/auth-urls";
 import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
 
 const fieldClassName =
@@ -38,13 +39,7 @@ function isValidPassword(value: string) {
   );
 }
 
-function emailRedirectTo() {
-  const origin =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  return `${origin}/auth/callback`;
-}
+import { authCallbackUrl } from "@/lib/auth-urls";
 
 function firstErrorMessage(errors: FieldErrors) {
   for (const key of FIELD_ORDER) {
@@ -146,7 +141,7 @@ export function RegistroForm() {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: emailRedirectTo(),
+        emailRedirectTo: authCallbackUrl(),
         data: {
           nombre: nombreCompleto,
           nombre_usuario: username,
