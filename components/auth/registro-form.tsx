@@ -39,8 +39,6 @@ function isValidPassword(value: string) {
   );
 }
 
-import { authCallbackUrl } from "@/lib/auth-urls";
-
 function firstErrorMessage(errors: FieldErrors) {
   for (const key of FIELD_ORDER) {
     if (errors[key]) return errors[key]!;
