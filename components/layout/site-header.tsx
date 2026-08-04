@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ArchivosLink } from "@/components/layout/archivos-link";
@@ -107,23 +108,17 @@ export function SiteHeader({
 }
 
 /**
- * Logo oficial Pixelarticons `letter-r-circle`. Blanco vía `currentColor`.
+ * Logo de la app: "plunger" en blanco.
  */
 function LogoIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="28"
-      height="28"
-      viewBox="0 0 24 24"
-      fill="none"
-      style={{ shapeRendering: "crispEdges" }}
-      aria-hidden
-    >
-      <path
-        d="M18 22H6V20H18V22ZM6 20H4V18H6V20ZM20 20H18V18H20V20ZM4 18H2L2 6H4L4 18ZM14 8H10V12H14V16H12V14H10V18H8L8 6L14 6V8ZM16 18H14V16H16V18ZM22 18H20V6H22V18ZM16 12H14V8H16V12ZM6 6H4V4H6V6ZM20 6H18V4H20V6ZM18 4L6 4V2L18 2V4Z"
-        fill="currentColor"
-      />
-    </svg>
+    <Image
+      src="/icons/plunger-icon-white.png"
+      alt="plunger"
+      width={32}
+      height={32}
+      priority
+      style={{ imageRendering: "pixelated" }}
+    />
   );
 }

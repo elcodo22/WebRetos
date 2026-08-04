@@ -15,6 +15,10 @@ const bitcount = Bitcount_Grid_Single({
 export const metadata: Metadata = {
   title: "Retos Audiovisuales",
   description: "Plataforma de retos audiovisuales con límite de tiempo",
+  icons: {
+    icon: "/icons/plunger-icon-white.png",
+    apple: "/icons/plunger-icon-white.png",
+  },
 };
 
 export default function RootLayout({
