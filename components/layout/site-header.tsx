@@ -113,10 +113,10 @@ export function SiteHeader({
 function LogoIcon() {
   return (
     <Image
-      src="/icons/plunger-icon-white.png"
+      src="/icons/plunger-word-white.png"
       alt="plunger"
-      width={32}
-      height={32}
+      width={96}
+      height={24}
       priority
       style={{ imageRendering: "pixelated" }}
     />
