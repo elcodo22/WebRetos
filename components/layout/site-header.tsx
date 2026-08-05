@@ -1,12 +1,9 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
-import { ArchivosLink } from "@/components/layout/archivos-link";
+import { HeaderNav } from "@/components/layout/header-nav";
 import { HomeLogoLink } from "@/components/layout/home-logo-link";
-import { ProfileMenu } from "@/components/layout/profile-menu";
 import { StopwatchCursorZone } from "@/components/layout/stopwatch-cursor-zone";
 import { CountdownCompact } from "@/components/reto/countdown";
-import { ArchivosSearch } from "@/components/archivos/archivos-search";
 import { slugUsername } from "@/lib/mocks/perfil";
 
 type SiteHeaderVariant = "default" | "login" | "registro" | "forgot";
@@ -46,64 +43,32 @@ export function SiteHeader({
   const profileUsername = user ? usernameFromUser(user) : null;
 
   return (
-    <header className="site-grid relative items-center bg-transparent pb-6 pt-10 text-white [background:transparent]">
-      <HomeLogoLink>
-        <LogoIcon />
-      </HomeLogoLink>
+    <header className="relative flex w-full items-center gap-2 bg-transparent px-[var(--grid-margin)] pb-4 pt-6 text-white [background:transparent] md:gap-4 md:pb-6 md:pt-10">
+      <div className="z-10 shrink-0">
+        <HomeLogoLink>
+          <LogoIcon />
+        </HomeLogoLink>
+      </div>
 
-      <div className="col-span-10 h-7" aria-hidden />
+      <div className="min-w-0 flex-1 text-center font-normal leading-none tracking-wide">
+        {center != null ? (
+          <div className="truncate text-[clamp(14px,3.8vw,20px)]">{center}</div>
+        ) : null}
+        {showTimer && fechaFin ? (
+          <div className="text-[clamp(20px,5.5vw,40px)]">
+            <StopwatchCursorZone>
+              <CountdownCompact fechaFin={fechaFin} />
+            </StopwatchCursorZone>
+          </div>
+        ) : null}
+      </div>
 
-      {center != null && (
-        <div className="pointer-events-none absolute left-1/2 top-1/2 max-w-[min(52vw,640px)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-[20px] font-normal leading-none tracking-wide">
-          {center}
-        </div>
-      )}
-
-      {showTimer && fechaFin ? (
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[40px] font-normal leading-none tracking-wide">
-          <StopwatchCursorZone>
-            <CountdownCompact fechaFin={fechaFin} />
-          </StopwatchCursorZone>
-        </div>
-      ) : null}
-
-      <nav className="absolute right-[18px] top-1/2 flex -translate-y-1/2 items-center gap-4 text-[20px] font-normal leading-none">
-        {variant === "login" && <Link href="/registro">[Registro]</Link>}
-        {variant === "registro" && <Link href="/login">[Login]</Link>}
-        {variant === "forgot" && (
-          <>
-            {onLoginClick ? (
-              <button
-                type="button"
-                onClick={onLoginClick}
-                className="cursor-pointer"
-              >
-                [Login]
-              </button>
-            ) : (
-              <Link href="/login">[Login]</Link>
-            )}
-            <Link href="/registro">[Registro]</Link>
-          </>
-        )}
-        {variant === "default" && (
-          <>
-            <ArchivosLink />
-            {user ? (
-              <>
-                <ArchivosSearch />
-                <ProfileMenu username={profileUsername} />
-              </>
-            ) : (
-              <>
-                <Link href="/login">[Login]</Link>
-                <Link href="/registro">[Registro]</Link>
-                <ArchivosSearch />
-              </>
-            )}
-          </>
-        )}
-      </nav>
+      <HeaderNav
+        user={user}
+        variant={variant}
+        profileUsername={profileUsername}
+        onLoginClick={onLoginClick}
+      />
     </header>
   );
 }
@@ -116,6 +81,7 @@ function LogoIcon() {
       viewBox="0 0 50.7 26.67"
       width={53}
       height={28}
+      className="h-[22px] w-auto md:h-[28px]"
       style={{ shapeRendering: "crispEdges", display: "block" }}
       aria-hidden
     >

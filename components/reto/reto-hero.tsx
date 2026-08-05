@@ -357,13 +357,13 @@ export function RetoHero({
       state.phase === "done");
 
   return (
-    <section className="site-grid w-full items-start text-white">
-      <p className="col-start-2 col-span-1 pt-1 text-[24px] font-normal leading-none tracking-wide">
+    <section className="site-grid w-full items-start text-white max-md:!flex max-md:flex-col max-md:gap-3">
+      <p className="col-start-2 col-span-1 pt-1 text-[clamp(18px,4.5vw,24px)] font-normal leading-none tracking-wide max-md:col-auto max-md:w-full max-md:pt-0">
         <span>{typedNumero}</span>
         {state.phase === "numero" && showCursor ? <Caret /> : null}
       </p>
 
-      <h1 className="col-start-3 col-span-4 min-h-[1.2em] text-[32px] font-medium leading-tight tracking-wide">
+      <h1 className="col-start-3 col-span-4 min-h-[1.2em] text-[clamp(22px,5.5vw,32px)] font-medium leading-tight tracking-wide max-md:col-auto max-md:w-full">
         {wordsEnabled ? (
           <ClickableText text={titulo} enabled />
         ) : (
@@ -374,10 +374,10 @@ export function RetoHero({
 
       <div
         ref={containerRef}
-        className="relative col-start-3 col-span-6 row-start-2 mt-6 grid grid-cols-subgrid"
+        className="relative col-start-3 col-span-6 row-start-2 mt-6 grid grid-cols-subgrid max-md:col-auto max-md:mt-4 max-md:!flex max-md:w-full max-md:flex-col max-md:items-stretch max-md:gap-6 max-md:grid-cols-none"
       >
         {/* Descripción: columnas 3–6 del site (1–4 del subgrid) */}
-        <p className="relative col-span-4 min-h-[3em] text-[20px] font-normal leading-relaxed tracking-wide">
+        <p className="relative col-span-4 min-h-[3em] w-full text-[clamp(16px,4vw,20px)] font-normal leading-relaxed tracking-wide max-md:col-auto max-md:min-h-0">
           {/* Misma caja que el texto visible → wrapping correcto para medir */}
           <span
             ref={measureRef}
@@ -390,17 +390,17 @@ export function RetoHero({
           {state.phase === "descripcion" && showCursor ? <Caret /> : null}
         </p>
 
-        {/* Fin de columna 7 (5 del subgrid) */}
+        {/* Fin de columna 7 (5 del subgrid) — solo desktop */}
         <div
           ref={col7EndRef}
-          className="col-start-5 pointer-events-none self-stretch"
+          className="col-start-5 pointer-events-none self-stretch max-md:hidden"
           aria-hidden
         />
 
         {showDots && dotsBox ? (
           <span
             aria-hidden
-            className="pointer-events-none absolute overflow-hidden whitespace-nowrap text-[20px] font-normal leading-none tracking-wide"
+            className="pointer-events-none absolute overflow-hidden whitespace-nowrap text-[20px] font-normal leading-none tracking-wide max-md:hidden"
             style={{
               left: dotsBox.left,
               top: dotsBox.top,
@@ -418,7 +418,7 @@ export function RetoHero({
         <Link
           href={participarHref}
           className={[
-            "col-start-6 self-end pb-[0.15em] text-[24px] font-semibold leading-none",
+            "col-start-6 self-end pb-[0.15em] text-[clamp(18px,4.5vw,24px)] font-semibold leading-none max-md:col-auto max-md:self-center max-md:pb-0 max-md:text-center",
             state.phase === "done" ? "participar-bulb" : "",
           ]
             .filter(Boolean)

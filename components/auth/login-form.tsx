@@ -8,7 +8,7 @@ import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
 import { SiteHeader } from "@/components/layout/site-header";
 
 const fieldClassName =
-  "w-full max-w-xl bg-transparent text-center text-[24px] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
+  "w-full max-w-xl bg-transparent text-center text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
 
 type Mode = "login" | "forgot";
 

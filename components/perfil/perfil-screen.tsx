@@ -121,13 +121,13 @@ export function PerfilScreen({
       </div>
 
       <div
-        className={`site-grid shrink-0 items-center pb-8 pt-3 transition-opacity duration-200 ${
+        className={`site-grid shrink-0 items-center gap-y-3 pb-6 pt-3 transition-opacity duration-200 max-md:flex max-md:flex-col max-md:px-[var(--grid-margin)] max-md:text-center md:pb-8 ${
           lifting ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
-        <div className="col-span-3 min-w-0">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <p className="truncate text-[28px] font-normal leading-none tracking-wide">
+        <div className="col-span-3 min-w-0 max-md:w-full">
+          <div className="flex min-w-0 items-center gap-2.5 max-md:justify-center">
+            <p className="truncate text-[clamp(20px,5vw,28px)] font-normal leading-none tracking-wide">
               {formatUsername(perfil.username)}
             </p>
             <div className="relative shrink-0">
@@ -154,31 +154,31 @@ export function PerfilScreen({
               ) : null}
             </div>
           </div>
-          <p className="mt-2 truncate text-[16px] font-normal leading-none tracking-wide text-white/90">
+          <p className="mt-2 truncate text-[clamp(14px,3.5vw,16px)] font-normal leading-none tracking-wide text-white/90">
             {perfil.nombreCompleto}
           </p>
         </div>
 
-        <div className="col-span-4 min-w-0 px-2 text-center">
+        <div className="col-span-4 min-w-0 px-2 text-center max-md:w-full max-md:px-0">
           {focus ? (
             focus.retoId ? (
               <button
                 type="button"
                 onClick={() => powerOffTo(`/reto/${focus.retoId}`)}
-                className="max-w-full truncate text-[20px] font-normal leading-snug tracking-wide transition-opacity hover:opacity-80"
+                className="max-w-full truncate text-[clamp(14px,3.8vw,20px)] font-normal leading-snug tracking-wide transition-opacity hover:opacity-80"
               >
                 #{focus.retoNumero} {focus.retoTitulo}
               </button>
             ) : (
-              <p className="truncate text-[20px] font-normal leading-snug tracking-wide">
+              <p className="truncate text-[clamp(14px,3.8vw,20px)] font-normal leading-snug tracking-wide">
                 #{focus.retoNumero} {focus.retoTitulo}
               </p>
             )
           ) : null}
         </div>
 
-        <div className="col-span-3 text-right">
-          <p className="text-[16px] font-normal leading-none tracking-wide">
+        <div className="col-span-3 text-right max-md:w-full max-md:text-center">
+          <p className="text-[clamp(14px,3.5vw,16px)] font-normal leading-none tracking-wide">
             {perfil.participaciones} participaciones
           </p>
         </div>

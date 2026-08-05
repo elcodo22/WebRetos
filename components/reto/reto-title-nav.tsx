@@ -9,7 +9,7 @@ type RetoTitleNavProps = {
 
 export function RetoTitleNav({ numero, titulo }: RetoTitleNavProps) {
   return (
-    <h1 className="flex min-w-0 max-w-[min(100%,42rem)] flex-wrap items-baseline justify-center gap-x-5 gap-y-2 px-2 text-center text-[32px] font-normal leading-none tracking-wide">
+    <h1 className="flex min-w-0 max-w-[min(100%,42rem)] flex-wrap items-baseline justify-center gap-x-3 gap-y-1 px-2 text-center text-[clamp(18px,4.5vw,32px)] font-normal leading-tight tracking-wide md:gap-x-5 md:gap-y-2 md:leading-none">
       <span className="shrink-0">#{numero}</span>
       <span className="min-w-0">
         <ClickableText text={titulo} />

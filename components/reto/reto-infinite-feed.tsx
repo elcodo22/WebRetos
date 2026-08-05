@@ -110,7 +110,7 @@ function PosterGrid({
   );
 
   return (
-    <ul className="m-0 box-border grid w-screen list-none grid-cols-5 gap-x-8 gap-y-14 p-0 px-6 pb-10">
+    <ul className="m-0 box-border grid w-full max-w-[100vw] list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-10 sm:grid-cols-3 sm:gap-x-6 md:w-screen md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6">
       {items.map((item) => (
         <li key={item.id} className="relative min-w-0">
           <button

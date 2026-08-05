@@ -7,7 +7,7 @@ import { authCallbackUrl } from "@/lib/auth-urls";
 import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
 
 const fieldClassName =
-  "w-full max-w-xl bg-transparent text-center text-[24px] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
+  "w-full max-w-xl bg-transparent text-center text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
 
 const FIELD_ORDER = [
   "nombre",
@@ -219,7 +219,7 @@ export function RegistroForm() {
     return (
       <div className="relative flex h-full min-h-0 flex-1 flex-col">
         <div className="flex flex-1 flex-col items-center justify-center gap-5 px-[18px] text-center">
-          <p className="max-w-xl text-[24px] font-normal tracking-wide text-white">
+          <p className="max-w-xl text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white">
             revisa tu correo
           </p>
           <p className="max-w-xl text-[18px] tracking-wide text-white/[0.72]">

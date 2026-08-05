@@ -24,8 +24,18 @@ import {
 import { saveObraToCaja, type SavedCaja } from "@/lib/perfil-caja";
 
 /** Ancho del póster vertical centrado. */
-const CARD_VW = 20;
-const GAP_VW = 7;
+const CARD_VW_DESKTOP = 20;
+const CARD_VW_MOBILE = 48;
+const GAP_VW_DESKTOP = 7;
+const GAP_VW_MOBILE = 4;
+
+function cardMetricsForWidth(width: number) {
+  const mobile = width < 768;
+  return {
+    cardVw: mobile ? CARD_VW_MOBILE : CARD_VW_DESKTOP,
+    gapVw: mobile ? GAP_VW_MOBILE : GAP_VW_DESKTOP,
+  };
+}
 
 const EASE_FACTOR = 0.32;
 const SNAP_EPS = 0.002;
@@ -84,6 +94,8 @@ export function PerfilCarousel({
   const [active, setActive] = useState<PerfilObra | null>(null);
   const [openGuardados, setOpenGuardados] = useState(false);
   const [lift, setLift] = useState<LiftState | null>(null);
+  const [cardVw, setCardVw] = useState(CARD_VW_DESKTOP);
+  const [gapVw, setGapVw] = useState(GAP_VW_DESKTOP);
   const [renderMin, setRenderMin] = useState(() =>
     Math.max(0, lastParticipationIndex - REST_RANGE),
   );
@@ -117,6 +129,17 @@ export function PerfilCarousel({
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+
+  useEffect(() => {
+    const sync = () => {
+      const next = cardMetricsForWidth(window.innerWidth);
+      setCardVw(next.cardVw);
+      setGapVw(next.gapVw);
+    };
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
 
   useEffect(() => {
     liftRef.current = lift != null;
@@ -207,13 +230,16 @@ export function PerfilCarousel({
       if (!root || !ribbon) return;
       const w = root.clientWidth;
       const cardEl = ribbon.querySelector<HTMLElement>("[data-perfil-card]");
+      const { cardVw: cvw, gapVw: gvw } = cardMetricsForWidth(
+        window.innerWidth,
+      );
       const card =
         cardEl?.offsetWidth ||
         Math.min(
-          (CARD_VW / 100) * window.innerWidth,
+          (cvw / 100) * window.innerWidth,
           0.42 * window.innerHeight,
         );
-      const gap = (GAP_VW / 100) * window.innerWidth;
+      const gap = (gvw / 100) * window.innerWidth;
       metricsRef.current = {
         pad: Math.max(0, (w - card) / 2),
         slot: card + gap,
@@ -465,7 +491,7 @@ export function PerfilCarousel({
           <div
             ref={ribbonRef}
             className="flex h-full items-center"
-            style={{ gap: `${GAP_VW}vw` }}
+            style={{ gap: `${gapVw}vw` }}
           >
             {items.map((item, i) => {
               if (i < renderMin || i > renderMax) {
@@ -474,7 +500,7 @@ export function PerfilCarousel({
                     key={item.key}
                     data-perfil-card
                     className="aspect-[2/3] shrink-0"
-                    style={{ width: `min(${CARD_VW}vw, 42vh)` }}
+                    style={{ width: `min(${cardVw}vw, 42vh)` }}
                     aria-hidden
                   />
                 );
@@ -485,7 +511,7 @@ export function PerfilCarousel({
               const opacity = isFocus ? 1 : dist < 1.5 ? 0.45 : 0;
               const scale = isFocus ? 1 : 0.82;
               const cardStyle = {
-                width: `min(${CARD_VW}vw, 42vh)`,
+                width: `min(${cardVw}vw, 42vh)`,
                 opacity,
                 transform: `scale(${scale})`,
               } as const;

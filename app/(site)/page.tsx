@@ -24,15 +24,15 @@ export default async function Home() {
       participarHref={user ? "/subir" : "/login"}
     />
   ) : (
-    <section className="site-grid w-full items-start">
-      <p className="col-start-2 col-span-1 pt-1 text-[24px] font-normal leading-none">
+    <section className="site-grid w-full items-start max-md:flex max-md:flex-col max-md:gap-3">
+      <p className="col-start-2 col-span-1 pt-1 text-[clamp(18px,4.5vw,24px)] font-normal leading-none max-md:col-auto max-md:pt-0">
         #---
       </p>
-      <div className="col-start-3 col-span-4">
-        <h1 className="text-[32px] font-medium leading-tight tracking-wide">
+      <div className="col-start-3 col-span-4 max-md:col-auto max-md:w-full">
+        <h1 className="text-[clamp(22px,5.5vw,32px)] font-medium leading-tight tracking-wide">
           Sin reto activo
         </h1>
-        <p className="mt-6 text-[20px] font-normal leading-relaxed tracking-wide">
+        <p className="mt-4 text-[clamp(16px,4vw,20px)] font-normal leading-relaxed tracking-wide md:mt-6">
           Vuelve pronto. El próximo reto aparecerá aquí.
         </p>
       </div>

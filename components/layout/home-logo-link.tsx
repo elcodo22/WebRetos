@@ -13,7 +13,7 @@ export function HomeLogoLink({ children }: { children: ReactNode }) {
     <Link
       href="/#reto"
       aria-label="Ir a la pantalla principal"
-      className="absolute left-[18px] top-1/2 z-10 inline-flex -translate-y-1/2 items-center leading-none"
+      className="inline-flex items-center leading-none"
       onClick={(event) => {
         if (pathname !== "/") return;
 

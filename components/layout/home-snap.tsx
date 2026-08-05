@@ -224,13 +224,13 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
             : "none",
         }}
       >
-        <section className="flex h-full flex-col overflow-hidden pt-[88px]">
-          <div className="min-h-0 flex-1 overflow-hidden pt-[161px] pb-16">
+        <section className="flex h-full flex-col overflow-hidden pt-[72px] md:pt-[88px]">
+          <div className="min-h-0 flex-1 overflow-hidden pb-10 pt-[clamp(48px,12vh,161px)] md:pb-16">
             {hero}
           </div>
         </section>
 
-        <section className="flex h-full flex-col overflow-hidden pt-[88px]">
+        <section className="flex h-full flex-col overflow-hidden pt-[72px] md:pt-[88px]">
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {archivos}
           </div>

@@ -158,12 +158,20 @@ input:-webkit-autofill:active {
 
 .site-grid {
   display: grid;
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-  column-gap: 16px;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  column-gap: var(--grid-gutter);
   width: 100%;
   max-width: 100%;
   margin-inline: 0;
-  padding-inline: 18px;
+  padding-inline: var(--grid-margin);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --grid-gutter: 10px;
+    --grid-margin: 14px;
+    --grid-columns: 4;
+  }
 }
 
 .site-dots {

@@ -175,7 +175,7 @@ export function PerfilCajaOverlay({
   }, [lift, syncOpenFolder]);
 
   const breadcrumb = openFolder ? (
-    <p className="truncate px-24 text-center text-[20px] font-normal leading-snug tracking-wide">
+    <p className="truncate px-4 text-center text-[clamp(14px,3.8vw,20px)] font-normal leading-snug tracking-wide md:px-24">
       <button
         type="button"
         onClick={goBackToFolders}
@@ -216,7 +216,7 @@ export function PerfilCajaOverlay({
         <>
           {/* Lienzo a pantalla completa: las portadas pasan bajo header y pie */}
           <div className="absolute inset-0 overflow-y-auto scrollbar-none">
-            <ul className="m-0 box-border grid w-full list-none grid-cols-5 gap-x-8 gap-y-14 p-0 px-6 pb-28 pt-[100px]">
+            <ul className="m-0 box-border grid w-full list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-28 pt-[88px] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6 md:pt-[100px]">
               {folderObras.map((obra) => (
                 <li key={obra.id} className="relative min-w-0">
                   <button
@@ -345,7 +345,7 @@ export function PerfilCajaOverlay({
                 </p>
               </div>
             ) : (
-              <ul className="grid w-full grid-cols-5 justify-items-center gap-x-6 gap-y-10 overflow-visible px-[18px] pb-28 pt-[100px]">
+              <ul className="grid w-full grid-cols-2 justify-items-center gap-x-4 gap-y-10 overflow-visible px-[14px] pb-28 pt-[88px] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-6 md:px-[18px] md:pt-[100px]">
                 {cajas.map((caja) => {
                   const key = retoKey(caja.retoNumero, caja.retoTitulo);
                   const label = `#${caja.retoNumero} ${caja.retoTitulo}`;
@@ -368,7 +368,7 @@ export function PerfilCajaOverlay({
                         onClick={() => setOpenFolder(caja)}
                         onPointerEnter={() => onFolderPointerEnter(key)}
                         onPointerLeave={onFolderPointerLeave}
-                        className={`relative flex w-[208px] max-w-full flex-col items-start overflow-visible text-left text-white transition-transform duration-500 ease-out ${
+                        className={`relative flex w-full max-w-[208px] flex-col items-start overflow-visible text-left text-white transition-transform duration-500 ease-out ${
                           focused ? "z-30 scale-[1.07]" : "scale-100"
                         }`}
                         aria-label={`Carpeta reto #${caja.retoNumero} ${caja.retoTitulo}`}

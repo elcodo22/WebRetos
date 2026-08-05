@@ -372,15 +372,15 @@ export function RetoVideoPlayer({
       />
 
       <div
-        className={`absolute left-[18px] top-[22px] z-20 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[20px] font-normal leading-none tracking-wide transition-opacity duration-300 ${
+        className={`absolute left-[14px] top-[18px] z-20 flex min-w-0 max-w-[calc(100%-28px)] flex-wrap items-baseline gap-x-3 gap-y-1 text-[clamp(14px,3.8vw,20px)] font-normal leading-tight tracking-wide transition-opacity duration-300 md:left-[18px] md:top-[22px] md:gap-x-5 md:leading-none ${
           showUi
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
         }`}
         onClick={(event) => event.stopPropagation()}
       >
-        <span>#{retoNumero}</span>
-        <span>
+        <span className="shrink-0">#{retoNumero}</span>
+        <span className="min-w-0">
           <ClickableText text={retoTitulo} />
         </span>
       </div>
@@ -395,7 +395,7 @@ export function RetoVideoPlayer({
       </div>
 
       <div
-        className={`absolute bottom-[22%] left-[18px] z-20 max-w-[min(52vw,560px)] pr-6 transition-opacity duration-500 ${
+        className={`absolute bottom-[18%] left-[14px] z-20 max-w-[min(88vw,560px)] pr-4 transition-opacity duration-500 md:bottom-[22%] md:left-[18px] md:pr-6 ${
           showSheet
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -405,15 +405,15 @@ export function RetoVideoPlayer({
       >
         <Link
           href={perfilHref(item.username)}
-          className="inline-block text-[18px] font-normal leading-none tracking-wide hover:underline"
+          className="inline-block text-[clamp(14px,3.5vw,18px)] font-normal leading-none tracking-wide hover:underline"
           onClick={(event) => event.stopPropagation()}
         >
           {item.username}
         </Link>
-        <h2 className="mt-3 text-[32px] font-normal leading-tight tracking-wide">
+        <h2 className="mt-2 text-[clamp(20px,5vw,32px)] font-normal leading-tight tracking-wide md:mt-3">
           {item.titulo}
         </h2>
-        <p className="mt-3 text-[16px] font-normal leading-relaxed tracking-wide text-white/95">
+        <p className="mt-2 text-[clamp(13px,3.2vw,16px)] font-normal leading-relaxed tracking-wide text-white/95 md:mt-3">
           {item.descripcion}
         </p>
       </div>

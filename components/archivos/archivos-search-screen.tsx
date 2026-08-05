@@ -53,18 +53,18 @@ export function ArchivosSearchScreen({ retos, onClose }: Props) {
        * Barra superior: la X a la altura del logo; búsqueda + filtro ocupan
        * las mismas columnas que la lista (2–9) para alinear bordes.
        */}
-      <header className="site-grid relative shrink-0 items-center py-6 text-white">
+      <header className="site-grid relative shrink-0 items-center py-4 text-white max-md:flex max-md:gap-3 max-md:px-[var(--grid-margin)] md:py-6">
         <button
           type="button"
           onClick={onClose}
           aria-label="Cerrar búsqueda"
-          className="col-start-1 col-span-1 inline-flex items-center leading-none"
+          className="col-start-1 col-span-1 inline-flex shrink-0 items-center leading-none max-md:col-auto"
         >
           <CloseIcon />
         </button>
 
-        <div className="col-start-2 col-span-8 flex items-stretch gap-5">
-          <label className="relative flex h-12 flex-1 items-center border border-white">
+        <div className="col-start-2 col-span-8 flex min-w-0 flex-1 items-stretch gap-3 max-md:col-auto md:gap-5">
+          <label className="relative flex h-11 flex-1 items-center border border-white md:h-12">
             <span className="sr-only">Buscar</span>
             <input
               ref={inputRef}
@@ -72,20 +72,20 @@ export function ArchivosSearchScreen({ retos, onClose }: Props) {
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
               placeholder="Buscar"
-              className="h-full w-full bg-transparent px-4 text-[20px] font-normal tracking-wide text-white outline-none placeholder:text-white"
+              className="h-full w-full bg-transparent px-3 text-[clamp(14px,3.8vw,20px)] font-normal tracking-wide text-white outline-none placeholder:text-white md:px-4"
             />
           </label>
 
-          <div className="relative w-[220px] shrink-0">
+          <div className="relative w-[min(42vw,220px)] shrink-0 md:w-[220px]">
             <button
               type="button"
-              className="flex h-12 w-full items-center justify-between border border-white px-4 text-left text-[20px] font-normal tracking-wide"
+              className="flex h-11 w-full items-center justify-between border border-white px-3 text-left text-[clamp(12px,3.2vw,20px)] font-normal tracking-wide md:h-12 md:px-4"
               aria-haspopup="listbox"
               aria-expanded={menuAbierto}
               onClick={() => setMenuAbierto((abierto) => !abierto)}
             >
-              <span>{ORDEN_LABEL[orden]}</span>
-              <span aria-hidden className="text-[16px]">
+              <span className="truncate">{ORDEN_LABEL[orden]}</span>
+              <span aria-hidden className="shrink-0 text-[16px]">
                 v
               </span>
             </button>
@@ -101,7 +101,7 @@ export function ArchivosSearchScreen({ retos, onClose }: Props) {
                       type="button"
                       role="option"
                       aria-selected={orden === opcion}
-                      className="block w-full px-4 py-3 text-left text-[20px] hover:bg-white/10"
+                      className="block w-full px-4 py-3 text-left text-[clamp(14px,3.8vw,20px)] hover:bg-white/10"
                       onClick={() => {
                         setOrden(opcion);
                         setMenuAbierto(false);
@@ -117,8 +117,8 @@ export function ArchivosSearchScreen({ retos, onClose }: Props) {
         </div>
       </header>
 
-      <div className="site-grid scrollbar-none min-h-0 flex-1 overflow-y-auto overscroll-contain pb-16">
-        <ul className="col-start-2 col-span-8 mt-10 flex flex-col gap-8">
+      <div className="site-grid scrollbar-none min-h-0 flex-1 overflow-y-auto overscroll-contain pb-16 max-md:block max-md:px-[var(--grid-margin)]">
+        <ul className="col-start-2 col-span-8 mt-8 flex flex-col gap-6 max-md:col-auto max-md:mt-6 md:mt-10 md:gap-8">
           {filtrados.length === 0 ? (
             <li className="text-[20px] tracking-wide text-white/70">
               No hay resultados.
