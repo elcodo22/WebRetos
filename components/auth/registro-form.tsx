@@ -1,6 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-urls";
@@ -8,6 +16,8 @@ import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
 
 const fieldClassName =
   "w-full max-w-xl bg-transparent text-center text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
+
+const OTP_LENGTH = 6;
 
 const FIELD_ORDER = [
   "nombre",
@@ -57,6 +67,19 @@ export function RegistroForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [pendingVerify, setPendingVerify] = useState(false);
+  const [otpDigits, setOtpDigits] = useState<string[]>(() =>
+    Array.from({ length: OTP_LENGTH }, () => ""),
+  );
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const pendingProfileRef = useRef<{
+    username: string;
+    nombreCompleto: string;
+  } | null>(null);
+
+  const otpCode = otpDigits.join("");
+  const otpComplete = otpCode.length === OTP_LENGTH && /^\d{6}$/.test(otpCode);
 
   function clearFieldError(key: FieldKey) {
     setFormMessage(null);
@@ -68,7 +91,148 @@ export function RegistroForm() {
     });
   }
 
-  async function handleSiguiente(event: React.FormEvent) {
+  const focusOtp = useCallback((index: number) => {
+    const el = otpRefs.current[index];
+    if (!el) return;
+    el.focus();
+    el.select();
+  }, []);
+
+  useEffect(() => {
+    if (!pendingVerify) return;
+    const t = window.setTimeout(() => focusOtp(0), 50);
+    return () => window.clearTimeout(t);
+  }, [pendingVerify, focusOtp]);
+
+  function setOtpAt(index: number, raw: string) {
+    const digit = raw.replace(/\D/g, "").slice(-1);
+    setOtpDigits((prev) => {
+      const next = [...prev];
+      next[index] = digit;
+      return next;
+    });
+    setOtpError(null);
+    if (digit && index < OTP_LENGTH - 1) focusOtp(index + 1);
+  }
+
+  function onOtpKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Backspace" && !otpDigits[index] && index > 0) {
+      event.preventDefault();
+      setOtpAt(index - 1, "");
+      focusOtp(index - 1);
+    }
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      focusOtp(index - 1);
+    }
+    if (event.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      event.preventDefault();
+      focusOtp(index + 1);
+    }
+  }
+
+  function onOtpPaste(event: ClipboardEvent<HTMLInputElement>) {
+    event.preventDefault();
+    const pasted = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    const next = Array.from({ length: OTP_LENGTH }, (_, i) => pasted[i] ?? "");
+    setOtpDigits(next);
+    setOtpError(null);
+    focusOtp(Math.min(pasted.length, OTP_LENGTH - 1));
+  }
+
+  async function finishAfterVerify(userId: string) {
+    const pending = pendingProfileRef.current;
+    if (!pending) {
+      router.push("/");
+      router.refresh();
+      return;
+    }
+
+    const supabase = createClient();
+    const { error: perfilError } = await supabase.from("perfiles").upsert({
+      id: userId,
+      nombre_usuario: pending.username,
+      nombre_completo: pending.nombreCompleto,
+    });
+
+    if (perfilError && perfilError.code !== "23505") {
+      setOtpError(perfilError.message);
+      return;
+    }
+
+    router.push("/");
+    router.refresh();
+  }
+
+  async function handleVerifyOtp(event: FormEvent) {
+    event.preventDefault();
+    if (otpLoading || !otpComplete) return;
+
+    setOtpLoading(true);
+    setOtpError(null);
+
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: otpCode,
+      type: "signup",
+    });
+
+    if (error) {
+      setOtpLoading(false);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("expired") || msg.includes("otp_expired")) {
+        setOtpError("El código ha caducado. Vuelve a registrarte o reenvía.");
+      } else if (
+        msg.includes("invalid") ||
+        msg.includes("token") ||
+        msg.includes("otp")
+      ) {
+        setOtpError("Código incorrecto. Revisa el correo e inténtalo de nuevo.");
+      } else {
+        setOtpError(error.message);
+      }
+      return;
+    }
+
+    const userId = data.user?.id;
+    if (!userId) {
+      setOtpLoading(false);
+      setOtpError("No se pudo verificar la cuenta.");
+      return;
+    }
+
+    await finishAfterVerify(userId);
+    setOtpLoading(false);
+  }
+
+  async function handleResendCode() {
+    if (otpLoading) return;
+    setOtpLoading(true);
+    setOtpError(null);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: { emailRedirectTo: authCallbackUrl() },
+    });
+
+    setOtpLoading(false);
+    if (error) {
+      setOtpError(error.message);
+      return;
+    }
+    setOtpDigits(Array.from({ length: OTP_LENGTH }, () => ""));
+    setOtpError(null);
+    focusOtp(0);
+  }
+
+  async function handleSiguiente(event: FormEvent) {
     event.preventDefault();
     if (loading || pendingVerify) return;
 
@@ -162,15 +326,26 @@ export function RegistroForm() {
         msg.includes("confirmation email") ||
         msg.includes("sending confirmation") ||
         msg.includes("smtp") ||
-        msg.includes("error sending")
+        msg.includes("error sending") ||
+        msg.includes("error sending confirmation")
       ) {
-        setFieldErrors({
-          email:
-            "No se pudo enviar el correo de verificación. Configura SMTP en Supabase (Auth → SMTP) o desactiva Confirm email temporalmente.",
-        });
+        setFormMessage(
+          "No se pudo enviar el correo de verificación (SMTP/Resend). Revisa Auth → SMTP en Supabase.",
+        );
+        setFieldErrors({ email: signUpError.message });
+      } else if (
+        msg.includes("database") ||
+        msg.includes("trigger") ||
+        msg.includes("perfil")
+      ) {
+        setFormMessage(
+          "Error al crear el perfil en la base de datos. Revisa Logs en Supabase.",
+        );
+        setFieldErrors({ email: signUpError.message });
       } else if (msg.includes("email") && msg.includes("invalid")) {
         setFieldErrors({ email: "Introduce un correo electrónico válido." });
       } else {
+        setFormMessage(signUpError.message);
         setFieldErrors({ email: signUpError.message });
       }
       return;
@@ -182,6 +357,8 @@ export function RegistroForm() {
       setFieldErrors({ email: "Ya existe una cuenta con ese correo." });
       return;
     }
+
+    pendingProfileRef.current = { username, nombreCompleto };
 
     const userId = data.user?.id;
     if (userId && data.session) {
@@ -210,6 +387,8 @@ export function RegistroForm() {
     }
 
     setLoading(false);
+    setOtpDigits(Array.from({ length: OTP_LENGTH }, () => ""));
+    setOtpError(null);
     setPendingVerify(true);
   }
 
@@ -217,27 +396,81 @@ export function RegistroForm() {
 
   if (pendingVerify) {
     return (
-      <div className="relative flex h-full min-h-0 flex-1 flex-col">
-        <div className="flex flex-1 flex-col items-center justify-center gap-5 px-[18px] text-center">
+      <form
+        onSubmit={handleVerifyOtp}
+        className="relative flex h-full min-h-0 flex-1 flex-col"
+        noValidate
+      >
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-none px-[18px] py-6 text-center">
           <p className="max-w-xl text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white">
-            revisa tu correo
+            te hemos enviado un código
           </p>
-          <p className="max-w-xl text-[18px] tracking-wide text-white/[0.72]">
-            Te hemos enviado un enlace a{" "}
-            <span className="text-white">{email.trim()}</span> para verificar tu
-            cuenta. Cuando lo confirmes, ya podrás iniciar sesión.
+          <p className="max-w-xl text-[16px] tracking-wide text-white/[0.72]">
+            Revisa{" "}
+            <span className="text-white">{email.trim()}</span> e introduce los 6
+            dígitos.
           </p>
-        </div>
-        <div className="flex items-end justify-end px-[18px] pb-10 text-[20px] font-normal tracking-wide">
-          <button
-            type="button"
-            onClick={() => router.push("/login")}
-            className="text-white"
+
+          <div
+            className="flex items-center justify-center gap-2 sm:gap-3"
+            role="group"
+            aria-label="Código de verificación de 6 dígitos"
           >
-            [Ir al login]
-          </button>
+            {otpDigits.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => {
+                  otpRefs.current[index] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                autoComplete={index === 0 ? "one-time-code" : "off"}
+                maxLength={1}
+                value={digit}
+                onChange={(event) => setOtpAt(index, event.target.value)}
+                onKeyDown={(event) => onOtpKeyDown(index, event)}
+                onPaste={onOtpPaste}
+                onFocus={(event) => event.currentTarget.select()}
+                aria-label={`Dígito ${index + 1} de ${OTP_LENGTH}`}
+                className="h-12 w-10 border border-white bg-transparent text-center text-[24px] font-normal tracking-wide text-white outline-none sm:h-14 sm:w-12 sm:text-[28px]"
+              />
+            ))}
+          </div>
+
+          <p
+            className="min-h-[24px] max-w-xl text-[16px] tracking-wide text-white"
+            role={otpError ? "alert" : undefined}
+          >
+            {otpError ?? "\u00A0"}
+          </p>
         </div>
-      </div>
+
+        <div className="flex flex-col gap-4 px-[18px] pb-10">
+          <div className="flex items-end justify-between gap-4 text-[20px] font-normal tracking-wide">
+            <button
+              type="button"
+              disabled={otpLoading}
+              onClick={() => void handleResendCode()}
+              className={
+                otpLoading ? "cursor-default text-white/[0.72]" : "text-white"
+              }
+            >
+              [Reenviar]
+            </button>
+            <button
+              type="submit"
+              disabled={otpLoading || !otpComplete}
+              className={
+                otpLoading || !otpComplete
+                  ? "cursor-default text-white/[0.72]"
+                  : "text-white"
+              }
+            >
+              {otpLoading ? "[...]" : "[Verificar]"}
+            </button>
+          </div>
+        </div>
+      </form>
     );
   }
 

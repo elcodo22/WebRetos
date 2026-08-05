@@ -43,19 +43,21 @@ export function SiteHeader({
   const profileUsername = user ? usernameFromUser(user) : null;
 
   return (
-    <header className="relative flex w-full items-center gap-2 bg-transparent px-[var(--grid-margin)] pb-4 pt-6 text-white [background:transparent] md:gap-4 md:pb-6 md:pt-10">
+    <header className="relative flex w-full items-center gap-2 bg-transparent px-[var(--grid-margin)] pb-4 pt-3 text-white [background:transparent] md:gap-4 md:pb-6 md:pt-6">
       <div className="z-10 shrink-0">
         <HomeLogoLink>
           <LogoIcon />
         </HomeLogoLink>
       </div>
 
-      <div className="min-w-0 flex-1 text-center font-normal leading-none tracking-wide">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 w-max max-w-[min(70vw,36rem)] -translate-x-1/2 -translate-y-1/2 text-center font-normal leading-none tracking-wide">
         {center != null ? (
-          <div className="truncate text-[clamp(14px,3.8vw,20px)]">{center}</div>
+          <div className="pointer-events-auto truncate text-[clamp(14px,3.8vw,20px)]">
+            {center}
+          </div>
         ) : null}
         {showTimer && fechaFin ? (
-          <div className="text-[clamp(20px,5.5vw,40px)]">
+          <div className="pointer-events-auto text-[clamp(20px,5.5vw,40px)]">
             <StopwatchCursorZone>
               <CountdownCompact fechaFin={fechaFin} />
             </StopwatchCursorZone>
@@ -63,12 +65,14 @@ export function SiteHeader({
         ) : null}
       </div>
 
-      <HeaderNav
-        user={user}
-        variant={variant}
-        profileUsername={profileUsername}
-        onLoginClick={onLoginClick}
-      />
+      <div className="ml-auto z-10 shrink-0">
+        <HeaderNav
+          user={user}
+          variant={variant}
+          profileUsername={profileUsername}
+          onLoginClick={onLoginClick}
+        />
+      </div>
     </header>
   );
 }
