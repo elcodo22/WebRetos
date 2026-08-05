@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ArchivosLink } from "@/components/layout/archivos-link";
@@ -47,10 +46,12 @@ export function SiteHeader({
   const profileUsername = user ? usernameFromUser(user) : null;
 
   return (
-    <header className="site-grid relative items-center bg-transparent py-6 text-white [background:transparent]">
+    <header className="site-grid relative items-center bg-transparent pb-6 pt-10 text-white [background:transparent]">
       <HomeLogoLink>
         <LogoIcon />
       </HomeLogoLink>
+
+      <div className="col-span-10 h-7" aria-hidden />
 
       {center != null && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 max-w-[min(52vw,640px)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-[20px] font-normal leading-none tracking-wide">
@@ -107,18 +108,25 @@ export function SiteHeader({
   );
 }
 
-/**
- * Logo de la app: "plunger" en blanco.
- */
+/** Logo corto (Recurso 4). */
 function LogoIcon() {
   return (
-    <Image
-      src="/icons/plunger-word-white.png"
-      alt="plunger"
-      width={96}
-      height={24}
-      priority
-      style={{ imageRendering: "pixelated" }}
-    />
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 50.7 26.67"
+      width={53}
+      height={28}
+      style={{ shapeRendering: "crispEdges", display: "block" }}
+      aria-hidden
+    >
+      <path
+        fill="#fff"
+        d="m45.37,26.67h-16v-2.67h16v2.67Zm-16-2.67h-2.67v-2.67h2.67v2.67Zm18.67,0h-2.67v-2.67h2.67v2.67Zm-21.33-2.67h-2.67V5.33h2.67v16Zm13.33,0h-5.33v-2.67h5.33v2.67Zm10.67,0h-2.67V5.33h2.67v16Zm-16-2.67h-2.67v-2.67h2.67v2.67Zm8,0h-2.67v-10.67h-5.33v-2.67h8v13.33Zm-13.33-13.33h-2.67v-2.67h2.67v2.67Zm18.67,0h-2.67v-2.67h2.67v2.67Zm-2.67-2.67h-16V0h16v2.67Z"
+      />
+      <path
+        fill="#fff"
+        d="m21.33,26.67H5.33v-2.67h16v2.67Zm-16-2.67h-2.67v-2.67h2.67v2.67Zm18.67,0h-2.67v-2.67h2.67v2.67Zm-21.33-2.67H0V5.33h2.67v16Zm14.67,0h-8v-2.67h8v2.67Zm-8-2.67h-2.67V6.67h2.67v12Zm10.67,0h-2.67V6.67h2.67v12ZM5.33,5.33h-2.67v-2.67h2.67v2.67Zm18.67,0h-2.67v-2.67h2.67v2.67Zm-2.67-2.67H5.33V0h16v2.67Z"
+      />
+    </svg>
   );
 }
