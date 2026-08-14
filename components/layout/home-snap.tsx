@@ -5,11 +5,16 @@ import {
   useEffect,
   useRef,
   useState,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
+import {
+  ParticiparCursor,
+  isParticiparClickTarget,
+} from "@/components/layout/participar-cursor";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
@@ -22,9 +27,15 @@ type HomeSnapProps = {
   header: ReactNode;
   hero: ReactNode;
   archivos: ReactNode;
+  participarHref?: string;
 };
 
-export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
+export function HomeSnap({
+  header,
+  hero,
+  archivos,
+  participarHref,
+}: HomeSnapProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -209,6 +220,21 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
     };
   }, [goTo, dispatchArchivoWheel]);
 
+  const participarActive =
+    Boolean(participarHref) &&
+    panel === 0 &&
+    !searchOpen &&
+    !diccionarioOpen;
+
+  const onParticiparClick = useCallback(
+    (event: MouseEvent) => {
+      if (!participarHref || !participarActive) return;
+      if (!isParticiparClickTarget(event.target)) return;
+      router.push(participarHref);
+    },
+    [participarActive, participarHref, router],
+  );
+
   return (
     <div className="relative h-full overflow-hidden bg-[var(--background)] text-white">
       <div className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-transparent">
@@ -224,18 +250,24 @@ export function HomeSnap({ header, hero, archivos }: HomeSnapProps) {
             : "none",
         }}
       >
-        <section className="flex h-full flex-col overflow-hidden pt-[72px] md:pt-[88px]">
+        <section
+          data-participar-zone={participarActive ? "" : undefined}
+          onClick={onParticiparClick}
+          className="flex h-full flex-col overflow-hidden pt-[108px] md:pt-[88px]"
+        >
           <div className="min-h-0 flex-1 overflow-hidden pb-10 pt-[clamp(48px,12vh,161px)] md:pb-16">
             {hero}
           </div>
         </section>
 
-        <section className="flex h-full flex-col overflow-hidden pt-[72px] md:pt-[88px]">
+        <section className="flex h-full flex-col overflow-hidden pt-[108px] md:pt-[88px]">
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {archivos}
           </div>
         </section>
       </div>
+
+      <ParticiparCursor active={participarActive} />
     </div>
   );
 }

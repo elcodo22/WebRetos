@@ -41,38 +41,42 @@ export function SiteHeader({
     variant === "login" || variant === "registro" || variant === "forgot";
   const showTimer = !isAuthPage && showCountdown && center == null;
   const profileUsername = user ? usernameFromUser(user) : null;
+  const hasCenter = center != null || (showTimer && Boolean(fechaFin));
 
   return (
-    <header className="relative flex w-full items-center gap-2 bg-transparent px-[var(--grid-margin)] pb-4 pt-3 text-white [background:transparent] md:gap-4 md:pb-6 md:pt-6">
-      <div className="z-10 shrink-0">
-        <HomeLogoLink>
-          <LogoIcon />
-        </HomeLogoLink>
+    <header className="relative flex w-full flex-col gap-2 bg-transparent px-[var(--grid-margin)] pb-4 pt-3 text-white [background:transparent] md:flex-row md:items-center md:gap-4 md:pb-6 md:pt-6">
+      <div className="flex w-full items-center gap-2 md:contents">
+        <div className="z-10 shrink-0">
+          <HomeLogoLink>
+            <LogoIcon />
+          </HomeLogoLink>
+        </div>
+
+        <div className="z-10 ml-auto min-w-0 shrink">
+          <HeaderNav
+            user={user}
+            variant={variant}
+            profileUsername={profileUsername}
+            onLoginClick={onLoginClick}
+          />
+        </div>
       </div>
 
-      <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 w-max max-w-[min(70vw,36rem)] -translate-x-1/2 -translate-y-1/2 text-center font-normal leading-none tracking-wide">
-        {center != null ? (
-          <div className="pointer-events-auto truncate text-[clamp(14px,3.8vw,20px)]">
-            {center}
-          </div>
-        ) : null}
-        {showTimer && fechaFin ? (
-          <div className="pointer-events-auto text-[clamp(20px,5.5vw,40px)]">
-            <StopwatchCursorZone>
-              <CountdownCompact fechaFin={fechaFin} />
-            </StopwatchCursorZone>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="ml-auto z-10 shrink-0">
-        <HeaderNav
-          user={user}
-          variant={variant}
-          profileUsername={profileUsername}
-          onLoginClick={onLoginClick}
-        />
-      </div>
+      {hasCenter ? (
+        <div className="z-10 flex w-full justify-center text-center font-normal leading-none tracking-wide md:pointer-events-none md:absolute md:left-1/2 md:top-1/2 md:w-max md:max-w-[min(70vw,36rem)] md:-translate-x-1/2 md:-translate-y-1/2">
+          {center != null ? (
+            <div className="pointer-events-auto truncate text-[clamp(14px,3.8vw,20px)]">
+              {center}
+            </div>
+          ) : showTimer && fechaFin ? (
+            <div className="pointer-events-auto text-[clamp(20px,5.5vw,40px)]">
+              <StopwatchCursorZone>
+                <CountdownCompact fechaFin={fechaFin} />
+              </StopwatchCursorZone>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </header>
   );
 }

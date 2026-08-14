@@ -21,7 +21,6 @@ export default async function Home() {
       numero={retoActivo.numero}
       titulo={retoActivo.titulo}
       descripcion={retoActivo.descripcion}
-      participarHref={user ? "/subir" : "/login"}
     />
   ) : (
     <section className="site-grid w-full items-start max-md:flex max-md:flex-col max-md:gap-3">
@@ -46,6 +45,7 @@ export default async function Home() {
       }
       hero={hero}
       archivos={<ArchivosCarousel retos={retosArchivo} />}
+      participarHref={user ? "/subir" : "/login"}
     />
   );
 }

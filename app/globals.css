@@ -156,6 +156,16 @@ input:-webkit-autofill:active {
   cursor: inherit;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  [data-participar-zone] {
+    cursor: none;
+  }
+
+  [data-participar-zone] .diccionario-word {
+    cursor: url("/xp_link_xl.cur"), pointer;
+  }
+}
+
 .site-grid {
   display: grid;
   grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
