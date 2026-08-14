@@ -319,8 +319,8 @@ export function PerfilCarousel({
       if (dominant === 0) return;
 
       wheelLockUntil.current = now + WHEEL_LOCK_MS;
-      // Rueda: bajar → izquierda, subir → derecha
-      goTo(targetRef.current - Math.sign(dominant));
+      // Rueda: bajar → derecha, subir → izquierda
+      goTo(targetRef.current + Math.sign(dominant));
     };
 
     const onKeyDown = (event: KeyboardEvent) => {

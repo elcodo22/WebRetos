@@ -73,6 +73,7 @@ export function RegistroForm() {
   const [otpError, setOtpError] = useState<string | null>(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const lastTriedOtpRef = useRef<string | null>(null);
   const pendingProfileRef = useRef<{
     username: string;
     nombreCompleto: string;
@@ -106,6 +107,7 @@ export function RegistroForm() {
 
   function setOtpAt(index: number, raw: string) {
     const digit = raw.replace(/\D/g, "").slice(-1);
+    lastTriedOtpRef.current = null;
     setOtpDigits((prev) => {
       const next = [...prev];
       next[index] = digit;
@@ -138,6 +140,7 @@ export function RegistroForm() {
       .replace(/\D/g, "")
       .slice(0, OTP_LENGTH);
     if (!pasted) return;
+    lastTriedOtpRef.current = null;
     const next = Array.from({ length: OTP_LENGTH }, (_, i) => pasted[i] ?? "");
     setOtpDigits(next);
     setOtpError(null);
@@ -168,9 +171,9 @@ export function RegistroForm() {
     router.refresh();
   }
 
-  async function handleVerifyOtp(event: FormEvent) {
-    event.preventDefault();
-    if (otpLoading || !otpComplete) return;
+  async function handleVerifyOtp(code: string) {
+    if (otpLoading) return;
+    if (code.length !== OTP_LENGTH || !/^\d{6}$/.test(code)) return;
 
     setOtpLoading(true);
     setOtpError(null);
@@ -178,7 +181,7 @@ export function RegistroForm() {
     const supabase = createClient();
     const { data, error } = await supabase.auth.verifyOtp({
       email: email.trim(),
-      token: otpCode,
+      token: code,
       type: "signup",
     });
 
@@ -210,6 +213,15 @@ export function RegistroForm() {
     setOtpLoading(false);
   }
 
+  useEffect(() => {
+    if (!pendingVerify || !otpComplete || otpLoading) return;
+    if (lastTriedOtpRef.current === otpCode) return;
+    lastTriedOtpRef.current = otpCode;
+    void handleVerifyOtp(otpCode);
+    // Solo al completar los 6 dígitos (una vez por código)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otpComplete, otpCode, pendingVerify, otpLoading]);
+
   async function handleResendCode() {
     if (otpLoading) return;
     setOtpLoading(true);
@@ -227,6 +239,7 @@ export function RegistroForm() {
       setOtpError(error.message);
       return;
     }
+    lastTriedOtpRef.current = null;
     setOtpDigits(Array.from({ length: OTP_LENGTH }, () => ""));
     setOtpError(null);
     focusOtp(0);
@@ -396,18 +409,11 @@ export function RegistroForm() {
 
   if (pendingVerify) {
     return (
-      <form
-        onSubmit={handleVerifyOtp}
-        className="relative flex h-full min-h-0 flex-1 flex-col"
-        noValidate
-      >
+      <div className="relative flex h-full min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-none px-[18px] py-6 text-center">
-          <p className="max-w-xl text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white">
-            te hemos enviado un código
-          </p>
-          <p className="max-w-xl text-[16px] tracking-wide text-white/[0.72]">
-            Revisa{" "}
-            <span className="text-white">{email.trim()}</span> e introduce los 6
+          <p className="max-w-xl text-[16px] font-normal tracking-wide text-white/[0.72]">
+            Te hemos enviado un código a{" "}
+            <span className="text-white">{email.trim()}</span>. Introduce los 6
             dígitos.
           </p>
 
@@ -427,12 +433,13 @@ export function RegistroForm() {
                 autoComplete={index === 0 ? "one-time-code" : "off"}
                 maxLength={1}
                 value={digit}
+                disabled={otpLoading}
                 onChange={(event) => setOtpAt(index, event.target.value)}
                 onKeyDown={(event) => onOtpKeyDown(index, event)}
                 onPaste={onOtpPaste}
                 onFocus={(event) => event.currentTarget.select()}
                 aria-label={`Dígito ${index + 1} de ${OTP_LENGTH}`}
-                className="h-12 w-10 border border-white bg-transparent text-center text-[24px] font-normal tracking-wide text-white outline-none sm:h-14 sm:w-12 sm:text-[28px]"
+                className="h-12 w-10 border border-white bg-transparent text-center text-[24px] font-normal tracking-wide text-white outline-none disabled:opacity-60 sm:h-14 sm:w-12 sm:text-[28px]"
               />
             ))}
           </div>
@@ -441,36 +448,25 @@ export function RegistroForm() {
             className="min-h-[24px] max-w-xl text-[16px] tracking-wide text-white"
             role={otpError ? "alert" : undefined}
           >
-            {otpError ?? "\u00A0"}
+            {otpLoading && !otpError
+              ? "verificando…"
+              : (otpError ?? "\u00A0")}
           </p>
         </div>
 
-        <div className="flex flex-col gap-4 px-[18px] pb-10">
-          <div className="flex items-end justify-between gap-4 text-[20px] font-normal tracking-wide">
-            <button
-              type="button"
-              disabled={otpLoading}
-              onClick={() => void handleResendCode()}
-              className={
-                otpLoading ? "cursor-default text-white/[0.72]" : "text-white"
-              }
-            >
-              [Reenviar]
-            </button>
-            <button
-              type="submit"
-              disabled={otpLoading || !otpComplete}
-              className={
-                otpLoading || !otpComplete
-                  ? "cursor-default text-white/[0.72]"
-                  : "text-white"
-              }
-            >
-              {otpLoading ? "[...]" : "[Verificar]"}
-            </button>
-          </div>
+        <div className="flex items-end justify-start px-[18px] pb-10 text-[20px] font-normal tracking-wide">
+          <button
+            type="button"
+            disabled={otpLoading}
+            onClick={() => void handleResendCode()}
+            className={
+              otpLoading ? "cursor-default text-white/[0.72]" : "text-white"
+            }
+          >
+            reenviar código
+          </button>
         </div>
-      </form>
+      </div>
     );
   }
 
