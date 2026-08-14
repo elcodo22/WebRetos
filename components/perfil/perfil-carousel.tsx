@@ -22,6 +22,7 @@ import {
   type LiftState,
 } from "@/components/perfil/perfil-lift-overlay";
 import { saveObraToCaja, type SavedCaja } from "@/lib/perfil-caja";
+import { AuthRequiredPopup } from "@/components/auth/auth-required-popup";
 
 /** Ancho del póster vertical centrado. */
 const CARD_VW_DESKTOP = 20;
@@ -94,6 +95,7 @@ export function PerfilCarousel({
   const [active, setActive] = useState<PerfilObra | null>(null);
   const [openGuardados, setOpenGuardados] = useState(false);
   const [lift, setLift] = useState<LiftState | null>(null);
+  const [authPopup, setAuthPopup] = useState(false);
   const [cardVw, setCardVw] = useState(CARD_VW_DESKTOP);
   const [gapVw, setGapVw] = useState(GAP_VW_DESKTOP);
   const [renderMin, setRenderMin] = useState(() =>
@@ -579,12 +581,27 @@ export function PerfilCarousel({
         <PerfilLiftOverlay
           lift={lift}
           onCancel={() => setLift(null)}
-          onDropInFolder={() => {
-            if (!isOwnUsername(lift.obra.username, viewerUsernameFromUser(user))) {
-              saveObraToCaja(lift.obra);
-            }
+          requireAuth={!user}
+          onAuthRequired={() => {
             setLift(null);
+            setAuthPopup(true);
           }}
+          onDropInFolder={
+            user
+              ? () => {
+                  setLift(null);
+                  if (
+                    isOwnUsername(
+                      lift.obra.username,
+                      viewerUsernameFromUser(user),
+                    )
+                  ) {
+                    return;
+                  }
+                  saveObraToCaja(lift.obra);
+                }
+              : undefined
+          }
         />
       ) : null}
 
@@ -595,6 +612,11 @@ export function PerfilCarousel({
           onClose={() => setOpenGuardados(false)}
         />
       ) : null}
+
+      <AuthRequiredPopup
+        open={authPopup}
+        onClose={() => setAuthPopup(false)}
+      />
     </>
   );
 }

@@ -21,6 +21,9 @@ type PerfilLiftOverlayProps = {
   onCancel: () => void;
   /** Guardar en caja (modo save). */
   onDropInFolder?: () => void;
+  /** Sin sesión: abrir popup de login al soltar, sin animar ni guardar. */
+  onAuthRequired?: () => void;
+  requireAuth?: boolean;
   /** Eliminar de guardados (modo remove). */
   onRemove?: () => void;
   mode?: "save" | "remove";
@@ -33,6 +36,8 @@ export function PerfilLiftOverlay({
   lift,
   onCancel,
   onDropInFolder,
+  onAuthRequired,
+  requireAuth = false,
   onRemove,
   mode = "save",
 }: PerfilLiftOverlayProps) {
@@ -50,6 +55,8 @@ export function PerfilLiftOverlay({
   const grabRef = useRef({ x: lift.grabX, y: lift.grabY });
   const onCancelRef = useRef(onCancel);
   const onDropRef = useRef(onDropInFolder);
+  const onAuthRequiredRef = useRef(onAuthRequired);
+  const requireAuthRef = useRef(requireAuth);
   const onRemoveRef = useRef(onRemove);
   const modeRef = useRef(mode);
 
@@ -67,9 +74,11 @@ export function PerfilLiftOverlay({
   useEffect(() => {
     onCancelRef.current = onCancel;
     onDropRef.current = onDropInFolder;
+    onAuthRequiredRef.current = onAuthRequired;
+    requireAuthRef.current = requireAuth;
     onRemoveRef.current = onRemove;
     modeRef.current = mode;
-  }, [onCancel, onDropInFolder, onRemove, mode]);
+  }, [onCancel, onDropInFolder, onAuthRequired, requireAuth, onRemove, mode]);
 
   useEffect(() => {
     absorbRef.current = false;
@@ -118,6 +127,11 @@ export function PerfilLiftOverlay({
         return;
       }
       if (hitTarget(event.clientX, event.clientY)) {
+        if (requireAuthRef.current && modeRef.current !== "remove") {
+          doneRef.current = true;
+          onAuthRequiredRef.current?.();
+          return;
+        }
         const r = targetRef.current?.getBoundingClientRect();
         const tx = (r?.left ?? event.clientX) + (r?.width ?? 0) / 2 - 14;
         const ty = (r?.top ?? event.clientY) + (r?.height ?? 0) / 2 - 14;

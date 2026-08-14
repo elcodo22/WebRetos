@@ -29,11 +29,13 @@ export function LoginForm() {
     return null;
   });
   const [error, setError] = useState<string | null>(null);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState("");
 
   const emailOk = email.trim().length > 0 && email.includes("@");
   const passwordOk = password.length > 0;
   const canSubmitLogin = !loading && emailOk && passwordOk;
-  const canSubmitForgot = !loading && emailOk;
+  const canSubmitForgot = !loading && emailOk && !forgotSent;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -94,17 +96,23 @@ export function LoginForm() {
       return;
     }
 
-    setMessage("Te hemos enviado un enlace para restablecer la contraseña.");
+    setSentEmail(email.trim());
+    setForgotSent(true);
+    setMessage(null);
   }
 
   function enterForgotMode() {
     setMode("forgot");
+    setForgotSent(false);
+    setSentEmail("");
     setError(null);
     setMessage(null);
   }
 
   function exitForgotMode() {
     setMode("login");
+    setForgotSent(false);
+    setSentEmail("");
     setError(null);
     setMessage(null);
   }
@@ -126,33 +134,37 @@ export function LoginForm() {
         {mode === "forgot" ? (
           <div className="relative flex flex-1 flex-col items-center px-[18px]">
             <div className="absolute left-1/2 top-[38%] flex w-full max-w-xl -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-8">
-              <p className="text-center text-[18px] font-normal tracking-wide text-white/[0.72]">
-                Ingresa tu email y te enviaremos un enlace para restablecer tu
-                contraseña.
-              </p>
-
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="correo electrónico"
-                className={fieldClassName}
-                aria-label="correo electrónico"
-                autoFocus
-              />
-
-              {error ? (
-                <p className="text-center text-[16px] tracking-wide text-white/[0.72]">
-                  {error}
+              {forgotSent ? (
+                <p className="text-center text-[18px] font-normal tracking-wide text-white">
+                  Se ha enviado un enlace a {sentEmail} para restablecer tu
+                  contraseña.
                 </p>
-              ) : null}
-              {message ? (
-                <p className="text-center text-[16px] tracking-wide text-white/[0.72]">
-                  {message}
-                </p>
-              ) : null}
+              ) : (
+                <>
+                  <p className="text-center text-[18px] font-normal tracking-wide text-white/[0.72]">
+                    Ingresa tu email y te enviaremos un enlace para restablecer
+                    tu contraseña.
+                  </p>
+
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="correo electrónico"
+                    className={fieldClassName}
+                    aria-label="correo electrónico"
+                    autoFocus
+                  />
+
+                  {error ? (
+                    <p className="text-center text-[16px] tracking-wide text-white/[0.72]">
+                      {error}
+                    </p>
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
         ) : (
@@ -209,17 +221,19 @@ export function LoginForm() {
             </button>
           )}
 
-          <button
-            type="submit"
-            disabled={mode === "forgot" ? !canSubmitForgot : !canSubmitLogin}
-            className={
-              (mode === "forgot" ? canSubmitForgot : canSubmitLogin)
-                ? "text-white"
-                : "cursor-default text-white/[0.72]"
-            }
-          >
-            {loading ? "[...]" : "[Siguiente]"}
-          </button>
+          {mode === "forgot" && forgotSent ? null : (
+            <button
+              type="submit"
+              disabled={mode === "forgot" ? !canSubmitForgot : !canSubmitLogin}
+              className={
+                (mode === "forgot" ? canSubmitForgot : canSubmitLogin)
+                  ? "text-white"
+                  : "cursor-default text-white/[0.72]"
+              }
+            >
+              {loading ? "[...]" : "[Siguiente]"}
+            </button>
+          )}
         </div>
       </form>
     </>

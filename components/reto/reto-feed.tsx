@@ -14,6 +14,7 @@ import {
 } from "@/components/perfil/perfil-lift-overlay";
 import { RetoInfiniteFeed } from "@/components/reto/reto-infinite-feed";
 import { RetoVideoPlayer } from "@/components/reto/reto-video-player";
+import { AuthRequiredPopup } from "@/components/auth/auth-required-popup";
 import {
   isObraSaved,
   removeObraFromCaja,
@@ -55,6 +56,7 @@ export function RetoFeed({
   const [active, setActive] = useState<RetoFeedItem | null>(null);
   const [lift, setLift] = useState<LiftState | null>(null);
   const [liftMode, setLiftMode] = useState<"save" | "remove">("save");
+  const [authPopup, setAuthPopup] = useState(false);
   const viewerUsername = useMemo(
     () => viewerUsernameFromUser(user),
     [user],
@@ -65,7 +67,7 @@ export function RetoFeed({
       if (isOwnUsername(item.username, viewerUsername)) return;
       const rect = el.getBoundingClientRect();
       setActive(null);
-      setLiftMode(isObraSaved(item.id) ? "remove" : "save");
+      setLiftMode(user && isObraSaved(item.id) ? "remove" : "save");
       setLift({
         obra: toPerfilObra(item, retoNumero, retoTitulo, retoId),
         x: rect.left,
@@ -76,7 +78,7 @@ export function RetoFeed({
         grabY: clientY - rect.top,
       });
     },
-    [retoId, retoNumero, retoTitulo, viewerUsername],
+    [retoId, retoNumero, retoTitulo, user, viewerUsername],
   );
 
   const onLiftCancel = useCallback(() => setLift(null), []);
@@ -84,10 +86,14 @@ export function RetoFeed({
   const onDropInFolder = useCallback(() => {
     const obra = lift?.obra;
     setLift(null);
-    if (obra && !isOwnUsername(obra.username, viewerUsername)) {
-      saveObraToCaja(obra);
-    }
-  }, [lift, viewerUsername]);
+    if (!obra || !user || isOwnUsername(obra.username, viewerUsername)) return;
+    saveObraToCaja(obra);
+  }, [lift, user, viewerUsername]);
+
+  const onAuthRequired = useCallback(() => {
+    setLift(null);
+    setAuthPopup(true);
+  }, []);
 
   const onRemove = useCallback(() => {
     const id = lift?.obra.id;
@@ -112,7 +118,9 @@ export function RetoFeed({
           lift={lift}
           mode={liftMode}
           onCancel={onLiftCancel}
-          onDropInFolder={liftMode === "save" ? onDropInFolder : undefined}
+          requireAuth={!user}
+          onAuthRequired={!user ? onAuthRequired : undefined}
+          onDropInFolder={liftMode === "save" && user ? onDropInFolder : undefined}
           onRemove={liftMode === "remove" ? onRemove : undefined}
         />
       ) : null}
@@ -125,6 +133,11 @@ export function RetoFeed({
           onClose={() => setActive(null)}
         />
       ) : null}
+
+      <AuthRequiredPopup
+        open={authPopup}
+        onClose={() => setAuthPopup(false)}
+      />
     </>
   );
 }
