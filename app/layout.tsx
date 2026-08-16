@@ -1,14 +1,25 @@
 import type { Metadata } from "next";
-import { Bitcount_Grid_Single } from "next/font/google";
+import localFont from "next/font/local";
 import { CrtShell } from "@/components/layout/crt-shell";
 import { CrtPowerProvider } from "@/components/layout/crt-power-transition";
 import { SearchOverlayProvider } from "@/components/archivos/search-overlay-provider";
 import { DiccionarioProvider } from "@/components/diccionario/diccionario-provider";
 import "./globals.css";
 
-const bitcount = Bitcount_Grid_Single({
-  variable: "--font-bitcount",
-  subsets: ["latin"],
+const ppNeueBit = localFont({
+  src: [
+    {
+      path: "../public/fonts/PPNeueBit-Regular.otf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/PPNeueBit-Bold.otf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-pp-neue-bit",
   display: "swap",
 });
 
@@ -23,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${bitcount.variable} h-full`}>
-      <body className={`${bitcount.className} crt-body antialiased`}>
+    <html lang="es" className={`${ppNeueBit.variable} h-full`}>
+      <body className={`${ppNeueBit.className} crt-body antialiased`}>
         <CrtShell>
           <CrtPowerProvider>
             <SearchOverlayProvider>

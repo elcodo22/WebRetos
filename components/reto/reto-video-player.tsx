@@ -372,7 +372,7 @@ export function RetoVideoPlayer({
       />
 
       <div
-        className={`absolute left-[14px] top-[18px] z-20 flex min-w-0 max-w-[calc(100%-28px)] flex-wrap items-baseline gap-x-3 gap-y-1 text-[clamp(14px,3.8vw,20px)] font-normal leading-tight tracking-wide transition-opacity duration-300 md:left-[18px] md:top-[22px] md:gap-x-5 md:leading-none ${
+        className={`absolute left-[14px] top-[18px] z-20 flex min-w-0 max-w-[calc(100%-28px)] flex-wrap items-baseline gap-x-3 gap-y-1 text-[clamp(18px,3.8vw,25px)] font-normal leading-tight tracking-wide transition-opacity duration-300 md:left-[18px] md:top-[22px] md:gap-x-5 md:leading-none ${
           showUi
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"
@@ -405,15 +405,15 @@ export function RetoVideoPlayer({
       >
         <Link
           href={perfilHref(item.username)}
-          className="inline-block text-[clamp(14px,3.5vw,18px)] font-normal leading-none tracking-wide hover:underline"
+          className="inline-block text-[clamp(18px,3.5vw,22px)] font-normal leading-none tracking-wide hover:underline"
           onClick={(event) => event.stopPropagation()}
         >
           {item.username}
         </Link>
-        <h2 className="mt-2 text-[clamp(20px,5vw,32px)] font-normal leading-tight tracking-wide md:mt-3">
+        <h2 className="mt-2 text-[clamp(25px,5vw,40px)] font-normal leading-tight tracking-wide md:mt-3">
           {item.titulo}
         </h2>
-        <p className="mt-2 text-[clamp(13px,3.2vw,16px)] font-normal leading-relaxed tracking-wide text-white/95 md:mt-3">
+        <p className="mt-2 text-[clamp(16px,3.2vw,20px)] font-normal leading-relaxed tracking-wide text-white/95 md:mt-3">
           {item.descripcion}
         </p>
       </div>
@@ -475,7 +475,7 @@ export function RetoVideoPlayer({
               />
             </div>
           </div>
-          <div className="mt-1 flex items-center justify-between text-[14px] tabular-nums tracking-wide text-white/90">
+          <div className="mt-1 flex items-center justify-between text-[18px] tabular-nums tracking-wide text-white/90">
             <span>{formatTime(current)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -485,7 +485,7 @@ export function RetoVideoPlayer({
       <button
         type="button"
         onClick={onClose}
-        className={`absolute right-[18px] top-[22px] z-40 text-[20px] font-normal leading-none tracking-wide text-white/90 transition-opacity duration-300 hover:text-white ${
+        className={`absolute right-[18px] top-[22px] z-40 text-[25px] font-normal leading-none tracking-wide text-white/90 transition-opacity duration-300 hover:text-white ${
           showUi ? "opacity-100" : "opacity-0"
         }`}
         aria-label="Cerrar vídeo"

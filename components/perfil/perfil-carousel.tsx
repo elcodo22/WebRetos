@@ -530,7 +530,7 @@ export function PerfilCarousel({
                     aria-label="Guardados"
                   >
                     <CartonBoxIcon scale={isFocus ? 1.05 : 0.9} />
-                    <p className="text-center text-[16px] font-normal leading-none tracking-wide text-white">
+                    <p className="text-center text-[20px] font-normal leading-none tracking-wide text-white">
                       Guardados
                     </p>
                   </button>

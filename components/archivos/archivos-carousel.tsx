@@ -188,8 +188,8 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
 
   if (total === 0) {
     return (
-      <div className="site-grid h-full items-center text-white max-md:flex max-md:px-[var(--grid-margin)]">
-        <p className="col-start-2 col-span-8 text-[clamp(16px,4vw,20px)] tracking-wide text-white/70 max-md:col-auto">
+      <div className="site-grid h-full items-center max-md:flex max-md:px-[var(--grid-margin)]">
+        <p className="col-start-2 col-span-8 text-[clamp(20px,4vw,25px)] tracking-wide opacity-70 max-md:col-auto">
           No hay retos en el archivo.
         </p>
       </div>
@@ -199,14 +199,14 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
   const current = items[index];
 
   return (
-    <div className="relative h-full w-full overflow-hidden text-white">
+    <div className="relative h-full w-full overflow-hidden">
       {/* Título y fecha: laterales en desktop; encima/debajo en móvil */}
       <div className="pointer-events-none absolute inset-0 z-10 flex items-center max-md:items-stretch max-md:justify-center">
         <div className="site-grid w-full items-center max-md:flex max-md:h-full max-md:flex-col max-md:justify-between max-md:px-[var(--grid-margin)] max-md:pb-10 max-md:pt-4">
-          <div className="col-start-2 col-span-2 self-center truncate text-[clamp(14px,3.8vw,20px)] font-normal leading-none tracking-wide max-md:col-auto max-md:max-w-full max-md:self-center max-md:text-center">
+          <div className="col-start-2 col-span-2 self-center truncate text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide max-md:col-auto max-md:max-w-full max-md:self-center max-md:text-center">
             {current.titulo}
           </div>
-          <div className="col-start-8 col-span-2 self-center whitespace-nowrap text-right text-[clamp(14px,3.8vw,20px)] font-normal leading-none tracking-wide max-md:col-auto max-md:self-center max-md:text-center">
+          <div className="col-start-8 col-span-2 self-center whitespace-nowrap text-right text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide max-md:col-auto max-md:self-center max-md:text-center">
             {current.fechaLabel}
           </div>
         </div>
@@ -262,7 +262,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                     <FolderIcon />
                   )}
                   <div
-                    className="pointer-events-none absolute inset-x-0 top-full mt-4 text-center text-[20px] leading-none tracking-wide"
+                    className="pointer-events-none absolute inset-x-0 top-full mt-4 text-center text-[25px] leading-none tracking-wide"
                     style={{
                       opacity: isFocus && isSettled ? 1 : 0,
                       transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
-import { ArchivosLink } from "@/components/layout/archivos-link";
 import { ProfileMenu } from "@/components/layout/profile-menu";
 import { ArchivosSearch } from "@/components/archivos/archivos-search";
 
@@ -20,7 +19,7 @@ export function HeaderNav({
   onLoginClick?: () => void;
 }) {
   return (
-    <nav className="flex items-center gap-2 whitespace-nowrap text-[clamp(12px,3.2vw,20px)] font-normal leading-none tracking-wide md:gap-4 md:text-[20px]">
+    <nav className="flex items-center gap-2 whitespace-nowrap text-[clamp(15px,3.2vw,25px)] font-normal leading-none tracking-wide md:gap-4 md:text-[25px]">
       {variant === "login" && <Link href="/registro">[Registro]</Link>}
       {variant === "registro" && <Link href="/login">[Login]</Link>}
       {variant === "forgot" && (
@@ -41,7 +40,6 @@ export function HeaderNav({
       )}
       {variant === "default" && (
         <>
-          <ArchivosLink />
           {user ? (
             <>
               <ArchivosSearch />

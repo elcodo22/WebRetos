@@ -72,20 +72,20 @@ export function ArchivosSearchScreen({ retos, onClose }: Props) {
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
               placeholder="Buscar"
-              className="h-full w-full bg-transparent px-3 text-[clamp(14px,3.8vw,20px)] font-normal tracking-wide text-white outline-none placeholder:text-white md:px-4"
+              className="h-full w-full bg-transparent px-3 text-[clamp(18px,3.8vw,25px)] font-normal tracking-wide text-white outline-none placeholder:text-white md:px-4"
             />
           </label>
 
           <div className="relative w-[min(42vw,220px)] shrink-0 md:w-[220px]">
             <button
               type="button"
-              className="flex h-11 w-full items-center justify-between border border-white px-3 text-left text-[clamp(12px,3.2vw,20px)] font-normal tracking-wide md:h-12 md:px-4"
+              className="flex h-11 w-full items-center justify-between border border-white px-3 text-left text-[clamp(15px,3.2vw,25px)] font-normal tracking-wide md:h-12 md:px-4"
               aria-haspopup="listbox"
               aria-expanded={menuAbierto}
               onClick={() => setMenuAbierto((abierto) => !abierto)}
             >
               <span className="truncate">{ORDEN_LABEL[orden]}</span>
-              <span aria-hidden className="shrink-0 text-[16px]">
+              <span aria-hidden className="shrink-0 text-[20px]">
                 v
               </span>
             </button>
@@ -101,7 +101,7 @@ export function ArchivosSearchScreen({ retos, onClose }: Props) {
                       type="button"
                       role="option"
                       aria-selected={orden === opcion}
-                      className="block w-full px-4 py-3 text-left text-[clamp(14px,3.8vw,20px)] hover:bg-white/10"
+                      className="block w-full px-4 py-3 text-left text-[clamp(18px,3.8vw,25px)] hover:bg-white/10"
                       onClick={() => {
                         setOrden(opcion);
                         setMenuAbierto(false);
@@ -120,14 +120,14 @@ export function ArchivosSearchScreen({ retos, onClose }: Props) {
       <div className="site-grid scrollbar-none min-h-0 flex-1 overflow-y-auto overscroll-contain pb-16 max-md:block max-md:px-[var(--grid-margin)]">
         <ul className="col-start-2 col-span-8 mt-8 flex flex-col gap-6 max-md:col-auto max-md:mt-6 md:mt-10 md:gap-8">
           {filtrados.length === 0 ? (
-            <li className="text-[20px] tracking-wide text-white/70">
+            <li className="text-[25px] tracking-wide text-white/70">
               No hay resultados.
             </li>
           ) : (
             filtrados.map((reto) => (
               <li
                 key={reto.id}
-                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-10 text-[20px] font-normal tracking-wide"
+                className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-x-10 text-[25px] font-normal tracking-wide"
               >
                 <span className="tabular-nums">#{reto.numero}</span>
                 <span className="min-w-0 truncate">{reto.titulo}</span>

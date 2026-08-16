@@ -114,7 +114,7 @@ export function PerfilScreen({
         ) : null}
 
         {showEmptyMessage ? (
-          <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 max-w-md -translate-x-1/2 -translate-y-1/2 text-center text-[20px] font-normal tracking-wide text-white/[0.72]">
+          <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 max-w-md -translate-x-1/2 -translate-y-1/2 text-center text-[25px] font-normal tracking-wide text-white/[0.72]">
             todavía no hay guardados ni participaciones
           </p>
         ) : null}
@@ -127,7 +127,7 @@ export function PerfilScreen({
       >
         <div className="col-span-3 min-w-0 max-md:w-full">
           <div className="flex min-w-0 items-center gap-2.5 max-md:justify-center">
-            <p className="truncate text-[clamp(20px,5vw,28px)] font-normal leading-none tracking-wide">
+            <p className="truncate text-[clamp(25px,5vw,35px)] font-normal leading-none tracking-wide">
               {formatUsername(perfil.username)}
             </p>
             <div className="relative shrink-0">
@@ -148,13 +148,13 @@ export function PerfilScreen({
                 />
               </button>
               {copied ? (
-                <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap bg-black px-2 py-1 text-[12px] font-normal leading-none tracking-wide text-white">
+                <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap bg-black px-2 py-1 text-[15px] font-normal leading-none tracking-wide text-white">
                   copiado
                 </span>
               ) : null}
             </div>
           </div>
-          <p className="mt-2 truncate text-[clamp(14px,3.5vw,16px)] font-normal leading-none tracking-wide text-white/90">
+          <p className="mt-2 truncate text-[clamp(18px,3.5vw,20px)] font-normal leading-none tracking-wide text-white/90">
             {perfil.nombreCompleto}
           </p>
         </div>
@@ -165,12 +165,12 @@ export function PerfilScreen({
               <button
                 type="button"
                 onClick={() => powerOffTo(`/reto/${focus.retoId}`)}
-                className="max-w-full truncate text-[clamp(14px,3.8vw,20px)] font-normal leading-snug tracking-wide transition-opacity hover:opacity-80"
+                className="max-w-full truncate text-[clamp(18px,3.8vw,25px)] font-normal leading-snug tracking-wide transition-opacity hover:opacity-80"
               >
                 #{focus.retoNumero} {focus.retoTitulo}
               </button>
             ) : (
-              <p className="truncate text-[clamp(14px,3.8vw,20px)] font-normal leading-snug tracking-wide">
+              <p className="truncate text-[clamp(18px,3.8vw,25px)] font-normal leading-snug tracking-wide">
                 #{focus.retoNumero} {focus.retoTitulo}
               </p>
             )
@@ -178,7 +178,7 @@ export function PerfilScreen({
         </div>
 
         <div className="col-span-3 text-right max-md:w-full max-md:text-center">
-          <p className="text-[clamp(14px,3.5vw,16px)] font-normal leading-none tracking-wide">
+          <p className="text-[clamp(18px,3.5vw,20px)] font-normal leading-none tracking-wide">
             {perfil.participaciones} participaciones
           </p>
         </div>

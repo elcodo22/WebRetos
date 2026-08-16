@@ -16,36 +16,35 @@ export default async function Home() {
     loadRetosArchivo(),
   ]);
 
+  const descripcionLarga = retoActivo
+    ? `Este reto te pide crear una pieza audiovisual alrededor de **${retoActivo.titulo}**. No hace falta que sea perfecta: busca una idea clara, un gesto visual y una intención que se entienda en poco tiempo. Grábala en vertical o horizontal, con el material que tengas a mano; puede ser un plano fijo, un montaje corto, una animación sencilla o un experimento sonoro con imagen. Lo importante es que responda al enunciado y se note que has tomado una decisión. Duración orientativa: entre **15 y 60 segundos**. Si te pasas un poco no pasa nada, pero evita piezas largas sin foco: el reto premia la contundencia. Puedes trabajar solo o en equipo pequeño; cita fuentes si usas material ajeno y respeta los derechos de otras personas. Cuando termines, sube tu obra desde Participar antes de que se acabe el tiempo. Piensa en ritmo, color, silencio y un cierre: si alguien ve tu vídeo sin contexto, debería intuir de qué va **${retoActivo.titulo}** en los primeros segundos.`
+    : "";
+
   const hero = retoActivo ? (
     <RetoHero
       numero={retoActivo.numero}
       titulo={retoActivo.titulo}
-      descripcion={retoActivo.descripcion}
+      descripcion={descripcionLarga}
     />
   ) : (
-    <section className="site-grid w-full items-start max-md:flex max-md:flex-col max-md:gap-3">
-      <p className="col-start-2 col-span-1 pt-1 text-[clamp(18px,4.5vw,24px)] font-normal leading-none max-md:col-auto max-md:pt-0">
-        #---
-      </p>
-      <div className="col-start-3 col-span-4 max-md:col-auto max-md:w-full">
-        <h1 className="text-[clamp(22px,5.5vw,32px)] font-medium leading-tight tracking-wide">
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div className="w-full max-w-3xl px-[var(--grid-margin)] text-center [word-spacing:0.45em]">
+        <p className="text-[clamp(28px,5.5vw,40px)] font-normal uppercase leading-none tracking-normal">
+          #---
+        </p>
+        <h1 className="mt-3 text-[clamp(36px,7vw,56px)] font-medium uppercase leading-tight tracking-normal md:mt-4">
           Sin reto activo
         </h1>
-        <p className="mt-4 text-[clamp(16px,4vw,20px)] font-normal leading-relaxed tracking-wide md:mt-6">
-          Vuelve pronto. El próximo reto aparecerá aquí.
-        </p>
       </div>
-    </section>
+    </div>
   );
 
   return (
     <HomeSnap
-      header={
-        <SiteHeader user={user} fechaFin={retoActivo?.fecha_fin ?? null} />
-      }
+      header={<SiteHeader user={user} />}
+      participarHref={retoActivo ? "/subir" : undefined}
       hero={hero}
       archivos={<ArchivosCarousel retos={retosArchivo} />}
-      participarHref={user ? "/subir" : "/login"}
     />
   );
 }

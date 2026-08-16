@@ -142,7 +142,7 @@ export function ProfileMenu({ username }: { username: string | null }) {
             />
 
             <div
-              className="absolute flex flex-col items-end gap-3 text-[20px] font-normal leading-none tracking-wide text-white"
+              className="absolute flex flex-col items-end gap-3 text-[25px] font-normal leading-none tracking-wide text-white"
               style={{ top: anchor.top, right: anchor.right }}
               onClick={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}

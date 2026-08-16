@@ -15,7 +15,7 @@ import { authCallbackUrl } from "@/lib/auth-urls";
 import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
 
 const fieldClassName =
-  "w-full max-w-xl bg-transparent text-center text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
+  "w-full max-w-xl bg-transparent text-center text-[clamp(22px,4.5vw,30px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
 
 const OTP_LENGTH = 6;
 
@@ -411,7 +411,7 @@ export function RegistroForm() {
     return (
       <div className="relative flex h-full min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-none px-[18px] py-6 text-center">
-          <p className="max-w-xl text-[16px] font-normal tracking-wide text-white/[0.72]">
+          <p className="max-w-xl text-[20px] font-normal tracking-wide text-white/[0.72]">
             Te hemos enviado un código a{" "}
             <span className="text-white">{email.trim()}</span>. Introduce los 6
             dígitos.
@@ -439,13 +439,13 @@ export function RegistroForm() {
                 onPaste={onOtpPaste}
                 onFocus={(event) => event.currentTarget.select()}
                 aria-label={`Dígito ${index + 1} de ${OTP_LENGTH}`}
-                className="h-12 w-10 border border-white bg-transparent text-center text-[24px] font-normal tracking-wide text-white outline-none disabled:opacity-60 sm:h-14 sm:w-12 sm:text-[28px]"
+                className="h-12 w-10 border border-white bg-transparent text-center text-[30px] font-normal tracking-wide text-white outline-none disabled:opacity-60 sm:h-14 sm:w-12 sm:text-[35px]"
               />
             ))}
           </div>
 
           <p
-            className="min-h-[24px] max-w-xl text-[16px] tracking-wide text-white"
+            className="min-h-[24px] max-w-xl text-[20px] tracking-wide text-white"
             role={otpError ? "alert" : undefined}
           >
             {otpLoading && !otpError
@@ -454,7 +454,7 @@ export function RegistroForm() {
           </p>
         </div>
 
-        <div className="flex items-end justify-start px-[18px] pb-10 text-[20px] font-normal tracking-wide">
+        <div className="flex items-end justify-start px-[18px] pb-10 text-[25px] font-normal tracking-wide">
           <button
             type="button"
             disabled={otpLoading}
@@ -548,12 +548,12 @@ export function RegistroForm() {
 
       <div className="flex flex-col gap-4 px-[18px] pb-10">
         <p
-          className="min-h-[24px] text-center text-[16px] tracking-wide text-white"
+          className="min-h-[24px] text-center text-[20px] tracking-wide text-white"
           role={bottomMessage ? "alert" : undefined}
         >
           {bottomMessage ?? "\u00A0"}
         </p>
-        <div className="flex items-end justify-end text-[20px] font-normal tracking-wide">
+        <div className="flex items-end justify-end text-[25px] font-normal tracking-wide">
           <button
             type="submit"
             disabled={loading}

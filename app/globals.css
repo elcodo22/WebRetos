@@ -3,7 +3,8 @@
 :root {
   --background: #006eff;
   --foreground: #ffffff;
-  --font-display: var(--font-bitcount);
+  --font-display: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
+  --font-bitcount: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
   --grid-gutter: 16px;
   --grid-margin: 18px;
   --grid-columns: 10;
@@ -12,7 +13,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-bitcount);
+  --font-sans: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
 }
 
 *,
@@ -34,7 +35,7 @@ body.crt-body {
   margin: 0;
   overflow: hidden;
   color: var(--foreground);
-  font-family: var(--font-bitcount), monospace;
+  font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
   cursor: url("/larrow.cur"), auto;
   background: #000;
 }
@@ -154,16 +155,6 @@ input:-webkit-autofill:active {
 
 .cursor-stopwatch * {
   cursor: inherit;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  [data-participar-zone] {
-    cursor: none;
-  }
-
-  [data-participar-zone] .diccionario-word {
-    cursor: url("/xp_link_xl.cur"), pointer;
-  }
 }
 
 .site-grid {
@@ -495,6 +486,25 @@ input:-webkit-autofill:active {
   animation: participar-bulb 4.5s linear infinite;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  [data-participar-zone] {
+    cursor: none;
+  }
+
+  [data-participar-zone] * {
+    cursor: none;
+  }
+
+  [data-participar-zone] .diccionario-word,
+  [data-participar-zone] .diccionario-word *,
+  [data-participar-zone] a,
+  [data-participar-zone] a *,
+  [data-participar-zone] button,
+  [data-participar-zone] button * {
+    cursor: url("/xp_link_xl.cur"), pointer !important;
+  }
+}
+
 @keyframes participar-bulb {
   0%,
   38% {
@@ -578,5 +588,10 @@ input:-webkit-autofill:active {
 }
 
 .diccionario-word:hover {
+  transform: scale(1.06);
+}
+
+.diccionario-hover-word {
+  transform-origin: center bottom;
   transform: scale(1.06);
 }

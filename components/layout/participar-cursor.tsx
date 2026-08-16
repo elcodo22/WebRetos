@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-const LABEL = "[PARTICIPAR]";
+const LABEL = "[Participar]";
 
 function isParticiparHover(target: EventTarget | null) {
   if (!(target instanceof Element)) return false;
@@ -19,8 +19,8 @@ export function isParticiparClickTarget(target: EventTarget | null) {
 }
 
 /**
- * El cursor del home (panel reto) es el botón [PARTICIPAR].
- * En Archivos, cabecera y palabras del diccionario no se muestra.
+ * En desktop (pointer fino), el cursor del panel reto es [Participar].
+ * En móvil no se muestra: ahí queda el botón fijo.
  */
 export function ParticiparCursor({ active }: { active: boolean }) {
   const [mounted, setMounted] = useState(false);
@@ -54,7 +54,7 @@ export function ParticiparCursor({ active }: { active: boolean }) {
   return createPortal(
     <div
       aria-hidden
-      className="participar-bulb pointer-events-none fixed z-[80] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[clamp(18px,4.5vw,24px)] font-semibold leading-none tracking-wide text-white"
+      className="participar-bulb pointer-events-none fixed z-[80] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[clamp(18px,3.8vw,24px)] font-normal leading-none tracking-normal text-white"
       style={{ left: pos.x, top: pos.y }}
     >
       {LABEL}

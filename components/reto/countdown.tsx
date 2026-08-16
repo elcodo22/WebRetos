@@ -39,22 +39,22 @@ export function CountdownCompact({ fechaFin }: { fechaFin: string }) {
   const segundos = pad(tiempo.finalizado ? 0 : tiempo.segundos);
 
   return (
-    <span className="inline-flex items-baseline gap-1.5 tabular-nums tracking-wide md:gap-3">
+    <span className="inline-flex items-baseline gap-1.5 tabular-nums tracking-wide md:gap-2.5">
       <span>
         {dias}
-        <span className="text-[clamp(16px,4vw,28px)]">d</span>
+        <span className="text-[0.72em]">d</span>
       </span>
       <span>
         {horas}
-        <span className="text-[clamp(16px,4vw,28px)]">h</span>
+        <span className="text-[0.72em]">h</span>
       </span>
       <span>
         {minutos}
-        <span className="text-[clamp(16px,4vw,28px)]">m</span>
+        <span className="text-[0.72em]">m</span>
       </span>
       <span>
         {segundos}
-        <span className="text-[clamp(16px,4vw,28px)]">s</span>
+        <span className="text-[0.72em]">s</span>
       </span>
     </span>
   );

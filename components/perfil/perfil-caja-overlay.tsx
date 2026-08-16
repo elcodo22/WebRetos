@@ -175,7 +175,7 @@ export function PerfilCajaOverlay({
   }, [lift, syncOpenFolder]);
 
   const breadcrumb = openFolder ? (
-    <p className="truncate px-4 text-center text-[clamp(14px,3.8vw,20px)] font-normal leading-snug tracking-wide md:px-24">
+    <p className="truncate px-4 text-center text-[clamp(18px,3.8vw,25px)] font-normal leading-snug tracking-wide md:px-24">
       <button
         type="button"
         onClick={goBackToFolders}
@@ -309,7 +309,7 @@ export function PerfilCajaOverlay({
                   </button>
                   <Link
                     href={perfilHref(obra.username)}
-                    className="relative z-20 mt-2 block truncate text-[14px] font-normal leading-none tracking-wide text-white select-none hover:underline"
+                    className="relative z-20 mt-2 block truncate text-[18px] font-normal leading-none tracking-wide text-white select-none hover:underline"
                     draggable={false}
                   >
                     {obra.username}
@@ -340,7 +340,7 @@ export function PerfilCajaOverlay({
           <div className="absolute inset-0 overflow-y-auto scrollbar-none">
             {cajas.length === 0 ? (
               <div className="flex min-h-full items-center justify-center px-[18px] pt-[100px] pb-28">
-                <p className="text-center text-[18px] tracking-wide text-white/[0.72]">
+                <p className="text-center text-[22px] tracking-wide text-white/[0.72]">
                   Arrastra un póster a la carpeta para guardar vídeos.
                 </p>
               </div>
@@ -376,7 +376,7 @@ export function PerfilCajaOverlay({
                         <FolderIcon scale={1.05} className="shrink-0" />
                         <div className="mt-1.5 w-full min-w-0 text-left">
                           <p
-                            className={`text-[16px] font-normal leading-snug tracking-wide text-white ${
+                            className={`text-[20px] font-normal leading-snug tracking-wide text-white ${
                               focused && wrapsTitle
                                 ? "whitespace-normal break-words"
                                 : "truncate whitespace-nowrap"
@@ -384,7 +384,7 @@ export function PerfilCajaOverlay({
                           >
                             {label}
                           </p>
-                          <p className="mt-0.5 truncate text-[14px] font-normal leading-none tracking-wide text-white/55">
+                          <p className="mt-0.5 truncate text-[18px] font-normal leading-none tracking-wide text-white/55">
                             {countLabel}
                           </p>
                         </div>
@@ -407,10 +407,10 @@ export function PerfilCajaOverlay({
               className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black via-black/55 to-transparent"
               aria-hidden
             />
-            <div className="relative text-center text-[20px] font-normal leading-snug tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+            <div className="relative text-center text-[25px] font-normal leading-snug tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
               <p>Guardados</p>
             </div>
-            <p className="pointer-events-none absolute bottom-8 right-[18px] text-[16px] font-normal tracking-wide text-white/70 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+            <p className="pointer-events-none absolute bottom-8 right-[18px] text-[20px] font-normal tracking-wide text-white/70 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
               {cajas.length === 1 ? "1 carpeta" : `${cajas.length} carpetas`}
             </p>
           </div>

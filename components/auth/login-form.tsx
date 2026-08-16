@@ -8,7 +8,7 @@ import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
 import { SiteHeader } from "@/components/layout/site-header";
 
 const fieldClassName =
-  "w-full max-w-xl bg-transparent text-center text-[clamp(18px,4.5vw,24px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
+  "w-full max-w-xl bg-transparent text-center text-[clamp(22px,4.5vw,30px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
 
 type Mode = "login" | "forgot";
 
@@ -135,13 +135,13 @@ export function LoginForm() {
           <div className="relative flex flex-1 flex-col items-center px-[18px]">
             <div className="absolute left-1/2 top-[38%] flex w-full max-w-xl -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-8">
               {forgotSent ? (
-                <p className="text-center text-[18px] font-normal tracking-wide text-white">
+                <p className="text-center text-[22px] font-normal tracking-wide text-white">
                   Se ha enviado un enlace a {sentEmail} para restablecer tu
                   contraseña.
                 </p>
               ) : (
                 <>
-                  <p className="text-center text-[18px] font-normal tracking-wide text-white/[0.72]">
+                  <p className="text-center text-[22px] font-normal tracking-wide text-white/[0.72]">
                     Ingresa tu email y te enviaremos un enlace para restablecer
                     tu contraseña.
                   </p>
@@ -159,7 +159,7 @@ export function LoginForm() {
                   />
 
                   {error ? (
-                    <p className="text-center text-[16px] tracking-wide text-white/[0.72]">
+                    <p className="text-center text-[20px] tracking-wide text-white/[0.72]">
                       {error}
                     </p>
                   ) : null}
@@ -188,19 +188,19 @@ export function LoginForm() {
             />
 
             {error ? (
-              <p className="max-w-xl text-center text-[16px] tracking-wide text-white/[0.72]">
+              <p className="max-w-xl text-center text-[20px] tracking-wide text-white/[0.72]">
                 {error}
               </p>
             ) : null}
             {message ? (
-              <p className="max-w-xl text-center text-[16px] tracking-wide text-white/[0.72]">
+              <p className="max-w-xl text-center text-[20px] tracking-wide text-white/[0.72]">
                 {message}
               </p>
             ) : null}
           </div>
         )}
 
-        <div className="flex items-end justify-between px-[18px] pb-10 text-[20px] font-normal tracking-wide">
+        <div className="flex items-end justify-between px-[18px] pb-10 text-[25px] font-normal tracking-wide">
           {mode === "forgot" ? (
             <button
               type="button"

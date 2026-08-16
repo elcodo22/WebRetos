@@ -6,13 +6,31 @@ import {
   useContext,
   useEffect,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import { categoryLabel, type DiccionarioResult } from "@/lib/diccionario";
 
+type HoverWordState = {
+  text: string;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  fontSize: string;
+  fontWeight: string;
+  fontFamily: string;
+  letterSpacing: string;
+  lineHeight: string;
+  textTransform: string;
+  wordSpacing: string;
+};
+
 type Ctx = {
   isOpen: boolean;
+  hoverWord: HoverWordState | null;
+  setHoverWord: (word: HoverWordState | null) => void;
   open: (palabra: string) => void;
   close: () => void;
 };
@@ -39,12 +57,18 @@ type State =
 export function DiccionarioProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ phase: "closed" });
   const [mounted, setMounted] = useState(false);
+  const [hoverWord, setHoverWordState] = useState<HoverWordState | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const setHoverWord = useCallback((word: HoverWordState | null) => {
+    setHoverWordState(word);
+  }, []);
+
   const close = useCallback(() => {
+    setHoverWordState(null);
     setState({ phase: "closed" });
   }, []);
 
@@ -52,6 +76,7 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
     const word = palabra.trim().toLowerCase();
     if (!word) return;
 
+    setHoverWordState(null);
     setState({ phase: "loading", word });
 
     void fetch(`/api/diccionario?palabra=${encodeURIComponent(word)}`)
@@ -85,6 +110,7 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isOpen = state.phase !== "closed";
+  const showHoverPreview = Boolean(hoverWord) && !isOpen;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -160,7 +186,7 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
               </a>
               <button
                 type="button"
-                className="pointer-events-auto text-[18px] font-normal tracking-wide text-black/70 hover:text-black"
+                className="pointer-events-auto text-[22px] font-normal tracking-wide text-black/70 hover:text-black"
                 style={{ cursor: 'url("/xp_link_xl.cur"), pointer' }}
                 onClick={close}
                 aria-label="Cerrar diccionario"
@@ -176,18 +202,18 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
               onWheel={(event) => event.stopPropagation()}
             >
               <div className="max-w-[36rem]">
-                <p className="text-[28px] font-medium leading-tight tracking-wide md:text-[32px]">
+                <p className="text-[35px] font-medium leading-tight tracking-wide md:text-[40px]">
                   {"word" in state ? state.word : ""}
                 </p>
 
                 {state.phase === "loading" ? (
-                  <p className="mt-8 text-[16px] font-normal leading-relaxed tracking-wide text-black/50">
+                  <p className="mt-8 text-[20px] font-normal leading-relaxed tracking-wide text-black/50">
                     …
                   </p>
                 ) : null}
 
                 {state.phase === "error" ? (
-                  <p className="mt-8 text-[16px] font-normal leading-relaxed tracking-wide">
+                  <p className="mt-8 text-[20px] font-normal leading-relaxed tracking-wide">
                     {state.message}
                   </p>
                 ) : null}
@@ -199,7 +225,7 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
                       return (
                         <li
                           key={`${sense.n}-${sense.description}`}
-                          className="text-[16px] font-normal leading-relaxed tracking-wide md:text-[17px]"
+                          className="text-[20px] font-normal leading-relaxed tracking-wide md:text-[21px]"
                         >
                           <span className="text-black/55">
                             {sense.n}.
@@ -218,9 +244,45 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
         )
       : null;
 
+  const hoverOverlay =
+    showHoverPreview && hoverWord && mounted
+      ? createPortal(
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-[9990] bg-white"
+          >
+            <span
+              className="diccionario-hover-word absolute whitespace-nowrap text-black"
+              style={{
+                top: hoverWord.top,
+                left: hoverWord.left,
+                width: hoverWord.width,
+                height: hoverWord.height,
+                fontSize: hoverWord.fontSize,
+                fontWeight: hoverWord.fontWeight,
+                fontFamily: hoverWord.fontFamily,
+                letterSpacing: hoverWord.letterSpacing,
+                lineHeight: hoverWord.lineHeight,
+                textTransform: hoverWord.textTransform as CSSProperties["textTransform"],
+                wordSpacing: hoverWord.wordSpacing,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {hoverWord.text}
+            </span>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <DiccionarioContext.Provider value={{ isOpen, open, close }}>
+    <DiccionarioContext.Provider
+      value={{ isOpen, hoverWord, setHoverWord, open, close }}
+    >
       {children}
+      {hoverOverlay}
       {overlay}
     </DiccionarioContext.Provider>
   );

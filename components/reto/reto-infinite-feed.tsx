@@ -202,7 +202,7 @@ function PosterGrid({
           </button>
           <Link
             href={perfilHref(item.username)}
-            className="relative z-20 mt-2 block truncate text-[14px] font-normal leading-none tracking-wide text-white select-none hover:underline"
+            className="relative z-20 mt-2 block truncate text-[18px] font-normal leading-none tracking-wide text-white select-none hover:underline"
             onClick={(event) => {
               if (suppressClickRef.current) {
                 event.preventDefault();

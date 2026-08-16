@@ -50,11 +50,11 @@ export function AuthRequiredPopup({
       >
         <p
           id="auth-required-title"
-          className="text-[16px] font-normal leading-snug tracking-wide"
+          className="text-[20px] font-normal leading-snug tracking-wide"
         >
           {message}
         </p>
-        <div className="flex items-center gap-6 text-[20px] font-normal leading-none tracking-wide">
+        <div className="flex items-center gap-6 text-[25px] font-normal leading-none tracking-wide">
           <Link href="/login" className="text-black hover:opacity-70">
             [Login]
           </Link>

@@ -211,7 +211,7 @@ export function PerfilLiftOverlay({
         ) : (
           <CartonBoxIcon scale={0.85} className="brightness-0 invert" />
         )}
-        <span className="text-[14px] tracking-wide text-white">{label}</span>
+        <span className="text-[18px] tracking-wide text-white">{label}</span>
       </div>
     </div>,
     document.body,

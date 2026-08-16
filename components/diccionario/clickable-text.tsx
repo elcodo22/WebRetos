@@ -1,6 +1,12 @@
 "use client";
 
-import { Fragment, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import {
+  Fragment,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+  type FocusEvent,
+} from "react";
 import { tokenizeClickableText } from "@/lib/diccionario";
 import { useDiccionario } from "./diccionario-provider";
 
@@ -11,6 +17,25 @@ type ClickableTextProps = {
   className?: string;
 };
 
+function hoverPayloadFromElement(el: HTMLElement, text: string) {
+  const rect = el.getBoundingClientRect();
+  const style = window.getComputedStyle(el);
+  return {
+    text,
+    top: rect.top,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+    fontSize: style.fontSize,
+    fontWeight: style.fontWeight,
+    fontFamily: style.fontFamily,
+    letterSpacing: style.letterSpacing,
+    lineHeight: style.lineHeight,
+    textTransform: style.textTransform,
+    wordSpacing: style.wordSpacing,
+  };
+}
+
 /**
  * Renderiza un texto con cada palabra clicable para abrir el diccionario.
  */
@@ -19,7 +44,7 @@ export function ClickableText({
   enabled = true,
   className,
 }: ClickableTextProps) {
-  const { open } = useDiccionario();
+  const { open, setHoverWord } = useDiccionario();
 
   if (!enabled) {
     return className ? <span className={className}>{text}</span> : <>{text}</>;
@@ -40,6 +65,13 @@ export function ClickableText({
     open(query);
   };
 
+  const showHover = (
+    event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>,
+    wordText: string,
+  ) => {
+    setHoverWord(hoverPayloadFromElement(event.currentTarget, wordText));
+  };
+
   const nodes: ReactNode[] = tokens.map((token, index) => {
     if (token.type === "other") {
       return <Fragment key={index}>{token.text}</Fragment>;
@@ -53,6 +85,10 @@ export function ClickableText({
         style={{ cursor: 'url("/xp_link_xl.cur"), pointer' }}
         onClick={(event) => onWordClick(event, token.query)}
         onKeyDown={(event) => onWordKeyDown(event, token.query)}
+        onMouseEnter={(event) => showHover(event, token.text)}
+        onMouseLeave={() => setHoverWord(null)}
+        onFocus={(event) => showHover(event, token.text)}
+        onBlur={() => setHoverWord(null)}
       >
         {token.text}
       </span>
