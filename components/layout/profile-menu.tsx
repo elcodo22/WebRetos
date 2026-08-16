@@ -224,10 +224,11 @@ function ProfilePixelCircle() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="22"
-      height="22"
+      width="26"
+      height="26"
       viewBox="0 0 24 24"
       fill="none"
+      className="h-[26px] w-[26px] md:h-[24px] md:w-[24px]"
       style={{ shapeRendering: "crispEdges" }}
       aria-hidden
     >

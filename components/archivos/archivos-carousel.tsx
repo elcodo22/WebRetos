@@ -200,14 +200,14 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* Título y fecha: laterales en desktop; encima/debajo en móvil */}
-      <div className="pointer-events-none absolute inset-0 z-10 flex items-center max-md:items-stretch max-md:justify-center">
-        <div className="site-grid w-full items-center max-md:flex max-md:h-full max-md:flex-col max-md:justify-between max-md:px-[var(--grid-margin)] max-md:pb-10 max-md:pt-4">
-          <div className="col-start-2 col-span-2 self-center truncate text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide max-md:col-auto max-md:max-w-full max-md:self-center max-md:text-center">
-            {current.titulo}
+      {/* Desktop: título izquierda / fecha derecha */}
+      <div className="pointer-events-none absolute inset-0 z-10 hidden items-center md:flex">
+        <div className="site-grid w-full items-center">
+          <div className="col-start-2 col-span-2 self-center truncate text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide">
+            {current?.titulo}
           </div>
-          <div className="col-start-8 col-span-2 self-center whitespace-nowrap text-right text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide max-md:col-auto max-md:self-center max-md:text-center">
-            {current.fechaLabel}
+          <div className="col-start-8 col-span-2 self-center whitespace-nowrap text-right text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide">
+            {current?.fechaLabel}
           </div>
         </div>
       </div>
@@ -235,6 +235,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
             const isPeek = Math.abs(offset) === 1;
             const restOpacity = isFocus ? 1 : isPeek ? 0.28 : 0;
             const opacity = isSettled ? restOpacity : 1;
+            const metaOpacity = isFocus && isSettled ? 1 : 0;
 
             return (
               <div
@@ -248,27 +249,59 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                   transition: `opacity ${isSettled ? 200 : 80}ms ease-out`,
                 }}
               >
-                <div className="relative">
+                <div className="relative inline-block">
+                  {/* Móvil: # alineado con la 1ª línea del cuerpo de la carpeta */}
+                  <div
+                    className="pointer-events-none absolute right-full z-[1] mr-3 text-[clamp(18px,4vw,25px)] font-normal leading-none tracking-wide md:hidden"
+                    style={{
+                      top: `${(2 / 12) * 100}%`,
+                      opacity: metaOpacity,
+                      transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,
+                    }}
+                  >
+                    #{item.numero}
+                  </div>
+
                   {isFocus ? (
                     <button
                       type="button"
-                      className="pointer-events-auto block border-0 bg-transparent p-0 text-inherit"
+                      className="pointer-events-auto relative z-[2] block border-0 bg-transparent p-0 text-inherit"
                       aria-label={`Abrir reto #${item.numero}: ${item.titulo}`}
                       onClick={() => powerOffTo(`/reto/${item.id}`)}
                     >
                       <FolderIcon />
                     </button>
                   ) : (
-                    <FolderIcon />
+                    <div className="relative z-[2]">
+                      <FolderIcon />
+                    </div>
                   )}
+
+                  {/* Desktop: # justo bajo la carpeta */}
                   <div
-                    className="pointer-events-none absolute inset-x-0 top-full mt-4 text-center text-[25px] leading-none tracking-wide"
+                    className="pointer-events-none absolute inset-x-0 top-full mt-4 hidden text-center text-[25px] leading-none tracking-wide md:block"
                     style={{
-                      opacity: isFocus && isSettled ? 1 : 0,
+                      opacity: metaOpacity,
                       transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,
                     }}
                   >
                     #{item.numero}
+                  </div>
+
+                  {/* Móvil: título y fecha bajo la carpeta */}
+                  <div
+                    className="pointer-events-none absolute inset-x-0 top-full z-[1] mt-5 flex w-[min(86vw,22rem)] -translate-x-1/2 left-1/2 flex-col items-center gap-2 text-center leading-tight tracking-wide md:hidden"
+                    style={{
+                      opacity: metaOpacity,
+                      transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,
+                    }}
+                  >
+                    <span className="text-[clamp(16px,4.2vw,22px)] font-normal">
+                      {item.titulo}
+                    </span>
+                    <span className="text-[clamp(15px,3.6vw,20px)] font-normal leading-none">
+                      {item.fechaLabel}
+                    </span>
                   </div>
                 </div>
               </div>

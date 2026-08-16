@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { useCrtPower } from "@/components/layout/crt-power-transition";
+import { PARTICIPAR_BTN_CLASS } from "@/components/layout/participar-cursor";
 import { PixelHelpIcon } from "@/components/reto/pixel-help-icon";
 
 export const RETO_DETALLE_EVENT = "reto-detalle";
@@ -74,6 +75,19 @@ export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
       onClick={
         detalle
           ? (event) => {
+              // Desktop: el clic es Participar (sube al zone). Móvil: tap cierra.
+              if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+                return;
+              }
+              event.stopPropagation();
+              setOpen(false);
+            }
+          : undefined
+      }
+      onContextMenu={
+        detalle
+          ? (event) => {
+              event.preventDefault();
               event.stopPropagation();
               setOpen(false);
             }
@@ -112,15 +126,17 @@ export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
           </div>
         </div>
 
+        {/* Móvil: botón fijo (también en descripción). Desktop: cursor. */}
         <button
           type="button"
           onClick={(event) => {
             event.stopPropagation();
             powerOffTo("/subir");
           }}
-          className="mt-6 text-[clamp(18px,3.8vw,24px)] font-normal normal-case tracking-normal text-current [word-spacing:0.2em] md:hidden"
+          className={`mt-6 ${detalle ? "!mt-8" : ""} ${PARTICIPAR_BTN_CLASS} md:hidden`}
+          style={{ cursor: 'url("/xp_link_xl.cur"), pointer' }}
         >
-          [Participar]
+          <span>[Participar]</span>
         </button>
       </div>
 

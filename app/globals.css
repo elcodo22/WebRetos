@@ -486,6 +486,13 @@ input:-webkit-autofill:active {
   animation: participar-bulb 4.5s linear infinite;
 }
 
+/* Centrado óptico vertical del label (más aire arriba → subir el texto). */
+.participar-btn-label {
+  display: block;
+  transform: translateY(-0.1em);
+  line-height: 1;
+}
+
 @media (hover: hover) and (pointer: fine) {
   [data-participar-zone] {
     cursor: none;

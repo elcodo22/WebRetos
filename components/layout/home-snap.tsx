@@ -278,8 +278,7 @@ export function HomeSnap({
     Boolean(participarHref) &&
     panel === 0 &&
     !searchOpen &&
-    !diccionarioOpen &&
-    !detalleOpen;
+    !diccionarioOpen;
 
   const onParticiparClick = useCallback(
     (event: MouseEvent) => {

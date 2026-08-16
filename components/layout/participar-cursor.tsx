@@ -5,6 +5,14 @@ import { createPortal } from "react-dom";
 
 const LABEL = "[Participar]";
 
+/** Botón fijo (móvil): mismo estilo que el cursor, sin fondo. */
+export const PARTICIPAR_BTN_CLASS =
+  "inline-flex items-center justify-center whitespace-nowrap text-center text-[clamp(24px,5vw,34px)] font-normal normal-case leading-none tracking-normal text-white [word-spacing:0.06em]";
+
+/** Cursor desktop: solo texto, sin fondo. */
+const PARTICIPAR_CURSOR_CLASS =
+  "whitespace-nowrap text-center text-[clamp(24px,5vw,34px)] font-normal normal-case leading-none tracking-normal text-white [word-spacing:0.06em]";
+
 function isParticiparHover(target: EventTarget | null) {
   if (!(target instanceof Element)) return false;
   if (!target.closest("[data-participar-zone]")) return false;
@@ -54,7 +62,7 @@ export function ParticiparCursor({ active }: { active: boolean }) {
   return createPortal(
     <div
       aria-hidden
-      className="participar-bulb pointer-events-none fixed z-[80] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[clamp(18px,3.8vw,24px)] font-normal leading-none tracking-normal text-white"
+      className={`participar-bulb pointer-events-none fixed z-[80] -translate-x-1/2 -translate-y-1/2 ${PARTICIPAR_CURSOR_CLASS}`}
       style={{ left: pos.x, top: pos.y }}
     >
       {LABEL}
