@@ -250,18 +250,6 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                 }}
               >
                 <div className="relative inline-block">
-                  {/* Móvil: # alineado con la 1ª línea del cuerpo de la carpeta */}
-                  <div
-                    className="pointer-events-none absolute right-full z-[1] mr-3 text-[clamp(18px,4vw,25px)] font-normal leading-none tracking-wide md:hidden"
-                    style={{
-                      top: `${(2 / 12) * 100}%`,
-                      opacity: metaOpacity,
-                      transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,
-                    }}
-                  >
-                    #{item.numero}
-                  </div>
-
                   {isFocus ? (
                     <button
                       type="button"
@@ -288,19 +276,19 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                     #{item.numero}
                   </div>
 
-                  {/* Móvil: título y fecha bajo la carpeta */}
+                  {/* Móvil: # y título bajo la carpeta */}
                   <div
-                    className="pointer-events-none absolute inset-x-0 top-full z-[1] mt-5 flex w-[min(86vw,22rem)] -translate-x-1/2 left-1/2 flex-col items-center gap-2 text-center leading-tight tracking-wide md:hidden"
+                    className="pointer-events-none absolute left-1/2 top-full z-[1] mt-5 flex w-[min(86vw,22rem)] -translate-x-1/2 flex-col items-center gap-2 text-center leading-tight tracking-wide md:hidden"
                     style={{
                       opacity: metaOpacity,
                       transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,
                     }}
                   >
+                    <span className="text-[clamp(18px,4vw,25px)] font-normal leading-none">
+                      #{item.numero}
+                    </span>
                     <span className="text-[clamp(16px,4.2vw,22px)] font-normal">
                       {item.titulo}
-                    </span>
-                    <span className="text-[clamp(15px,3.6vw,20px)] font-normal leading-none">
-                      {item.fechaLabel}
                     </span>
                   </div>
                 </div>

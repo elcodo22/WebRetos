@@ -42,6 +42,23 @@ function wrapCentered(value: number, size: number) {
   return r;
 }
 
+function useIsMobileNav() {
+  const [mobile, setMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 767px)").matches;
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => setMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  return mobile;
+}
+
 function PosterGrid({
   items,
   onOpen,
@@ -49,6 +66,7 @@ function PosterGrid({
   suppressClickRef,
   cancelPanRef,
   ownUsername,
+  eagerCount = 0,
 }: {
   items: RetoFeedItem[];
   onOpen: (item: RetoFeedItem) => void;
@@ -56,6 +74,8 @@ function PosterGrid({
   suppressClickRef: MutableRefObject<boolean>;
   cancelPanRef: MutableRefObject<() => void>;
   ownUsername?: string | null;
+  /** Primeras N imágenes en eager para el peek móvil. */
+  eagerCount?: number;
 }) {
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressRef = useRef<{
@@ -111,15 +131,20 @@ function PosterGrid({
 
   return (
     <ul className="m-0 box-border grid w-full max-w-[100vw] list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-10 sm:grid-cols-3 sm:gap-x-6 md:w-screen md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6">
-      {items.map((item) => (
+      {items.map((item, index) => (
         <li key={item.id} className="relative min-w-0">
           <button
             type="button"
             onPointerDown={(event) => {
               if (event.button !== 0 || !onLiftStart) return;
               if (isOwnUsername(item.username, ownUsername)) return;
-              // Evita que el lienzo robe el gesto y cancele el agarre.
-              event.stopPropagation();
+              const isTouch =
+                event.pointerType === "touch" || event.pointerType === "pen";
+              // En desktop el clic izquierdo es para agarrar; en touch el scroll
+              // / pan tiene prioridad y el lift solo por hold largo.
+              if (!isTouch) {
+                event.stopPropagation();
+              }
               const el = event.currentTarget;
               pressRef.current = {
                 item,
@@ -138,10 +163,12 @@ function PosterGrid({
                 if (!press || press.lifted) return;
                 beginLift(press.x, press.y, press.pointerId);
               }, LIFT_HOLD_MS);
-              try {
-                el.setPointerCapture(event.pointerId);
-              } catch {
-                /* ignore */
+              if (!isTouch) {
+                try {
+                  el.setPointerCapture(event.pointerId);
+                } catch {
+                  /* ignore */
+                }
               }
             }}
             onPointerMove={(event) => {
@@ -153,15 +180,20 @@ function PosterGrid({
                 event.clientX - press.originX,
                 event.clientY - press.originY,
               );
-              if (dist >= LIFT_DRAG_PX) {
-                beginLift(event.clientX, event.clientY, event.pointerId);
+              if (dist < LIFT_DRAG_PX) return;
+              const isTouch =
+                event.pointerType === "touch" || event.pointerType === "pen";
+              if (isTouch) {
+                clearHoldTimer();
+                pressRef.current = null;
+                return;
               }
+              beginLift(event.clientX, event.clientY, event.pointerId);
             }}
             onPointerUp={(event) => {
               clearHoldTimer();
               const press = pressRef.current;
               const wasLifted = press?.lifted ?? false;
-              // Si ya hay lift, el overlay gestiona el soltar.
               if (!wasLifted) pressRef.current = null;
               try {
                 if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -195,7 +227,7 @@ function PosterGrid({
               src={item.imageUrl}
               alt=""
               className="pointer-events-none aspect-[2/3] w-full origin-bottom rounded-none object-cover transition-transform duration-200 ease-out group-hover:scale-[1.07] select-none"
-              loading="lazy"
+              loading={index < eagerCount ? "eager" : "lazy"}
               decoding="async"
               draggable={false}
             />
@@ -220,11 +252,88 @@ function PosterGrid({
 }
 
 /**
- * Lienzo infinito 2D: arrastrar y rueda en 4 direcciones.
- * Grid repetido en tiles 3×3 con wrap del offset.
- * Arrastra un póster (o mantén pulsado) para agarrarlo y soltarlo en la carpeta.
+ * Móvil: lista con scroll nativo (peek + deslizamiento fiables).
  */
-export function RetoInfiniteFeed({
+function RetoMobileScrollFeed({
+  items,
+  onOpen,
+  onLiftStart,
+  lifting = false,
+  ownUsername = null,
+}: RetoInfiniteFeedProps) {
+  const { setAtTop, requestExitToTitle, feedSession, feedActive } =
+    useRetoFeedNav();
+
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const suppressClickRef = useRef(false);
+  const cancelPanRef = useRef<() => void>(() => {});
+  const touchStartY = useRef<number | null>(null);
+  const feedActiveRef = useRef(feedActive);
+  const liftingRef = useRef(lifting);
+
+  useEffect(() => {
+    feedActiveRef.current = feedActive;
+  }, [feedActive]);
+
+  useEffect(() => {
+    liftingRef.current = lifting;
+  }, [lifting]);
+
+  useEffect(() => {
+    const node = scrollerRef.current;
+    if (!node) return;
+    node.scrollTop = 0;
+    setAtTop(true);
+  }, [feedSession, setAtTop]);
+
+  return (
+    <div
+      ref={scrollerRef}
+      className="h-full w-full overflow-y-auto overscroll-y-contain scrollbar-none"
+      onScroll={(event) => {
+        const top = event.currentTarget.scrollTop;
+        setAtTop(top <= AT_TOP_PX);
+      }}
+      onTouchStart={(event) => {
+        if (!feedActiveRef.current || liftingRef.current) return;
+        touchStartY.current = event.touches[0]?.clientY ?? null;
+      }}
+      onTouchEnd={(event) => {
+        if (!feedActiveRef.current || liftingRef.current) return;
+        if (touchStartY.current == null) return;
+        const endY = event.changedTouches[0]?.clientY;
+        const startY = touchStartY.current;
+        touchStartY.current = null;
+        if (endY == null) return;
+        const node = scrollerRef.current;
+        if (!node || node.scrollTop > AT_TOP_PX) return;
+        // Tirar hacia abajo en el top → volver al título.
+        if (endY - startY > 80) {
+          requestExitToTitle();
+        }
+      }}
+      data-reto-mobile-feed=""
+    >
+      <div className="px-0 pb-10 pt-2">
+        <PosterGrid
+          items={items}
+          onOpen={onOpen}
+          onLiftStart={onLiftStart}
+          suppressClickRef={suppressClickRef}
+          cancelPanRef={cancelPanRef}
+          ownUsername={ownUsername}
+          eagerCount={6}
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Lienzo infinito 2D (desktop): arrastrar y rueda en 4 direcciones.
+ * Grid repetido en tiles 3×3 con wrap del offset.
+ */
+function RetoDesktopInfiniteFeed({
   items,
   onOpen,
   onLiftStart,
@@ -342,7 +451,6 @@ export function RetoInfiniteFeed({
         if (requestExitToTitle()) return;
       }
 
-      // Rueda abajo → contenido sube (dy negativo en el mundo)
       panBy(-dx, -dy);
     };
 
@@ -351,7 +459,6 @@ export function RetoInfiniteFeed({
   }, [panBy, requestExitToTitle]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    // Solo el botón central (rueda) panea el lienzo; el clic izquierdo es para pósters.
     if (event.button !== 1) return;
     if (!feedActiveRef.current || liftingRef.current) return;
     event.preventDefault();
@@ -394,7 +501,6 @@ export function RetoInfiniteFeed({
 
   const endPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current) return;
-    // button === -1 en pointerup de algunos navegadores; filtramos por gesto activo.
     draggingRef.current = false;
 
     const didPan = movedRef.current;
@@ -472,4 +578,15 @@ export function RetoInfiniteFeed({
       </div>
     </div>
   );
+}
+
+/**
+ * Feed del reto: scroll nativo en móvil, lienzo infinito en desktop.
+ */
+export function RetoInfiniteFeed(props: RetoInfiniteFeedProps) {
+  const mobile = useIsMobileNav();
+  if (mobile) {
+    return <RetoMobileScrollFeed {...props} />;
+  }
+  return <RetoDesktopInfiniteFeed {...props} />;
 }

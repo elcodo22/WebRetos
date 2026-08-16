@@ -10,7 +10,7 @@ export function ArchivosSearch() {
       type="button"
       onClick={open}
       aria-label="Buscar en archivos"
-      className="inline-flex items-center leading-none"
+      className="inline-flex items-center justify-center leading-none"
     >
       <LupaIcon />
     </button>
@@ -29,7 +29,7 @@ function LupaIcon() {
       height="26"
       viewBox="0 0 24 24"
       fill="none"
-      className="h-[26px] w-[26px] md:h-[24px] md:w-[24px]"
+      className="block h-[26px] w-[26px] md:h-[24px] md:w-[24px]"
       style={{ shapeRendering: "crispEdges" }}
       aria-hidden
     >

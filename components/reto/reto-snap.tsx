@@ -14,7 +14,8 @@ import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
-const PEEK_VH = 10;
+const PEEK_VH_DESKTOP = 12;
+const PEEK_VH_MOBILE = 34;
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 type RetoFeedNavCtx = {
@@ -53,11 +54,27 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
   const [panel, setPanel] = useState(0);
   const [feedSession, setFeedSession] = useState(0);
+  const [peekVh, setPeekVh] = useState(() => {
+    if (typeof window === "undefined") return PEEK_VH_DESKTOP;
+    return window.matchMedia("(max-width: 767px)").matches
+      ? PEEK_VH_MOBILE
+      : PEEK_VH_DESKTOP;
+  });
 
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
   const atTopRef = useRef(true);
   const touchStartY = useRef<number | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const apply = () => {
+      setPeekVh(mq.matches ? PEEK_VH_MOBILE : PEEK_VH_DESKTOP);
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   useEffect(() => {
     searchOpenRef.current = searchOpen;
@@ -171,25 +188,25 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
         <div className="relative h-full overflow-hidden">
           <div
-            className="h-full will-change-transform"
+            className="flex h-[200%] flex-col will-change-transform"
             style={{
               transform:
                 panel === 0
-                  ? `translate3d(0, -${PEEK_VH}vh, 0)`
-                  : "translate3d(0, -100%, 0)",
+                  ? `translate3d(0, -${peekVh}vh, 0)`
+                  : "translate3d(0, -50%, 0)",
               transition: `transform ${TRANSITION_MS}ms ${EASE}`,
             }}
           >
-            <section className="relative h-full overflow-hidden px-[18px]">
+            <section className="relative h-1/2 overflow-hidden px-[18px]">
               <div
                 className="absolute inset-x-0 flex -translate-y-1/2 items-center justify-center px-[18px]"
-                style={{ top: `calc(50% + ${PEEK_VH / 2}vh)` }}
+                style={{ top: `calc(50% + ${peekVh / 2}vh)` }}
               >
                 {hero}
               </div>
             </section>
 
-            <section className="relative h-full overflow-hidden">
+            <section className="relative h-1/2 min-h-0 overflow-hidden bg-black">
               <div
                 className={`h-full w-full ${panel === 0 ? "pointer-events-none" : ""}`}
               >
@@ -201,9 +218,9 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black via-black/75 to-transparent transition-opacity duration-300"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black/40 via-black/10 to-transparent transition-opacity duration-300 max-md:from-black/25 max-md:via-transparent"
           style={{
-            height: `${PEEK_VH + 6}vh`,
+            height: `${Math.min(peekVh, 18)}vh`,
             opacity: panel === 0 ? 1 : 0,
           }}
         />
