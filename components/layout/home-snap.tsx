@@ -15,7 +15,7 @@ import { RETO_DETALLE_EVENT } from "@/components/reto/reto-hero";
 const TRANSITION_MS = 560;
 const TRANSITION_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const WHEEL_THRESHOLD = 1;
-const TOUCH_THRESHOLD = 8;
+const TOUCH_THRESHOLD = 28;
 const PAUSE_ON_HERO_MS = 80;
 const STORAGE_KEY = "animate-to-archivos";
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
@@ -45,7 +45,7 @@ export function HomeSnap({
   const [detalleOpen, setDetalleOpen] = useState(false);
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
-  const touchStartY = useRef<number | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const runningEntranceRef = useRef(false);
   const detalleOpenRef = useRef(false);
 
@@ -226,23 +226,50 @@ export function HomeSnap({
   }, [goTo, dispatchArchivoWheel]);
 
   useEffect(() => {
-    const onTouchStart = (event: TouchEvent) => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    let tracking = false;
+    let startX = 0;
+    let startY = 0;
+    let lastY = 0;
+
+    const fromField = (target: EventTarget | null) =>
+      target instanceof Element &&
+      Boolean(target.closest("input, textarea, [data-codigo-field]"));
+
+    const onStart = (event: TouchEvent) => {
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
-      if (document.activeElement instanceof HTMLInputElement) {
-        touchStartY.current = null;
+      if (fromField(event.target)) {
+        tracking = false;
         return;
       }
-      touchStartY.current = event.touches[0]?.clientY ?? null;
+      const touch = event.touches[0];
+      if (!touch) return;
+      tracking = true;
+      startX = touch.clientX;
+      startY = touch.clientY;
+      lastY = startY;
     };
 
-    const onTouchEnd = (event: TouchEvent) => {
-      if (searchOpenRef.current || diccionarioOpenRef.current) return;
-      if (touchStartY.current == null || lockedRef.current) return;
-      const endY = event.changedTouches[0]?.clientY;
-      if (endY == null) return;
+    const onMove = (event: TouchEvent) => {
+      if (!tracking) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+      lastY = touch.clientY;
+      const dy = startY - lastY;
+      const dx = touch.clientX - startX;
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) {
+        event.preventDefault();
+      }
+    };
 
-      const delta = touchStartY.current - endY;
-      touchStartY.current = null;
+    const onEnd = () => {
+      if (!tracking) return;
+      tracking = false;
+      if (lockedRef.current) return;
+
+      const delta = startY - lastY;
       if (Math.abs(delta) < TOUCH_THRESHOLD) return;
 
       if (panelRef.current === 1) {
@@ -261,11 +288,15 @@ export function HomeSnap({
       }
     };
 
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    root.addEventListener("touchstart", onStart, { passive: true });
+    root.addEventListener("touchmove", onMove, { passive: false });
+    root.addEventListener("touchend", onEnd, { passive: true });
+    root.addEventListener("touchcancel", onEnd, { passive: true });
     return () => {
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchend", onTouchEnd);
+      root.removeEventListener("touchstart", onStart);
+      root.removeEventListener("touchmove", onMove);
+      root.removeEventListener("touchend", onEnd);
+      root.removeEventListener("touchcancel", onEnd);
     };
   }, [goTo, dispatchArchivoWheel]);
 
@@ -273,7 +304,10 @@ export function HomeSnap({
     panel === 0 && !searchOpen && !diccionarioOpen;
 
   return (
-    <div className="relative h-full overflow-hidden bg-[var(--background)] text-white">
+    <div
+      ref={rootRef}
+      className="relative h-full overflow-hidden overscroll-none touch-none bg-[var(--background)] text-white"
+    >
       <div
         className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-transparent"
         style={{

@@ -83,13 +83,11 @@ export function RetoHero({
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div
-        className="absolute left-1/2 w-full px-[var(--grid-margin)] text-center [word-spacing:0.45em]"
-        style={{
-          top: detalle ? "10%" : "50%",
-          transform: detalle ? "translate(-50%, 0)" : "translate(-50%, -50%)",
-          transition:
-            "top 480ms cubic-bezier(0.22, 1, 0.36, 1), transform 480ms cubic-bezier(0.22, 1, 0.36, 1)",
-        }}
+        className={`absolute left-1/2 w-full px-[var(--grid-margin)] text-center [word-spacing:0.45em] transition-[top,transform] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          detalle
+            ? "top-2 -translate-x-1/2 translate-y-0 md:top-[10%]"
+            : "top-1/2 -translate-x-1/2 -translate-y-1/2"
+        }`}
       >
         <p className="text-[clamp(28px,5.5vw,40px)] font-normal uppercase leading-none tracking-normal">
           #{numero}
@@ -114,13 +112,13 @@ export function RetoHero({
               active={detalle}
             />
 
-            <p className="mx-auto mt-6 w-full text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8 md:max-w-[80%]">
+            <p className="mx-auto mt-4 w-full text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8 md:max-w-[80%]">
               {renderDescripcion(descripcion)}
             </p>
 
             <label
               data-codigo-field=""
-              className="mx-auto mt-16 flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal] md:mt-20"
+              className="mx-auto mt-6 flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal] md:mt-20"
               onClick={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}
             >
@@ -135,7 +133,7 @@ export function RetoHero({
                 autoCorrect="off"
                 spellCheck={false}
                 size={38}
-                className="w-full min-w-0 bg-transparent text-center text-[clamp(13px,2.8vw,22px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
+                className="w-full min-w-0 touch-auto bg-transparent text-center text-[clamp(18px,4.6vw,26px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
               />
             </label>
           </div>

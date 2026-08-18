@@ -119,7 +119,7 @@ export function RetoTimeBar({
   const svgW = tickCount * TICK_W + Math.max(0, tickCount - 1) * TICK_GAP;
 
   return (
-    <div className="mx-auto mt-7 flex w-full max-w-[26rem] items-center gap-3 px-2 [word-spacing:normal]">
+    <div className="mx-auto mt-4 flex w-full max-w-[26rem] items-center gap-3 px-2 [word-spacing:normal] md:mt-7">
       <div
         className="box-border min-w-0 flex-1 bg-transparent"
         style={{
