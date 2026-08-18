@@ -83,9 +83,9 @@ export function RetoHero({
   return (
     <div className="relative h-full w-full overflow-hidden">
       <div
-        className={`absolute left-1/2 w-full px-[var(--grid-margin)] text-center [word-spacing:0.45em] transition-[top,transform] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`absolute left-1/2 flex w-full flex-col px-[var(--grid-margin)] text-center [word-spacing:0.45em] transition-[top,bottom,transform] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           detalle
-            ? "top-10 -translate-x-1/2 translate-y-0 md:top-[10%]"
+            ? "bottom-0 top-10 -translate-x-1/2 translate-y-0 md:top-[10%]"
             : "top-1/2 -translate-x-1/2 -translate-y-1/2"
         }`}
       >
@@ -93,49 +93,51 @@ export function RetoHero({
           #{numero}
         </p>
 
-        <h1 className="mt-3 text-[clamp(36px,7vw,56px)] font-medium uppercase leading-tight tracking-normal md:mt-4">
+        <h1 className="mt-3 shrink-0 text-[clamp(36px,7vw,56px)] font-medium uppercase leading-tight tracking-normal md:mt-4">
           <ClickableText text={titulo} enabled />
         </h1>
 
         <div
-          className={`grid transition-[grid-template-rows,opacity] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`grid min-h-0 transition-[grid-template-rows,opacity] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
             detalle
-              ? "mt-0 grid-rows-[1fr] opacity-100"
+              ? "mt-0 flex-1 grid-rows-[1fr] opacity-100"
               : "grid-rows-[0fr] opacity-0"
           }`}
           aria-hidden={!detalle}
         >
-          <div className="overflow-hidden">
+          <div className="flex min-h-0 flex-col overflow-hidden">
             <RetoTimeBar
               fechaInicio={fechaInicio}
               fechaFin={fechaFin}
               active={detalle}
             />
 
-            <p className="mx-auto mt-10 w-full text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8 md:max-w-[80%]">
+            <p className="mx-auto mt-10 w-full shrink-0 text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8 md:max-w-[80%]">
               {renderDescripcion(descripcion)}
             </p>
 
-            <label
-              data-codigo-field=""
-              className="mx-auto mt-6 flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal] md:mt-20"
-              onClick={(event) => event.stopPropagation()}
-              onPointerDown={(event) => event.stopPropagation()}
-            >
-              <input
-                type="text"
-                name="codigo"
-                value={codigo}
-                onChange={(event) => setCodigo(event.target.value)}
-                placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
-                aria-label="Introducir codigo de participación"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                size={38}
-                className="w-full min-w-0 touch-auto bg-transparent text-center text-[clamp(18px,4.6vw,26px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
-              />
-            </label>
+            <div className="flex min-h-0 flex-1 items-center justify-center pb-8 pt-2">
+              <label
+                data-codigo-field=""
+                className="flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal]"
+                onClick={(event) => event.stopPropagation()}
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                <input
+                  type="text"
+                  name="codigo"
+                  value={codigo}
+                  onChange={(event) => setCodigo(event.target.value)}
+                  placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
+                  aria-label="Introducir codigo de participación"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  size={38}
+                  className="w-full min-w-0 touch-auto bg-transparent text-center text-[clamp(18px,4.6vw,26px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
+                />
+              </label>
+            </div>
           </div>
         </div>
       </div>
