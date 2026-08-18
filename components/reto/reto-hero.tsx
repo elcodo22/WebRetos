@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
-import { useCrtPower } from "@/components/layout/crt-power-transition";
-import { PARTICIPAR_BTN_CLASS } from "@/components/layout/participar-cursor";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
 
 export const RETO_DETALLE_EVENT = "reto-detalle";
@@ -45,7 +43,6 @@ export function RetoHero({
   fechaInicio,
   fechaFin,
 }: RetoHeroProps) {
-  const { powerOffTo } = useCrtPower();
   const [detalle, setDetalle] = useState(false);
   const [codigo, setCodigo] = useState("");
 
@@ -84,30 +81,7 @@ export function RetoHero({
   }, [detalle, setOpen]);
 
   return (
-    <div
-      className="relative h-full w-full overflow-hidden"
-      onClick={
-        detalle
-          ? (event) => {
-              // Desktop: el clic es Participar (sube al zone). Móvil: tap cierra.
-              if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-                return;
-              }
-              event.stopPropagation();
-              setOpen(false);
-            }
-          : undefined
-      }
-      onContextMenu={
-        detalle
-          ? (event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setOpen(false);
-            }
-          : undefined
-      }
-    >
+    <div className="relative h-full w-full overflow-hidden">
       <div
         className="absolute left-1/2 w-full px-[var(--grid-margin)] text-center [word-spacing:0.45em]"
         style={{
@@ -140,7 +114,7 @@ export function RetoHero({
               active={detalle}
             />
 
-            <p className="mx-auto mt-6 w-full max-w-[80%] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8">
+            <p className="mx-auto mt-6 w-full text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8 md:max-w-[80%]">
               {renderDescripcion(descripcion)}
             </p>
 
@@ -166,19 +140,6 @@ export function RetoHero({
             </label>
           </div>
         </div>
-
-        {/* Móvil: botón fijo (también en descripción). Desktop: cursor. */}
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            powerOffTo("/subir");
-          }}
-          className={`mt-6 ${detalle ? "!mt-8" : ""} ${PARTICIPAR_BTN_CLASS} md:hidden`}
-          style={{ cursor: 'url("/xp_link_xl.cur"), pointer' }}
-        >
-          <span>[Participar]</span>
-        </button>
       </div>
     </div>
   );

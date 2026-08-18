@@ -5,16 +5,11 @@ import {
   useEffect,
   useRef,
   useState,
-  type MouseEvent,
   type ReactNode,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
-import { useCrtPower } from "@/components/layout/crt-power-transition";
-import {
-  isParticiparClickTarget,
-} from "@/components/layout/participar-cursor";
 import { RETO_DETALLE_EVENT } from "@/components/reto/reto-hero";
 
 const TRANSITION_MS = 560;
@@ -30,19 +25,16 @@ type HomeSnapProps = {
   header: ReactNode;
   hero: ReactNode;
   archivos: ReactNode;
-  participarHref?: string;
 };
 
 export function HomeSnap({
   header,
   hero,
   archivos,
-  participarHref,
 }: HomeSnapProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { powerOffTo } = useCrtPower();
   const { isOpen: searchOpen } = useSearchOverlay();
   const { isOpen: diccionarioOpen } = useDiccionario();
   const searchOpenRef = useRef(searchOpen);
@@ -278,19 +270,7 @@ export function HomeSnap({
   }, [goTo, dispatchArchivoWheel]);
 
   const participarActive =
-    Boolean(participarHref) &&
-    panel === 0 &&
-    !searchOpen &&
-    !diccionarioOpen;
-
-  const onParticiparClick = useCallback(
-    (event: MouseEvent) => {
-      if (!participarHref || !participarActive) return;
-      if (!isParticiparClickTarget(event.target)) return;
-      powerOffTo(participarHref);
-    },
-    [participarActive, participarHref, powerOffTo],
-  );
+    panel === 0 && !searchOpen && !diccionarioOpen;
 
   return (
     <div className="relative h-full overflow-hidden bg-[var(--background)] text-white">
@@ -331,7 +311,10 @@ export function HomeSnap({
       >
         <section
           data-participar-zone={participarActive ? "" : undefined}
-          onClick={onParticiparClick}
+          onContextMenu={(event) => {
+            if (event.target instanceof HTMLInputElement) return;
+            event.preventDefault();
+          }}
           className="relative h-full overflow-hidden"
         >
           <div className="absolute inset-0">{hero}</div>

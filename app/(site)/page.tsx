@@ -44,7 +44,6 @@ export default async function Home() {
   return (
     <HomeSnap
       header={<SiteHeader user={user} />}
-      participarHref={retoActivo ? "/subir" : undefined}
       hero={hero}
       archivos={<ArchivosCarousel retos={retosArchivo} />}
     />
