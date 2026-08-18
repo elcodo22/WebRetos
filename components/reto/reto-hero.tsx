@@ -85,7 +85,7 @@ export function RetoHero({
       <div
         className={`absolute left-1/2 flex w-full flex-col px-[var(--grid-margin)] text-center [word-spacing:0.45em] transition-[top,bottom,transform] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           detalle
-            ? "bottom-0 top-10 -translate-x-1/2 translate-y-0 md:top-[10%]"
+            ? "bottom-0 top-[88px] -translate-x-1/2 translate-y-0 md:top-[92px]"
             : "top-1/2 -translate-x-1/2 -translate-y-1/2"
         }`}
       >

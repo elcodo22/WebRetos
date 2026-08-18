@@ -312,24 +312,12 @@ export function HomeSnap({
         className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-transparent"
         style={{
           color: panel === 0 ? "#fff" : "var(--background)",
-          opacity: detalleOpen && panel === 0 ? 0 : 1,
-          transform:
-            detalleOpen && panel === 0
-              ? "translate3d(0, -100%, 0)"
-              : "translate3d(0, 0, 0)",
           transition: animate
-            ? `color ${TRANSITION_MS}ms ${TRANSITION_EASE}, opacity 420ms ${TRANSITION_EASE}, transform 420ms ${TRANSITION_EASE}`
+            ? `color ${TRANSITION_MS}ms ${TRANSITION_EASE}`
             : "none",
         }}
-        aria-hidden={detalleOpen && panel === 0}
       >
-        <div
-          className={
-            detalleOpen && panel === 0
-              ? "pointer-events-none bg-transparent"
-              : "pointer-events-auto bg-transparent"
-          }
-        >
+        <div className="pointer-events-auto bg-transparent">
           {header}
         </div>
       </div>
