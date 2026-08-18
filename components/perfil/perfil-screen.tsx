@@ -121,11 +121,11 @@ export function PerfilScreen({
       </div>
 
       <div
-        className={`site-grid shrink-0 items-center gap-y-3 pb-6 pt-3 transition-opacity duration-200 max-md:flex max-md:flex-col max-md:px-[var(--grid-margin)] max-md:text-center md:pb-8 ${
+        className={`site-grid shrink-0 items-center gap-y-3 pb-6 pt-3 transition-opacity duration-200 max-md:flex max-md:flex-col max-md:px-[var(--grid-margin)] md:pb-8 ${
           lifting ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
-        <div className="col-span-3 min-w-0 max-md:w-full">
+        <div className="col-span-3 min-w-0 max-md:order-2 max-md:mt-4 max-md:w-full max-md:text-center">
           <div className="flex min-w-0 items-center gap-2.5 max-md:justify-center">
             <p className="truncate text-[clamp(25px,5vw,35px)] font-normal leading-none tracking-wide">
               {formatUsername(perfil.username)}
@@ -154,12 +154,12 @@ export function PerfilScreen({
               ) : null}
             </div>
           </div>
-          <p className="mt-2 truncate text-[clamp(18px,3.5vw,20px)] font-normal leading-none tracking-wide text-white/90">
+          <p className="mt-2 hidden truncate text-[clamp(18px,3.5vw,20px)] font-normal leading-none tracking-wide text-white/90 md:block">
             {perfil.nombreCompleto}
           </p>
         </div>
 
-        <div className="col-span-4 min-w-0 px-2 text-center max-md:w-full max-md:px-0">
+        <div className="col-span-4 min-w-0 px-2 text-center max-md:order-1 max-md:w-full max-md:px-0">
           {focus ? (
             focus.retoId ? (
               <button
@@ -177,8 +177,17 @@ export function PerfilScreen({
           ) : null}
         </div>
 
-        <div className="col-span-3 text-right max-md:w-full max-md:text-center">
+        <div className="col-span-3 hidden text-right md:block">
           <p className="text-[clamp(18px,3.5vw,20px)] font-normal leading-none tracking-wide">
+            {perfil.participaciones} participaciones
+          </p>
+        </div>
+
+        <div className="order-3 mt-5 flex w-full items-end justify-between gap-3 md:hidden">
+          <p className="min-w-0 truncate text-left text-[clamp(16px,3.5vw,20px)] font-normal leading-none tracking-wide text-white/90">
+            {perfil.nombreCompleto}
+          </p>
+          <p className="shrink-0 text-right text-[clamp(16px,3.5vw,20px)] font-normal leading-none tracking-wide">
             {perfil.participaciones} participaciones
           </p>
         </div>

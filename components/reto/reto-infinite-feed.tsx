@@ -42,23 +42,6 @@ function wrapCentered(value: number, size: number) {
   return r;
 }
 
-function useIsMobileNav() {
-  const [mobile, setMobile] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.matchMedia("(max-width: 767px)").matches;
-  });
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const apply = () => setMobile(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  return mobile;
-}
-
 function PosterGrid({
   items,
   onOpen,
@@ -252,85 +235,7 @@ function PosterGrid({
 }
 
 /**
- * Móvil: lista con scroll nativo (peek + deslizamiento fiables).
- */
-function RetoMobileScrollFeed({
-  items,
-  onOpen,
-  onLiftStart,
-  lifting = false,
-  ownUsername = null,
-}: RetoInfiniteFeedProps) {
-  const { setAtTop, requestExitToTitle, feedSession, feedActive } =
-    useRetoFeedNav();
-
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const suppressClickRef = useRef(false);
-  const cancelPanRef = useRef<() => void>(() => {});
-  const touchStartY = useRef<number | null>(null);
-  const feedActiveRef = useRef(feedActive);
-  const liftingRef = useRef(lifting);
-
-  useEffect(() => {
-    feedActiveRef.current = feedActive;
-  }, [feedActive]);
-
-  useEffect(() => {
-    liftingRef.current = lifting;
-  }, [lifting]);
-
-  useEffect(() => {
-    const node = scrollerRef.current;
-    if (!node) return;
-    node.scrollTop = 0;
-    setAtTop(true);
-  }, [feedSession, setAtTop]);
-
-  return (
-    <div
-      ref={scrollerRef}
-      className="h-full w-full overflow-y-auto overscroll-y-contain scrollbar-none"
-      onScroll={(event) => {
-        const top = event.currentTarget.scrollTop;
-        setAtTop(top <= AT_TOP_PX);
-      }}
-      onTouchStart={(event) => {
-        if (!feedActiveRef.current || liftingRef.current) return;
-        touchStartY.current = event.touches[0]?.clientY ?? null;
-      }}
-      onTouchEnd={(event) => {
-        if (!feedActiveRef.current || liftingRef.current) return;
-        if (touchStartY.current == null) return;
-        const endY = event.changedTouches[0]?.clientY;
-        const startY = touchStartY.current;
-        touchStartY.current = null;
-        if (endY == null) return;
-        const node = scrollerRef.current;
-        if (!node || node.scrollTop > AT_TOP_PX) return;
-        // Tirar hacia abajo en el top → volver al título.
-        if (endY - startY > 80) {
-          requestExitToTitle();
-        }
-      }}
-      data-reto-mobile-feed=""
-    >
-      <div className="px-0 pb-10 pt-2">
-        <PosterGrid
-          items={items}
-          onOpen={onOpen}
-          onLiftStart={onLiftStart}
-          suppressClickRef={suppressClickRef}
-          cancelPanRef={cancelPanRef}
-          ownUsername={ownUsername}
-          eagerCount={6}
-        />
-      </div>
-    </div>
-  );
-}
-
-/**
- * Lienzo infinito 2D (desktop): arrastrar y rueda en 4 direcciones.
+ * Lienzo infinito 2D: arrastrar (dedo o clic medio) y rueda en 4 direcciones.
  * Grid repetido en tiles 3×3 con wrap del offset.
  */
 function RetoDesktopInfiniteFeed({
@@ -459,9 +364,15 @@ function RetoDesktopInfiniteFeed({
   }, [panBy, requestExitToTitle]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button !== 1) return;
+    const isTouch =
+      event.pointerType === "touch" || event.pointerType === "pen";
+    if (isTouch) {
+      if (event.button !== 0) return;
+    } else if (event.button !== 1) {
+      return;
+    }
     if (!feedActiveRef.current || liftingRef.current) return;
-    event.preventDefault();
+    if (!isTouch) event.preventDefault();
     window.getSelection()?.removeAllRanges();
 
     draggingRef.current = true;
@@ -473,10 +384,12 @@ function RetoDesktopInfiniteFeed({
       y: event.clientY,
       absY: absYRef.current,
     };
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    } catch {
-      /* ignore */
+    if (!isTouch) {
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        /* ignore */
+      }
     }
   };
 
@@ -581,12 +494,8 @@ function RetoDesktopInfiniteFeed({
 }
 
 /**
- * Feed del reto: scroll nativo en móvil, lienzo infinito en desktop.
+ * Feed del reto: lienzo infinito 2D (dedo en móvil, clic medio en desktop).
  */
 export function RetoInfiniteFeed(props: RetoInfiniteFeedProps) {
-  const mobile = useIsMobileNav();
-  if (mobile) {
-    return <RetoMobileScrollFeed {...props} />;
-  }
   return <RetoDesktopInfiniteFeed {...props} />;
 }

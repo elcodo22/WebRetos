@@ -215,7 +215,7 @@ export function LoginForm() {
               type="button"
               onClick={enterForgotMode}
               disabled={loading}
-              className="text-left text-white disabled:opacity-50"
+              className="text-left text-[16px] tracking-wide text-white disabled:opacity-50 md:text-[25px]"
             >
               ¿contraseña olvidada?
             </button>

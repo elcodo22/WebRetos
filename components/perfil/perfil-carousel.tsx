@@ -42,8 +42,8 @@ const EASE_FACTOR = 0.32;
 const SNAP_EPS = 0.002;
 const REST_RANGE = 2;
 const WHEEL_LOCK_MS = 420;
-/** Arrastrar esta distancia inicia el lift (sin long-press). */
-const DRAG_LIFT_PX = 8;
+/** Arrastrar en vertical esta distancia inicia el lift (sin long-press). */
+const DRAG_LIFT_PX = 16;
 
 export type PerfilFocusMeta = {
   retoNumero: string;
@@ -387,14 +387,19 @@ export function PerfilCarousel({
       obra,
       el: event.currentTarget,
     };
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const onObraPointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const start = dragStartRef.current;
     if (!start || lift) return;
-    const dist = Math.hypot(event.clientX - start.x, event.clientY - start.y);
-    if (dist >= DRAG_LIFT_PX) {
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    // Horizontal: es el carrusel, no guardar.
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+      clearDrag();
+      return;
+    }
+    if (Math.abs(dy) >= DRAG_LIFT_PX && Math.abs(dy) > Math.abs(dx)) {
       beginLift(start.obra, start.el, event.clientX, event.clientY);
     }
   };
@@ -423,8 +428,7 @@ export function PerfilCarousel({
 
     if (
       origin &&
-      Math.hypot(event.clientX - origin.x, event.clientY - origin.y) <
-        DRAG_LIFT_PX
+      Math.hypot(event.clientX - origin.x, event.clientY - origin.y) < 10
     ) {
       setActive(obra);
     }
@@ -450,7 +454,7 @@ export function PerfilCarousel({
       >
         <div
           ref={rootRef}
-          className="relative min-h-0 w-full flex-1 overflow-hidden"
+          className="relative min-h-0 w-full flex-1 overflow-hidden touch-none"
           onTouchStart={(event) => {
             if (lift) return;
             touchStartX.current = event.touches[0]?.clientX ?? null;
@@ -463,7 +467,6 @@ export function PerfilCarousel({
           onTouchMove={(event) => {
             if (lift || touchStartX.current == null || !ribbonRef.current)
               return;
-            if (dragStartRef.current) return;
             const x = event.touches[0]?.clientX;
             if (x == null) return;
             const { pad, slot } = metricsRef.current;

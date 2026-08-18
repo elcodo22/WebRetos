@@ -278,7 +278,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
 
                   {/* Móvil: # y título bajo la carpeta */}
                   <div
-                    className="pointer-events-none absolute left-1/2 top-full z-[1] mt-5 flex w-[min(86vw,22rem)] -translate-x-1/2 flex-col items-center gap-2 text-center leading-tight tracking-wide md:hidden"
+                    className="pointer-events-none absolute left-1/2 top-full z-[1] mt-1 flex w-[min(86vw,22rem)] -translate-x-1/2 flex-col items-center gap-1 text-center leading-tight tracking-wide md:hidden"
                     style={{
                       opacity: metaOpacity,
                       transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,

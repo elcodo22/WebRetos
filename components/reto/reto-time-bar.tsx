@@ -1,25 +1,36 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const FILL_MS = 1100;
-const BORDER = 2;
-const PAD = 2;
-const TICK_W = 8;
-const TICK_GAP = 2;
-const INNER_H = 10;
-const OUTER_H = INNER_H + PAD * 2 + BORDER * 2;
 
-function remainingRatio(fechaInicio: string, fechaFin: string) {
-  const start = new Date(fechaInicio).getTime();
-  const end = new Date(fechaFin).getTime();
-  const now = Date.now();
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
-    return 1;
-  }
-  if (now >= end) return 0;
-  if (now <= start) return 1;
-  return (end - now) / (end - start);
+type Tiempo = {
+  dias: number;
+  horas: number;
+  minutos: number;
+  segundos: number;
+};
+
+const ZERO: Tiempo = { dias: 0, horas: 0, minutos: 0, segundos: 0 };
+
+function splitSeconds(totalSegundos: number): Tiempo {
+  const safe = Math.max(0, Math.floor(totalSegundos));
+  return {
+    dias: Math.floor(safe / 86400),
+    horas: Math.floor((safe % 86400) / 3600),
+    minutos: Math.floor((safe % 3600) / 60),
+    segundos: safe % 60,
+  };
+}
+
+function remainingSeconds(fechaFin: string) {
+  const ms = new Date(fechaFin).getTime() - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return 0;
+  return Math.floor(ms / 1000);
+}
+
+function pad(valor: number) {
+  return valor.toString().padStart(2, "0");
 }
 
 function easeOutCubic(t: number) {
@@ -27,57 +38,28 @@ function easeOutCubic(t: number) {
 }
 
 type RetoTimeBarProps = {
-  fechaInicio?: string | null;
   fechaFin?: string | null;
   active?: boolean;
 };
 
-/**
- * Barra DOS: marco fino y bloques verticales con hueco de 2px.
- */
-export function RetoTimeBar({
-  fechaInicio,
-  fechaFin,
-  active = true,
-}: RetoTimeBarProps) {
-  const start = fechaInicio ?? fechaFin ?? null;
-  const end = fechaFin ?? null;
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [tickCount, setTickCount] = useState(28);
-  const [targetPct, setTargetPct] = useState(100);
-  const [displayPct, setDisplayPct] = useState(0);
+/** Contador restante: días, horas, minutos y segundos. */
+export function RetoTimeBar({ fechaFin, active = true }: RetoTimeBarProps) {
+  const [targetSec, setTargetSec] = useState(0);
+  const [display, setDisplay] = useState<Tiempo>(ZERO);
   const rafRef = useRef<number | null>(null);
-  const targetRef = useRef(targetPct);
-  targetRef.current = targetPct;
-
-  useLayoutEffect(() => {
-    const el = innerRef.current;
-    if (!el) return;
-
-    const measure = () => {
-      const w = el.clientWidth;
-      const n = Math.max(1, Math.floor((w + TICK_GAP) / (TICK_W + TICK_GAP)));
-      setTickCount(n);
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const targetSecRef = useRef(0);
+  targetSecRef.current = targetSec;
 
   useEffect(() => {
-    if (!start || !end) {
-      setTargetPct(100);
+    if (!fechaFin) {
+      setTargetSec(0);
       return;
     }
-    const tick = () => {
-      setTargetPct(Math.round(remainingRatio(start, end) * 100));
-    };
+    const tick = () => setTargetSec(remainingSeconds(fechaFin));
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [start, end]);
+  }, [fechaFin]);
 
   useEffect(() => {
     if (rafRef.current != null) {
@@ -86,23 +68,23 @@ export function RetoTimeBar({
     }
 
     if (!active) {
-      setDisplayPct(0);
+      setDisplay(ZERO);
       return;
     }
 
     const from = 0;
-    const to = Math.min(100, Math.max(0, targetRef.current));
+    const to = Math.max(0, targetSecRef.current);
     const begun = performance.now();
 
     const step = (now: number) => {
       const t = Math.min(1, (now - begun) / FILL_MS);
       const value = from + (to - from) * easeOutCubic(t);
-      setDisplayPct(Math.round(value));
+      setDisplay(splitSeconds(value));
       if (t < 1) {
         rafRef.current = requestAnimationFrame(step);
       } else {
         rafRef.current = null;
-        setDisplayPct(to);
+        setDisplay(splitSeconds(to));
       }
     };
 
@@ -115,54 +97,29 @@ export function RetoTimeBar({
     };
   }, [active]);
 
-  const filledTicks = Math.round((displayPct / 100) * tickCount);
-  const svgW = tickCount * TICK_W + Math.max(0, tickCount - 1) * TICK_GAP;
+  useEffect(() => {
+    if (!active || rafRef.current != null) return;
+    setDisplay(splitSeconds(targetSec));
+  }, [targetSec, active]);
 
   return (
-    <div className="mx-auto mt-4 flex w-full max-w-[26rem] items-center gap-3 px-2 [word-spacing:normal] md:mt-7">
-      <div
-        className="box-border min-w-0 flex-1 bg-transparent"
-        style={{
-          height: OUTER_H,
-          border: `${BORDER}px solid #fff`,
-          padding: PAD,
-        }}
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={displayPct}
-        aria-label="Tiempo restante del reto"
-      >
-        <div
-          ref={innerRef}
-          className="h-full w-full overflow-hidden"
-          style={{ height: INNER_H }}
-        >
-          <svg
-            width={svgW}
-            height={INNER_H}
-            viewBox={`0 0 ${svgW} ${INNER_H}`}
-            style={{ display: "block", shapeRendering: "crispEdges" }}
-            aria-hidden
-          >
-            {Array.from({ length: tickCount }, (_, i) =>
-              i < filledTicks ? (
-                <rect
-                  key={i}
-                  x={i * (TICK_W + TICK_GAP)}
-                  y={0}
-                  width={TICK_W}
-                  height={INNER_H}
-                  fill="#ffffff"
-                />
-              ) : null,
-            )}
-          </svg>
-        </div>
-      </div>
-      <p className="shrink-0 text-[clamp(16px,3vw,20px)] font-normal leading-none tracking-wide text-white tabular-nums">
-        {displayPct}%
-      </p>
-    </div>
+    <p className="flex items-baseline justify-center gap-[0.35em] text-center text-[clamp(16px,3vw,20px)] font-normal leading-none tracking-wide text-white tabular-nums [word-spacing:normal]">
+      <span>
+        {pad(display.dias)}
+        <span className="text-[0.72em]">d</span>
+      </span>
+      <span>
+        {pad(display.horas)}
+        <span className="text-[0.72em]">h</span>
+      </span>
+      <span>
+        {pad(display.minutos)}
+        <span className="text-[0.72em]">m</span>
+      </span>
+      <span>
+        {pad(display.segundos)}
+        <span className="text-[0.72em]">s</span>
+      </span>
+    </p>
   );
 }
