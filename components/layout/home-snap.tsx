@@ -13,14 +13,14 @@ import { useSearchOverlay } from "@/components/archivos/search-overlay-provider"
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import { useCrtPower } from "@/components/layout/crt-power-transition";
 import {
-  ParticiparCursor,
   isParticiparClickTarget,
 } from "@/components/layout/participar-cursor";
 import { RETO_DETALLE_EVENT } from "@/components/reto/reto-hero";
 
-const TRANSITION_MS = 820;
-const TRANSITION_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
-const WHEEL_THRESHOLD = 12;
+const TRANSITION_MS = 560;
+const TRANSITION_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const WHEEL_THRESHOLD = 1;
+const TOUCH_THRESHOLD = 8;
 const PAUSE_ON_HERO_MS = 80;
 const STORAGE_KEY = "animate-to-archivos";
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
@@ -82,26 +82,37 @@ export function HomeSnap({
     return () => window.removeEventListener(RETO_DETALLE_EVENT, onDetalle);
   }, []);
 
-  const goTo = useCallback((next: number) => {
+  const goTo = useCallback((next: number, opts?: { detalle?: boolean }) => {
     if (lockedRef.current) return;
-    if (next === panelRef.current) return;
     if (next < 0 || next > 1) return;
 
-    if (detalleOpenRef.current) {
+    // Al bajar a Archivos no cerrar la descripción: si no, se ve el home
+    // a mitad del desliz. El detalle sigue off-screen en el panel 0.
+    const wantDetalle =
+      next === 1 ? detalleOpenRef.current : Boolean(opts?.detalle);
+    const samePanel = next === panelRef.current;
+    if (samePanel && detalleOpenRef.current === wantDetalle) return;
+
+    if (detalleOpenRef.current !== wantDetalle) {
       window.dispatchEvent(
-        new CustomEvent(RETO_DETALLE_EVENT, { detail: { open: false } }),
+        new CustomEvent(RETO_DETALLE_EVENT, { detail: { open: wantDetalle } }),
       );
-      setDetalleOpen(false);
-      detalleOpenRef.current = false;
+      setDetalleOpen(wantDetalle);
+      detalleOpenRef.current = wantDetalle;
     }
 
     lockedRef.current = true;
-    setAnimate(true);
-    panelRef.current = next;
-    setPanel(next);
 
-    const hash = next === 1 ? "#archivos" : "#reto";
-    window.history.replaceState(null, "", `/${hash}`);
+    if (!samePanel) {
+      setAnimate(true);
+      panelRef.current = next;
+      setPanel(next);
+      window.history.replaceState(
+        null,
+        "",
+        next === 1 ? "/#archivos" : "/#reto",
+      );
+    }
 
     window.setTimeout(() => {
       lockedRef.current = false;
@@ -181,7 +192,7 @@ export function HomeSnap({
   }, [goToArchivosFromTop]);
 
   useEffect(() => {
-    const onHeroRequest = () => goTo(0);
+    const onHeroRequest = () => goTo(0, { detalle: true });
     window.addEventListener(HERO_REQUEST_EVENT, onHeroRequest);
     return () => window.removeEventListener(HERO_REQUEST_EVENT, onHeroRequest);
   }, [goTo]);
@@ -189,19 +200,7 @@ export function HomeSnap({
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
-
-      if (detalleOpenRef.current) {
-        if (Math.abs(event.deltaY) < WHEEL_THRESHOLD) return;
-        event.preventDefault();
-        if (event.deltaY > 0) {
-          goTo(1);
-        } else {
-          window.dispatchEvent(
-            new CustomEvent(RETO_DETALLE_EVENT, { detail: { open: false } }),
-          );
-        }
-        return;
-      }
+      if (document.activeElement instanceof HTMLInputElement) return;
 
       if (lockedRef.current) {
         event.preventDefault();
@@ -211,17 +210,22 @@ export function HomeSnap({
       const delta = event.deltaY;
       if (Math.abs(delta) < WHEEL_THRESHOLD) return;
 
-      if (panelRef.current === 0) {
-        if (delta > 0) {
-          event.preventDefault();
-          goTo(1);
-        }
-        return;
-      }
-
       if (panelRef.current === 1) {
         event.preventDefault();
         dispatchArchivoWheel(delta);
+        return;
+      }
+
+      if (detalleOpenRef.current) {
+        event.preventDefault();
+        if (delta > 0) goTo(1);
+        else goTo(0);
+        return;
+      }
+
+      if (delta > 0) {
+        event.preventDefault();
+        goTo(0, { detalle: true });
       }
     };
 
@@ -232,6 +236,10 @@ export function HomeSnap({
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
+      if (document.activeElement instanceof HTMLInputElement) {
+        touchStartY.current = null;
+        return;
+      }
       touchStartY.current = event.touches[0]?.clientY ?? null;
     };
 
@@ -243,26 +251,21 @@ export function HomeSnap({
 
       const delta = touchStartY.current - endY;
       touchStartY.current = null;
-      if (Math.abs(delta) < 50) return;
-
-      if (detalleOpenRef.current) {
-        if (delta > 0) {
-          goTo(1);
-        } else {
-          window.dispatchEvent(
-            new CustomEvent(RETO_DETALLE_EVENT, { detail: { open: false } }),
-          );
-        }
-        return;
-      }
-
-      if (panelRef.current === 0 && delta > 0) {
-        goTo(1);
-        return;
-      }
+      if (Math.abs(delta) < TOUCH_THRESHOLD) return;
 
       if (panelRef.current === 1) {
         dispatchArchivoWheel(delta);
+        return;
+      }
+
+      if (detalleOpenRef.current) {
+        if (delta > 0) goTo(1);
+        else goTo(0);
+        return;
+      }
+
+      if (delta > 0) {
+        goTo(0, { detalle: true });
       }
     };
 
@@ -340,8 +343,6 @@ export function HomeSnap({
           </div>
         </section>
       </div>
-
-      <ParticiparCursor active={participarActive} />
     </div>
   );
 }

@@ -25,6 +25,8 @@ export default async function Home() {
       numero={retoActivo.numero}
       titulo={retoActivo.titulo}
       descripcion={descripcionLarga}
+      fechaInicio={retoActivo.fecha_inicio}
+      fechaFin={retoActivo.fecha_fin}
     />
   ) : (
     <div className="relative flex h-full w-full items-center justify-center">

@@ -494,14 +494,6 @@ input:-webkit-autofill:active {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-participar-zone] {
-    cursor: none;
-  }
-
-  [data-participar-zone] * {
-    cursor: none;
-  }
-
   [data-participar-zone] .diccionario-word,
   [data-participar-zone] .diccionario-word *,
   [data-participar-zone] a,
@@ -509,6 +501,11 @@ input:-webkit-autofill:active {
   [data-participar-zone] button,
   [data-participar-zone] button * {
     cursor: url("/xp_link_xl.cur"), pointer !important;
+  }
+
+  [data-participar-zone] [data-codigo-field],
+  [data-participar-zone] [data-codigo-field] * {
+    cursor: url("/beam_m.png") 15 15, text !important;
   }
 }
 

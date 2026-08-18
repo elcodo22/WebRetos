@@ -8,6 +8,7 @@ export type RetoActivoHome = {
   id: string;
   titulo: string;
   descripcion: string;
+  fecha_inicio: string | null;
   fecha_fin: string | null;
   creado_en: string | null;
   numero: string;
@@ -44,6 +45,7 @@ const fetchRetoActivoHome = unstable_cache(
       id: reto.id,
       titulo: reto.titulo,
       descripcion: reto.descripcion,
+      fecha_inicio: reto.fecha_inicio ?? reto.creado_en,
       fecha_fin: reto.fecha_fin,
       creado_en: reto.creado_en,
       numero,

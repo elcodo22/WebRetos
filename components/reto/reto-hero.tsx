@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { useCrtPower } from "@/components/layout/crt-power-transition";
 import { PARTICIPAR_BTN_CLASS } from "@/components/layout/participar-cursor";
-import { PixelHelpIcon } from "@/components/reto/pixel-help-icon";
+import { RetoTimeBar } from "@/components/reto/reto-time-bar";
 
 export const RETO_DETALLE_EVENT = "reto-detalle";
 
@@ -12,6 +12,8 @@ type RetoHeroProps = {
   numero: string;
   titulo: string;
   descripcion: string;
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
 };
 
 function renderDescripcion(texto: string): ReactNode[] {
@@ -36,9 +38,16 @@ function dispatchDetalle(open: boolean) {
   );
 }
 
-export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
+export function RetoHero({
+  numero,
+  titulo,
+  descripcion,
+  fechaInicio,
+  fechaFin,
+}: RetoHeroProps) {
   const { powerOffTo } = useCrtPower();
   const [detalle, setDetalle] = useState(false);
+  const [codigo, setCodigo] = useState("");
 
   const setOpen = useCallback((open: boolean) => {
     setDetalle(open);
@@ -62,7 +71,12 @@ export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
     if (!detalle) return;
 
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key !== "Escape") return;
+      if (event.target instanceof HTMLInputElement) {
+        event.target.blur();
+        return;
+      }
+      setOpen(false);
     }
 
     window.addEventListener("keydown", onKey);
@@ -100,7 +114,7 @@ export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
           top: detalle ? "10%" : "50%",
           transform: detalle ? "translate(-50%, 0)" : "translate(-50%, -50%)",
           transition:
-            "top 500ms cubic-bezier(0.4, 0, 0.2, 1), transform 500ms cubic-bezier(0.4, 0, 0.2, 1)",
+            "top 480ms cubic-bezier(0.22, 1, 0.36, 1), transform 480ms cubic-bezier(0.22, 1, 0.36, 1)",
         }}
       >
         <p className="text-[clamp(28px,5.5vw,40px)] font-normal uppercase leading-none tracking-normal">
@@ -112,7 +126,7 @@ export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
         </h1>
 
         <div
-          className={`grid transition-[grid-template-rows,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          className={`grid transition-[grid-template-rows,opacity] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
             detalle
               ? "mt-0 grid-rows-[1fr] opacity-100"
               : "grid-rows-[0fr] opacity-0"
@@ -120,9 +134,36 @@ export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
           aria-hidden={!detalle}
         >
           <div className="overflow-hidden">
-            <p className="mt-6 w-full text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8">
+            <RetoTimeBar
+              fechaInicio={fechaInicio}
+              fechaFin={fechaFin}
+              active={detalle}
+            />
+
+            <p className="mx-auto mt-6 w-full max-w-[80%] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8">
               {renderDescripcion(descripcion)}
             </p>
+
+            <label
+              data-codigo-field=""
+              className="mx-auto mt-16 flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal] md:mt-20"
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <input
+                type="text"
+                name="codigo"
+                value={codigo}
+                onChange={(event) => setCodigo(event.target.value)}
+                placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
+                aria-label="Introducir codigo de participación"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                size={38}
+                className="w-full min-w-0 bg-transparent text-center text-[clamp(13px,2.8vw,22px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
+              />
+            </label>
           </div>
         </div>
 
@@ -139,22 +180,6 @@ export function RetoHero({ numero, titulo, descripcion }: RetoHeroProps) {
           <span>[Participar]</span>
         </button>
       </div>
-
-      {!detalle ? (
-        <button
-          type="button"
-          aria-label="Ver descripción del reto"
-          aria-expanded={false}
-          onClick={(event) => {
-            event.stopPropagation();
-            setOpen(true);
-          }}
-          className="absolute bottom-[18px] right-[18px] z-10 text-current md:bottom-6 md:right-6"
-          style={{ cursor: 'url("/xp_link_xl.cur"), pointer' }}
-        >
-          <PixelHelpIcon className="h-6 w-6 md:h-7 md:w-7" size={28} />
-        </button>
-      ) : null}
     </div>
   );
 }

@@ -22,7 +22,13 @@ function pad(valor: number) {
   return valor.toString().padStart(2, "0");
 }
 
-export function CountdownCompact({ fechaFin }: { fechaFin: string }) {
+export function CountdownCompact({
+  fechaFin,
+  className,
+}: {
+  fechaFin: string;
+  className?: string;
+}) {
   const [tiempo, setTiempo] = useState(() => calcularTiempoRestante(fechaFin));
 
   useEffect(() => {
@@ -39,7 +45,9 @@ export function CountdownCompact({ fechaFin }: { fechaFin: string }) {
   const segundos = pad(tiempo.finalizado ? 0 : tiempo.segundos);
 
   return (
-    <span className="inline-flex items-baseline gap-1.5 tabular-nums tracking-wide md:gap-2.5">
+    <span
+      className={`inline-flex items-baseline gap-[0.18em] tabular-nums tracking-wide ${className ?? ""}`}
+    >
       <span>
         {dias}
         <span className="text-[0.72em]">d</span>
