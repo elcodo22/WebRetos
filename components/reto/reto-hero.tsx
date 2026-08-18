@@ -85,7 +85,7 @@ export function RetoHero({
       <div
         className={`absolute left-1/2 w-full px-[var(--grid-margin)] text-center [word-spacing:0.45em] transition-[top,transform] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           detalle
-            ? "top-2 -translate-x-1/2 translate-y-0 md:top-[10%]"
+            ? "top-10 -translate-x-1/2 translate-y-0 md:top-[10%]"
             : "top-1/2 -translate-x-1/2 -translate-y-1/2"
         }`}
       >
@@ -112,7 +112,7 @@ export function RetoHero({
               active={detalle}
             />
 
-            <p className="mx-auto mt-4 w-full text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8 md:max-w-[80%]">
+            <p className="mx-auto mt-10 w-full text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:mt-8 md:max-w-[80%]">
               {renderDescripcion(descripcion)}
             </p>
 
