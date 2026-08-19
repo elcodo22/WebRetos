@@ -523,25 +523,23 @@ input:-webkit-autofill:active {
   line-height: 1;
 }
 
-/* Boton pixel-art: replica exacta del diseño NEXT.
+/* Boton pixel-art: replica exacta del diseño NEXT transparente.
    Capas de dentro a fuera:
-   1) background (btn-inner) = relleno interior
+   1) background transparente
    2) border 2px (btn-outer) = borde interior
-   3) outline 2px (btn-inner) = gap del color del fondo
+   3) outline 2px transparente = gap (deja ver el fondo real de la web)
    4) box-shadow 2px (btn-outer) = borde exterior
-   --btn-outer: lo que en la referencia era negro (bordes + texto)
-   --btn-inner: lo que en la referencia era blanco (relleno + gap) */
+   --btn-outer: color de los bordes y texto */
 .btn-pixel {
   --btn-outer: #fff;
-  --btn-inner: var(--background);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--btn-inner);
+  background: transparent;
   color: var(--btn-outer);
   border: 2px solid var(--btn-outer);
   border-radius: 6px;
-  outline: 2px solid var(--btn-inner);
+  outline: 2px solid transparent;
   box-shadow: 0 0 0 2px var(--btn-outer);
   padding: 8px 20px;
   font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
@@ -552,16 +550,14 @@ input:-webkit-autofill:active {
   text-transform: uppercase;
 }
 
-/* Sobre fondo blanco: bordes azules, relleno blanco. */
+/* Sobre fondo blanco: bordes y texto azules. */
 html[data-chrome="white"] .btn-pixel {
   --btn-outer: var(--background);
-  --btn-inner: #fff;
 }
 
-/* Sobre fondo negro: bordes blancos, relleno negro. */
+/* Sobre fondo negro: bordes y texto blancos. */
 .crt-shell--black .btn-pixel {
   --btn-outer: #fff;
-  --btn-inner: #000;
 }
 
 .btn-pixel:disabled {

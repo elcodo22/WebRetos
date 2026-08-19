@@ -248,7 +248,6 @@ export function RetoHero({
             style={
               {
                 "--btn-outer": "#fff",
-                "--btn-inner": "var(--background)",
               } as React.CSSProperties
             }
           >
