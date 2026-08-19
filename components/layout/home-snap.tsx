@@ -306,7 +306,7 @@ export function HomeSnap({
   return (
     <div
       ref={rootRef}
-      className="relative h-full overflow-hidden overscroll-none touch-none bg-[var(--background)] text-white"
+      className="relative h-full overflow-hidden overscroll-none touch-none bg-[var(--background)] text-white pb-[var(--safe-bottom)]"
     >
       <div
         className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-transparent"
@@ -342,7 +342,7 @@ export function HomeSnap({
           <div className="absolute inset-0">{hero}</div>
         </section>
 
-        <section className="flex h-full flex-col overflow-hidden bg-white text-[var(--background)] pt-[72px] md:pt-[68px]">
+        <section className="flex h-full flex-col overflow-hidden bg-white text-[var(--background)] pt-[calc(72px+var(--safe-top))] md:pt-[calc(68px+var(--safe-top))]">
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {archivos}
           </div>

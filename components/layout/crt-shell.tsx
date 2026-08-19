@@ -37,6 +37,17 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
     setPerf(shouldUsePerfCrt());
   }, []);
 
+  useEffect(() => {
+    const color = blackScreen ? "#000000" : "#006eff";
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "theme-color");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", color);
+  }, [blackScreen]);
+
   const shellClass = [
     "crt-shell",
     blackScreen ? "crt-shell--black" : "",

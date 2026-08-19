@@ -39,7 +39,7 @@ export function SiteHeader({
   const hasCenter = center != null;
 
   return (
-    <header className="relative flex w-full flex-col gap-2 bg-transparent px-[var(--grid-margin)] pb-3 pt-3 text-current [background:transparent] md:flex-row md:items-center md:gap-4 md:pb-4 md:pt-5">
+    <header className="relative flex w-full flex-col gap-2 bg-transparent px-[var(--grid-margin)] pb-3 pt-[max(0.75rem,var(--safe-top))] text-current [background:transparent] md:flex-row md:items-center md:gap-4 md:pb-4 md:pt-[max(1.25rem,var(--safe-top))]">
       <div className="flex w-full items-center gap-2 md:contents">
         <div className="z-10 shrink-0">
           <HomeLogoLink>

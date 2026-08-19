@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { CrtShell } from "@/components/layout/crt-shell";
 import { CrtPowerProvider } from "@/components/layout/crt-power-transition";
@@ -26,6 +26,18 @@ const ppNeueBit = localFont({
 export const metadata: Metadata = {
   title: "Retos Audiovisuales",
   description: "Plataforma de retos audiovisuales con límite de tiempo",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Retos Audiovisuales",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#006eff",
 };
 
 export default function RootLayout({

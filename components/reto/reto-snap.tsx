@@ -179,7 +179,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
         feedActive: panel === 1,
       }}
     >
-      <div className="relative h-full overflow-hidden bg-black text-white">
+      <div className="relative h-full overflow-hidden bg-black text-white pb-[var(--safe-bottom)]">
         <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-transparent">
           <div className="pointer-events-auto bg-transparent [&_header]:bg-transparent">
             {header}

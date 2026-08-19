@@ -52,7 +52,7 @@ export default async function PerfilPage({ params }: PageProps) {
           <SiteHeader user={user} showCountdown={false} />
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col pt-[88px]">
+      <div className="flex min-h-0 flex-1 flex-col pt-[var(--header-offset)] pb-[var(--safe-bottom)]">
         <PerfilScreen perfil={perfil} isOwnProfile={isOwnProfile} user={user} />
       </div>
     </div>

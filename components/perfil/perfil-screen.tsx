@@ -166,7 +166,7 @@ export function PerfilScreen({
       </div>
 
       <div
-        className={`site-grid shrink-0 items-center gap-y-3 pb-6 pt-3 transition-opacity duration-200 max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:flex-col max-md:items-stretch max-md:px-[var(--grid-margin)] max-md:pb-4 max-md:pt-0 md:pb-8 ${
+        className={`site-grid shrink-0 items-center gap-y-3 pb-6 pt-3 transition-opacity duration-200 max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:flex-col max-md:items-stretch max-md:px-[var(--grid-margin)] max-md:pb-[max(1rem,var(--safe-bottom))] max-md:pt-0 md:pb-8 ${
           lifting ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
       >
