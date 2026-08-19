@@ -325,11 +325,7 @@ export function HomeSnap({
             : "none",
         }}
       >
-        <div className={`pointer-events-auto bg-transparent max-md:border-t max-md:[&_header]:pt-2.5 max-md:[&_header]:pb-[max(0.5rem,var(--safe-bottom))] ${
-          panel === 0
-            ? "max-md:border-white/20 max-md:bg-[var(--background)]"
-            : "max-md:border-[var(--background)]/10 max-md:bg-white"
-        }`}>
+        <div className="pointer-events-auto bg-transparent max-md:[&_header]:pt-2.5 max-md:[&_header]:pb-[max(0.5rem,var(--safe-bottom))]">
           {header}
         </div>
       </div>
