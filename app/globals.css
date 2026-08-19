@@ -62,11 +62,6 @@ html:has(.crt-shell--black) body.crt-body {
   background: #000;
 }
 
-html[data-chrome="white"],
-html[data-chrome="white"] body.crt-body,
-html[data-chrome="white"] .crt-shell:not(.crt-shell--black) {
-  background: #fff;
-}
 
 a {
   color: inherit;

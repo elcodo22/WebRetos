@@ -55,7 +55,7 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (blackScreen) setChromeTheme("black");
+    setChromeTheme(blackScreen ? "black" : "blue");
   }, [blackScreen]);
 
   const shellClass = [
