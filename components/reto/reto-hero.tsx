@@ -109,10 +109,20 @@ export function RetoHero({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
+      {/* Contador arriba centrado, solo movil en pantalla de descripcion */}
+      <div
+        className={`pointer-events-none absolute inset-x-0 top-[max(12px,var(--safe-top))] z-20 flex justify-center transition-opacity duration-[480ms] md:hidden ${
+          detalle ? "opacity-100" : "opacity-0"
+        }`}
+        aria-hidden={!detalle}
+      >
+        <RetoTimeBar fechaFin={fechaFin} active={detalle} />
+      </div>
+
       <div
         className={`absolute left-1/2 z-10 w-full px-[var(--grid-margin)] text-center [word-spacing:0.45em] transition-[top,transform] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           detalle
-            ? "top-[max(12px,var(--safe-top))] -translate-x-1/2 translate-y-0 md:top-[calc(80px+max(20px,var(--safe-top)))]"
+            ? "top-[calc(max(12px,var(--safe-top))+68px)] -translate-x-1/2 translate-y-0 md:top-[calc(80px+max(20px,var(--safe-top)))]"
             : "top-1/2 -translate-x-1/2 -translate-y-1/2"
         }`}
       >
@@ -120,7 +130,7 @@ export function RetoHero({
       </div>
 
       <div
-        className={`absolute inset-x-0 bottom-0 top-[max(12px,var(--safe-top))] flex flex-col px-[var(--grid-margin)] text-center [word-spacing:0.45em] md:top-[calc(80px+max(20px,var(--safe-top)))] ${
+        className={`absolute inset-x-0 bottom-0 top-[calc(max(12px,var(--safe-top))+68px)] flex flex-col px-[var(--grid-margin)] text-center [word-spacing:0.45em] md:top-[calc(80px+max(20px,var(--safe-top)))] ${
           detalle ? "pointer-events-auto" : "pointer-events-none"
         }`}
         aria-hidden={!detalle}
@@ -142,7 +152,10 @@ export function RetoHero({
             </p>
 
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 pb-[calc(72px+var(--safe-bottom)+0.5rem)] pt-2 md:pb-8">
-              <RetoTimeBar fechaFin={fechaFin} active={detalle} />
+              {/* Contador desktop, en movil va arriba */}
+              <div className="hidden md:block">
+                <RetoTimeBar fechaFin={fechaFin} active={detalle} />
+              </div>
 
               <label
                 data-codigo-field=""
