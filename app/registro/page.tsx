@@ -8,7 +8,7 @@ export default function RegistroPage() {
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-[var(--background)] text-white">
       <RedirectIfAuthed />
-      <div className="shrink-0">
+      <div className="hidden shrink-0 md:block">
         <SiteHeader user={null} variant="registro" />
       </div>
       <RegistroForm />

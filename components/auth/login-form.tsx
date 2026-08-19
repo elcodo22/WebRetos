@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-urls";
@@ -119,12 +120,19 @@ export function LoginForm() {
 
   return (
     <>
-      <div className="shrink-0">
+      <div className="hidden shrink-0 md:block">
         <SiteHeader
           user={null}
           variant={mode === "forgot" ? "forgot" : "login"}
           onLoginClick={mode === "forgot" ? exitForgotMode : undefined}
         />
+      </div>
+
+      {/* Header movil: [Cerrar] arriba */}
+      <div className="flex shrink-0 items-center justify-start px-[var(--grid-margin)] pt-[max(0.75rem,var(--safe-top))] pb-2 text-[18px] font-normal tracking-wide md:hidden">
+        <Link href="/" className="text-white">
+          [Cerrar]
+        </Link>
       </div>
 
       <form
@@ -200,7 +208,7 @@ export function LoginForm() {
           </div>
         )}
 
-        <div className="flex items-end justify-between px-[18px] pb-10 text-[25px] font-normal tracking-wide">
+        <div className="flex items-end justify-between px-[18px] pb-4 text-[16px] font-normal tracking-wide md:pb-10 md:text-[25px]">
           {mode === "forgot" ? (
             <button
               type="button"
@@ -215,7 +223,7 @@ export function LoginForm() {
               type="button"
               onClick={enterForgotMode}
               disabled={loading}
-              className="text-left text-[16px] tracking-wide text-white disabled:opacity-50 md:text-[25px]"
+              className="text-left tracking-wide text-white disabled:opacity-50"
             >
               ¿contraseña olvidada?
             </button>
@@ -234,6 +242,19 @@ export function LoginForm() {
               {loading ? "[...]" : "[Siguiente]"}
             </button>
           )}
+        </div>
+
+        {/* Footer movil */}
+        <div className="flex flex-col items-center gap-1 pb-[max(1.5rem,var(--safe-bottom))] text-center text-white md:hidden">
+          <p className="text-[16px] font-normal tracking-wide">
+            ¿todavía no tienes cuenta?
+          </p>
+          <Link
+            href="/registro"
+            className="text-[20px] font-normal tracking-wide"
+          >
+            [Registro]
+          </Link>
         </div>
       </form>
     </>
