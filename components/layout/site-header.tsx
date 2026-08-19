@@ -40,7 +40,7 @@ export function SiteHeader({
 
   return (
     <header className="relative flex w-full flex-col gap-2 bg-transparent px-[var(--grid-margin)] pb-3 pt-[max(0.75rem,var(--safe-top))] text-current [background:transparent] md:flex-row md:items-center md:gap-4 md:pb-4 md:pt-[max(1.25rem,var(--safe-top))]">
-      <div className="flex w-full items-center justify-between md:contents">
+      <div className="flex w-full items-center justify-evenly md:contents">
         <div className="z-10 shrink-0 max-md:order-0">
           <HomeLogoLink>
             <LogoIcon />
