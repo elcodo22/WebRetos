@@ -63,7 +63,9 @@ export function HomeSnap({
   }, [detalleOpen]);
 
   useEffect(() => {
-    setChromeTheme(panel === 1 ? "white" : "blue");
+    const next = panel === 1 ? "white" : "blue";
+    const id = window.setTimeout(() => setChromeTheme(next), TRANSITION_MS);
+    return () => window.clearTimeout(id);
   }, [panel]);
 
   useEffect(() => {
