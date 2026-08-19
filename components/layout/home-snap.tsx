@@ -317,7 +317,7 @@ export function HomeSnap({
       }`}
     >
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-transparent"
+        className="pointer-events-none fixed inset-x-0 z-50 bg-transparent max-md:bottom-0 max-md:top-auto md:top-0"
         style={{
           color: panel === 0 ? "#fff" : "var(--background)",
           transition: animate
@@ -325,7 +325,7 @@ export function HomeSnap({
             : "none",
         }}
       >
-        <div className="pointer-events-auto bg-transparent">
+        <div className="pointer-events-auto bg-transparent max-md:[&_header]:pt-3 max-md:[&_header]:pb-[max(0.75rem,var(--safe-bottom))]">
           {header}
         </div>
       </div>
@@ -350,7 +350,7 @@ export function HomeSnap({
           <div className="absolute inset-0">{hero}</div>
         </section>
 
-        <section className="flex h-full flex-col overflow-hidden bg-white text-[var(--background)] pt-[calc(72px+var(--safe-top))] md:pt-[calc(68px+var(--safe-top))]">
+        <section className="flex h-full flex-col overflow-hidden bg-white text-[var(--background)] pt-0 pb-[calc(72px+var(--safe-bottom))] md:pt-[calc(68px+var(--safe-top))] md:pb-0">
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {archivos}
           </div>
