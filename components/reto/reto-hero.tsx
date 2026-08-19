@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
+import { RetoTimeCursor } from "@/components/reto/reto-time-cursor";
 
 export const RETO_DETALLE_EVENT = "reto-detalle";
 
@@ -109,6 +110,9 @@ export function RetoHero({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
+      {/* Contador que sigue al cursor, solo desktop */}
+      <RetoTimeCursor fechaFin={fechaFin} active={detalle} />
+
       {/* Contador arriba centrado, solo movil en pantalla de descripcion */}
       <div
         className={`pointer-events-none absolute inset-x-0 top-[max(12px,var(--safe-top))] z-20 flex justify-center transition-opacity duration-[480ms] md:hidden ${
@@ -152,11 +156,6 @@ export function RetoHero({
             </p>
 
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 pb-[calc(72px+var(--safe-bottom)+0.5rem)] pt-2 md:pb-8">
-              {/* Contador desktop, en movil va arriba */}
-              <div className="hidden md:block">
-                <RetoTimeBar fechaFin={fechaFin} active={detalle} />
-              </div>
-
               <label
                 data-codigo-field=""
                 className="flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal]"
