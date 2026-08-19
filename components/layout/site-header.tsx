@@ -40,14 +40,14 @@ export function SiteHeader({
 
   return (
     <header className="relative flex w-full flex-col gap-2 bg-transparent px-[var(--grid-margin)] pb-3 pt-[max(0.75rem,var(--safe-top))] text-current [background:transparent] md:flex-row md:items-center md:gap-4 md:pb-4 md:pt-[max(1.25rem,var(--safe-top))]">
-      <div className="flex w-full items-center gap-2 md:contents">
+      <div className="flex w-full items-center gap-4 md:contents">
         <div className="z-10 shrink-0">
           <HomeLogoLink>
             <LogoIcon />
           </HomeLogoLink>
         </div>
 
-        <div className="z-10 ml-auto min-w-0 shrink">
+        <div className="z-10 min-w-0 shrink">
           <HeaderNav
             user={user}
             variant={variant}
@@ -76,7 +76,7 @@ function LogoIcon() {
       viewBox="0 0 50.7 26.67"
       width={53}
       height={28}
-      className="h-[22px] w-auto md:h-[28px]"
+      className="h-[16px] w-auto md:h-[28px]"
       style={{ shapeRendering: "crispEdges", display: "block" }}
       aria-hidden
     >
