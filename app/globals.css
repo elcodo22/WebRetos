@@ -523,41 +523,42 @@ input:-webkit-autofill:active {
   line-height: 1;
 }
 
-/* Boton pixel-art: replica exacta del diseño NEXT transparente.
-   Capas de dentro a fuera:
-   1) background transparente
-   2) border 2px (btn-outer) = borde interior
-   3) outline 2px transparente = gap (deja ver el fondo real de la web)
-   4) box-shadow 2px (btn-outer) = borde exterior
-   --btn-outer: color de los bordes y texto */
+/* Boton pixel-art: borde SVG con esquinas escalonadas pixel-perfect.
+   Usa border-image con un SVG 20×14 (path evenodd) y 9-slice. */
 .btn-pixel {
-  --btn-outer: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: var(--btn-outer);
-  border: 2px solid var(--btn-outer);
-  border-radius: 6px;
-  outline: 2px solid transparent;
-  box-shadow: 0 0 0 2px var(--btn-outer);
-  padding: 8px 20px;
+  color: #fff;
+  border-style: solid;
+  border-width: 0;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' fill='%23fff' d='M3 0H17V1H18V2H19V3H20V11H19V12H18V13H17V14H3V13H2V12H1V11H0V3H1V2H2V1H3ZM5 3H15V4H16V5H17V9H16V10H15V11H5V10H4V9H3V5H4V4H5Z'/%3E%3C/svg%3E");
+  border-image-slice: 5;
+  border-image-width: 5px;
+  border-image-repeat: stretch;
+  padding: 6px 18px;
   font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
   font-weight: 500;
   line-height: 1;
   letter-spacing: 0.06em;
   white-space: nowrap;
   text-transform: uppercase;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
 }
 
 /* Sobre fondo blanco: bordes y texto azules. */
 html[data-chrome="white"] .btn-pixel {
-  --btn-outer: var(--background);
+  color: var(--background);
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' fill='%23006eff' d='M3 0H17V1H18V2H19V3H20V11H19V12H18V13H17V14H3V13H2V12H1V11H0V3H1V2H2V1H3ZM5 3H15V4H16V5H17V9H16V10H15V11H5V10H4V9H3V5H4V4H5Z'/%3E%3C/svg%3E");
 }
 
 /* Sobre fondo negro: bordes y texto blancos. */
 .crt-shell--black .btn-pixel {
-  --btn-outer: #fff;
+  color: #fff;
+  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' fill='%23fff' d='M3 0H17V1H18V2H19V3H20V11H19V12H18V13H17V14H3V13H2V12H1V11H0V3H1V2H2V1H3ZM5 3H15V4H16V5H17V9H16V10H15V11H5V10H4V9H3V5H4V4H5Z'/%3E%3C/svg%3E");
 }
 
 .btn-pixel:disabled {
