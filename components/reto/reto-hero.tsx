@@ -47,14 +47,14 @@ function TituloBlock({
   return (
     <>
       <p
-        className={`text-[clamp(28px,5.5vw,40px)] font-normal uppercase leading-none tracking-normal ${
+        className={`text-left text-[clamp(28px,5.5vw,40px)] font-normal uppercase leading-none tracking-normal ${
           hidden ? "invisible" : ""
         }`}
       >
         #{numero}
       </p>
       <h1
-        className={`mt-3 text-[clamp(36px,7vw,56px)] font-medium uppercase leading-tight tracking-normal md:mt-4 ${
+        className={`mt-3 text-left text-[clamp(36px,7vw,56px)] font-medium uppercase leading-tight tracking-normal md:mt-4 ${
           hidden ? "invisible" : ""
         }`}
       >
