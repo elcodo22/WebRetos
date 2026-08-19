@@ -27,6 +27,23 @@ function shouldUsePerfCrt() {
   return saveData || lowMem || lowCpu;
 }
 
+function applyThemeColor(hex: string) {
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", "theme-color");
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", hex);
+}
+
+export function setChromeTheme(chrome: "blue" | "white" | "black") {
+  document.documentElement.dataset.chrome = chrome;
+  applyThemeColor(
+    chrome === "black" ? "#000000" : chrome === "white" ? "#ffffff" : "#006eff",
+  );
+}
+
 export function CrtShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const blackScreen =
@@ -38,14 +55,7 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const color = blackScreen ? "#000000" : "#006eff";
-    let meta = document.querySelector('meta[name="theme-color"]');
-    if (!meta) {
-      meta = document.createElement("meta");
-      meta.setAttribute("name", "theme-color");
-      document.head.appendChild(meta);
-    }
-    meta.setAttribute("content", color);
+    if (blackScreen) setChromeTheme("black");
   }, [blackScreen]);
 
   const shellClass = [

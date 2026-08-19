@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -11,6 +12,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import { RETO_DETALLE_EVENT } from "@/components/reto/reto-hero";
+import { setChromeTheme } from "@/components/layout/crt-shell";
 
 const TRANSITION_MS = 560;
 const TRANSITION_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
@@ -60,6 +62,10 @@ export function HomeSnap({
   useEffect(() => {
     detalleOpenRef.current = detalleOpen;
   }, [detalleOpen]);
+
+  useLayoutEffect(() => {
+    setChromeTheme(panel === 1 || detalleOpen ? "white" : "blue");
+  }, [panel, detalleOpen]);
 
   useEffect(() => {
     function onDetalle(event: Event) {
@@ -306,7 +312,9 @@ export function HomeSnap({
   return (
     <div
       ref={rootRef}
-      className="relative h-full overflow-hidden overscroll-none touch-none bg-[var(--background)] text-white pb-[var(--safe-bottom)]"
+      className={`relative h-full overflow-hidden overscroll-none touch-none text-white pb-[var(--safe-bottom)] ${
+        panel === 1 || detalleOpen ? "bg-white" : "bg-[var(--background)]"
+      }`}
     >
       <div
         className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-transparent"
