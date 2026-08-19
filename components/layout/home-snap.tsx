@@ -311,6 +311,7 @@ export function HomeSnap({
   return (
     <div
       ref={rootRef}
+      data-detalle={detalleOpen ? "true" : undefined}
       className={`relative h-full overflow-hidden overscroll-none touch-none text-white pb-[var(--safe-bottom)] ${
         panel === 1 ? "bg-white" : "bg-[var(--background)]"
       }`}

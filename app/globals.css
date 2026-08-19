@@ -524,8 +524,8 @@ input:-webkit-autofill:active {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-participar-zone],
-  [data-participar-zone] * {
+  [data-detalle="true"] [data-participar-zone],
+  [data-detalle="true"] [data-participar-zone] * {
     cursor: none !important;
   }
 
