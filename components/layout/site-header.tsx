@@ -40,14 +40,14 @@ export function SiteHeader({
 
   return (
     <header className="relative flex w-full flex-col gap-2 bg-transparent px-[var(--grid-margin)] pb-3 pt-[max(0.75rem,var(--safe-top))] text-current [background:transparent] md:flex-row md:items-center md:gap-4 md:pb-4 md:pt-[max(1.25rem,var(--safe-top))]">
-      <div className="flex w-full items-center gap-4 md:contents">
-        <div className="z-10 shrink-0">
+      <div className="flex w-full items-center justify-evenly md:contents">
+        <div className="z-10 shrink-0 max-md:order-0">
           <HomeLogoLink>
             <LogoIcon />
           </HomeLogoLink>
         </div>
 
-        <div className="z-10 min-w-0 shrink md:ml-auto">
+        <div className="z-10 min-w-0 shrink max-md:contents md:ml-auto">
           <HeaderNav
             user={user}
             variant={variant}
