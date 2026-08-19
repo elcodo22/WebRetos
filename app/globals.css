@@ -524,6 +524,11 @@ input:-webkit-autofill:active {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  [data-participar-zone],
+  [data-participar-zone] * {
+    cursor: none !important;
+  }
+
   [data-participar-zone] .diccionario-word,
   [data-participar-zone] .diccionario-word *,
   [data-participar-zone] a,

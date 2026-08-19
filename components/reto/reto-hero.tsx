@@ -111,7 +111,7 @@ export function RetoHero({
   return (
     <div className="relative h-full w-full overflow-hidden">
       {/* Contador que sigue al cursor, solo desktop */}
-      <RetoTimeCursor fechaFin={fechaFin} active={detalle} />
+      <RetoTimeCursor fechaFin={fechaFin} active />
 
       {/* Contador arriba centrado, solo movil en pantalla de descripcion */}
       <div
