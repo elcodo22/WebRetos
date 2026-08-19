@@ -245,6 +245,12 @@ export function RetoHero({
               // TODO: validar y participar
             }}
             className="btn-pixel"
+            style={
+              {
+                "--btn-outer": "#fff",
+                "--btn-inner": "var(--background)",
+              } as React.CSSProperties
+            }
           >
             Participar
           </button>

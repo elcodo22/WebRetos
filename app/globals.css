@@ -523,14 +523,18 @@ input:-webkit-autofill:active {
   line-height: 1;
 }
 
-/* Boton pixel-art: fondo blanco, borde negro exterior, anillo blanco interior. */
+/* Boton pixel-art: se adapta al fondo del contexto.
+   --btn-outer: lo que en la referencia era negro (borde + texto)
+   --btn-inner: lo que en la referencia era blanco (fondo + anillo interior) */
 .btn-pixel {
+  --btn-outer: #fff;
+  --btn-inner: var(--background);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
-  color: #000;
-  border: 2px solid #000;
+  background: var(--btn-inner);
+  color: var(--btn-outer);
+  border: 3px solid var(--btn-outer);
   border-radius: 9999px;
   padding: 8px 22px;
   font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
@@ -538,8 +542,20 @@ input:-webkit-autofill:active {
   line-height: 1;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px #000;
+  box-shadow: inset 0 0 0 2px var(--btn-inner);
   text-transform: uppercase;
+}
+
+/* Sobre fondo blanco: borde y texto azules, anillo y fondo blancos. */
+html[data-chrome="white"] .btn-pixel {
+  --btn-outer: var(--background);
+  --btn-inner: #fff;
+}
+
+/* Sobre fondo negro: borde y texto blancos, anillo y fondo negros. */
+.crt-shell--black .btn-pixel {
+  --btn-outer: #fff;
+  --btn-inner: #000;
 }
 
 .btn-pixel:disabled {
