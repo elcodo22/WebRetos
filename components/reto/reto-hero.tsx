@@ -110,12 +110,17 @@ export function RetoHero({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* Contador que sigue al cursor, solo desktop */}
-      <RetoTimeCursor fechaFin={fechaFin} active />
+      {/* Contador que sigue al cursor, solo desktop y solo en descripcion */}
+      <RetoTimeCursor fechaFin={fechaFin} active={detalle} />
 
-      {/* Contador arriba centrado, solo movil (home y descripcion) */}
-      <div className="pointer-events-none absolute inset-x-0 top-[max(12px,var(--safe-top))] z-20 flex justify-center md:hidden">
-        <RetoTimeBar fechaFin={fechaFin} active />
+      {/* Contador arriba centrado, solo movil y solo en descripcion */}
+      <div
+        className={`pointer-events-none absolute inset-x-0 top-[max(12px,var(--safe-top))] z-20 flex justify-center transition-opacity duration-[480ms] md:hidden ${
+          detalle ? "opacity-100" : "opacity-0"
+        }`}
+        aria-hidden={!detalle}
+      >
+        <RetoTimeBar fechaFin={fechaFin} active={detalle} />
       </div>
 
       <div
