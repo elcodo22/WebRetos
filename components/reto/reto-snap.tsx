@@ -15,7 +15,7 @@ import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
 const PEEK_VH_DESKTOP = 12;
-const PEEK_VH_MOBILE = 10;
+const PEEK_VH_MOBILE = 34;
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 type RetoFeedNavCtx = {
@@ -218,7 +218,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black/40 via-black/10 to-transparent transition-opacity duration-300 max-md:from-black/70 max-md:via-black/25"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black/40 via-black/10 to-transparent transition-opacity duration-300 max-md:from-black/25 max-md:via-transparent"
           style={{
             height: `${Math.min(peekVh, 18)}vh`,
             opacity: panel === 0 ? 1 : 0,

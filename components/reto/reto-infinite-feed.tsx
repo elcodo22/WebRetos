@@ -17,9 +17,10 @@ import { useRetoFeedNav } from "@/components/reto/reto-snap";
 const TILE_XY = [-1, 0, 1] as const;
 const DRAG_THRESHOLD = 6;
 const AT_TOP_PX = 28;
-/** Igual que en el perfil: arrastrar el póster lo agarra. */
-const LIFT_DRAG_PX = 8;
-const LIFT_HOLD_MS = 350;
+/** Holgura táctil: menos que esto no cancela el hold ni inicia el pan. */
+const TOUCH_SLOP_PX = 14;
+/** En móvil solo se guarda manteniendo, no arrastrando. */
+const LIFT_HOLD_MS = 420;
 
 type RetoInfiniteFeedProps = {
   items: RetoFeedItem[];
@@ -48,6 +49,7 @@ function PosterGrid({
   onLiftStart,
   suppressClickRef,
   cancelPanRef,
+  cancelHoldRef,
   ownUsername,
   eagerCount = 0,
 }: {
@@ -56,6 +58,7 @@ function PosterGrid({
   onLiftStart?: RetoInfiniteFeedProps["onLiftStart"];
   suppressClickRef: MutableRefObject<boolean>;
   cancelPanRef: MutableRefObject<() => void>;
+  cancelHoldRef: MutableRefObject<Set<() => void>>;
   ownUsername?: string | null;
   /** Primeras N imágenes en eager para el peek móvil. */
   eagerCount?: number;
@@ -70,6 +73,7 @@ function PosterGrid({
     y: number;
     pointerId: number;
     lifted: boolean;
+    isTouch: boolean;
   } | null>(null);
 
   const clearHoldTimer = useCallback(() => {
@@ -79,30 +83,33 @@ function PosterGrid({
     }
   }, []);
 
+  const cancelHold = useCallback(() => {
+    clearHoldTimer();
+    const press = pressRef.current;
+    if (press?.lifted) return;
+    pressRef.current = null;
+  }, [clearHoldTimer]);
+
   const beginLift = useCallback(
-    (clientX: number, clientY: number, pointerId?: number) => {
+    (clientX: number, clientY: number) => {
       const press = pressRef.current;
       if (!press || press.lifted || !onLiftStart) return;
       press.lifted = true;
       clearHoldTimer();
       cancelPanRef.current();
       suppressClickRef.current = true;
-      if (pointerId != null) {
-        try {
-          if (press.el.hasPointerCapture(pointerId)) {
-            press.el.releasePointerCapture(pointerId);
-          }
-        } catch {
-          /* ignore */
-        }
-      }
+      window.getSelection()?.removeAllRanges();
       onLiftStart(press.item, press.el, clientX, clientY);
-      window.setTimeout(() => {
-        suppressClickRef.current = false;
-      }, 120);
     },
     [cancelPanRef, clearHoldTimer, onLiftStart, suppressClickRef],
   );
+
+  useEffect(() => {
+    cancelHoldRef.current.add(cancelHold);
+    return () => {
+      cancelHoldRef.current.delete(cancelHold);
+    };
+  }, [cancelHold, cancelHoldRef]);
 
   useEffect(
     () => () => {
@@ -113,18 +120,17 @@ function PosterGrid({
   );
 
   return (
-    <ul className="m-0 box-border grid w-full max-w-[100vw] list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-10 sm:grid-cols-3 sm:gap-x-6 md:w-screen md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6">
+    <ul className="m-0 box-border grid w-screen list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-10 sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6">
       {items.map((item, index) => (
         <li key={item.id} className="relative min-w-0">
           <button
             type="button"
+            onContextMenu={(event) => event.preventDefault()}
             onPointerDown={(event) => {
               if (event.button !== 0 || !onLiftStart) return;
               if (isOwnUsername(item.username, ownUsername)) return;
               const isTouch =
                 event.pointerType === "touch" || event.pointerType === "pen";
-              // En desktop el clic izquierdo es para agarrar; en touch el scroll
-              // / pan tiene prioridad y el lift solo por hold largo.
               if (!isTouch) {
                 event.stopPropagation();
               }
@@ -138,15 +144,17 @@ function PosterGrid({
                 y: event.clientY,
                 pointerId: event.pointerId,
                 lifted: false,
+                isTouch,
               };
               clearHoldTimer();
-              holdTimerRef.current = setTimeout(() => {
-                holdTimerRef.current = null;
-                const press = pressRef.current;
-                if (!press || press.lifted) return;
-                beginLift(press.x, press.y, press.pointerId);
-              }, LIFT_HOLD_MS);
-              if (!isTouch) {
+              if (isTouch) {
+                holdTimerRef.current = setTimeout(() => {
+                  holdTimerRef.current = null;
+                  const press = pressRef.current;
+                  if (!press || press.lifted) return;
+                  beginLift(press.x, press.y);
+                }, LIFT_HOLD_MS);
+              } else {
                 try {
                   el.setPointerCapture(event.pointerId);
                 } catch {
@@ -163,21 +171,20 @@ function PosterGrid({
                 event.clientX - press.originX,
                 event.clientY - press.originY,
               );
-              if (dist < LIFT_DRAG_PX) return;
-              const isTouch =
-                event.pointerType === "touch" || event.pointerType === "pen";
-              if (isTouch) {
-                clearHoldTimer();
-                pressRef.current = null;
+              if (press.isTouch) {
+                if (dist >= TOUCH_SLOP_PX) cancelHold();
                 return;
               }
-              beginLift(event.clientX, event.clientY, event.pointerId);
+              if (dist < TOUCH_SLOP_PX) return;
+              beginLift(event.clientX, event.clientY);
             }}
             onPointerUp={(event) => {
-              clearHoldTimer();
               const press = pressRef.current;
               const wasLifted = press?.lifted ?? false;
-              if (!wasLifted) pressRef.current = null;
+              if (!wasLifted) {
+                clearHoldTimer();
+                pressRef.current = null;
+              }
               try {
                 if (event.currentTarget.hasPointerCapture(event.pointerId)) {
                   event.currentTarget.releasePointerCapture(event.pointerId);
@@ -191,8 +198,7 @@ function PosterGrid({
               }
             }}
             onPointerCancel={() => {
-              clearHoldTimer();
-              pressRef.current = null;
+              cancelHold();
             }}
             onClick={(event) => {
               if (suppressClickRef.current) {
@@ -202,14 +208,14 @@ function PosterGrid({
               }
               onOpen(item);
             }}
-            className="group relative z-0 block w-full cursor-pointer overflow-visible text-left hover:z-10"
+            className="group relative z-0 block w-full cursor-pointer overflow-visible text-left select-none touch-none [-webkit-touch-callout:none] [-webkit-user-select:none] hover:z-10"
             aria-label={`Ver ${item.titulo} de ${item.username}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={item.imageUrl}
               alt=""
-              className="pointer-events-none aspect-[2/3] w-full origin-bottom rounded-none object-cover transition-transform duration-200 ease-out group-hover:scale-[1.07] select-none"
+              className="pointer-events-none aspect-[2/3] w-full origin-bottom rounded-none object-cover transition-transform duration-200 ease-out group-hover:scale-[1.07] select-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
               loading={index < eagerCount ? "eager" : "lazy"}
               decoding="async"
               draggable={false}
@@ -217,7 +223,7 @@ function PosterGrid({
           </button>
           <Link
             href={perfilHref(item.username)}
-            className="relative z-20 mt-2 block truncate text-[18px] font-normal leading-none tracking-wide text-white select-none hover:underline"
+            className="relative z-20 mt-2 block truncate text-[18px] font-normal leading-none tracking-wide text-white select-none [-webkit-touch-callout:none] hover:underline"
             onClick={(event) => {
               if (suppressClickRef.current) {
                 event.preventDefault();
@@ -263,14 +269,28 @@ function RetoDesktopInfiniteFeed({
   const measureRef = useRef<HTMLDivElement>(null);
   const suppressClickRef = useRef(false);
   const cancelPanRef = useRef<() => void>(() => {});
+  const cancelHoldRef = useRef<Set<() => void>>(new Set());
 
   const offsetRef = useRef({ x: 0, y: 0 });
   const absYRef = useRef(0);
   const tileSizeRef = useRef({ w: 1, h: 1 });
   const draggingRef = useRef(false);
+  const trackingRef = useRef(false);
   const movedRef = useRef(false);
   const lastPointerRef = useRef({ x: 0, y: 0 });
   const pointerStartRef = useRef({ x: 0, y: 0, absY: 0 });
+  const isTouchPointerRef = useRef(false);
+
+  useEffect(() => {
+    if (lifting) {
+      suppressClickRef.current = true;
+      return;
+    }
+    const id = window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 80);
+    return () => window.clearTimeout(id);
+  }, [lifting]);
 
   const [tileSize, setTileSize] = useState({ w: 900, h: 1400 });
 
@@ -301,6 +321,7 @@ function RetoDesktopInfiniteFeed({
 
   cancelPanRef.current = () => {
     draggingRef.current = false;
+    trackingRef.current = false;
     movedRef.current = false;
   };
 
@@ -360,7 +381,14 @@ function RetoDesktopInfiniteFeed({
     };
 
     viewport.addEventListener("wheel", onWheel, { passive: false });
-    return () => viewport.removeEventListener("wheel", onWheel);
+    const blockNative = (event: Event) => event.preventDefault();
+    viewport.addEventListener("contextmenu", blockNative);
+    viewport.addEventListener("selectstart", blockNative);
+    return () => {
+      viewport.removeEventListener("wheel", onWheel);
+      viewport.removeEventListener("contextmenu", blockNative);
+      viewport.removeEventListener("selectstart", blockNative);
+    };
   }, [panBy, requestExitToTitle]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -375,9 +403,10 @@ function RetoDesktopInfiniteFeed({
     if (!isTouch) event.preventDefault();
     window.getSelection()?.removeAllRanges();
 
-    draggingRef.current = true;
+    isTouchPointerRef.current = isTouch;
+    trackingRef.current = true;
+    draggingRef.current = !isTouch;
     movedRef.current = false;
-    suppressClickRef.current = false;
     lastPointerRef.current = { x: event.clientX, y: event.clientY };
     pointerStartRef.current = {
       x: event.clientX,
@@ -394,17 +423,29 @@ function RetoDesktopInfiniteFeed({
   };
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current || liftingRef.current) return;
+    if (!trackingRef.current || liftingRef.current) return;
 
     const totalDx = event.clientX - pointerStartRef.current.x;
     const totalDy = event.clientY - pointerStartRef.current.y;
+    const slop = isTouchPointerRef.current ? TOUCH_SLOP_PX : DRAG_THRESHOLD;
 
     if (!movedRef.current) {
-      if (Math.hypot(totalDx, totalDy) < DRAG_THRESHOLD) return;
+      if (Math.hypot(totalDx, totalDy) < slop) return;
       movedRef.current = true;
+      draggingRef.current = true;
       suppressClickRef.current = true;
       window.getSelection()?.removeAllRanges();
+      cancelHoldRef.current.forEach((cancel) => cancel());
+      if (isTouchPointerRef.current) {
+        try {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        } catch {
+          /* ignore */
+        }
+      }
     }
+
+    if (!draggingRef.current) return;
 
     const dx = event.clientX - lastPointerRef.current.x;
     const dy = event.clientY - lastPointerRef.current.y;
@@ -413,7 +454,8 @@ function RetoDesktopInfiniteFeed({
   };
 
   const endPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
+    if (!trackingRef.current && !draggingRef.current) return;
+    trackingRef.current = false;
     draggingRef.current = false;
 
     const didPan = movedRef.current;
@@ -449,7 +491,8 @@ function RetoDesktopInfiniteFeed({
   return (
     <div
       ref={viewportRef}
-      className="relative h-full w-full touch-none select-none overflow-hidden overscroll-none"
+      className="relative h-full w-full touch-none select-none overflow-hidden overscroll-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
+      onContextMenu={(event) => event.preventDefault()}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endPointer}
@@ -470,7 +513,7 @@ function RetoDesktopInfiniteFeed({
               <div
                 key={`${tx}:${ty}`}
                 ref={isMeasure ? measureRef : undefined}
-                className="absolute left-0 top-0"
+                className="absolute left-0 top-0 w-screen"
                 style={{
                   transform: `translate3d(${tx * tileSize.w}px, ${ty * tileSize.h}px, 0)`,
                 }}
@@ -482,7 +525,9 @@ function RetoDesktopInfiniteFeed({
                   onLiftStart={onLiftStart}
                   suppressClickRef={suppressClickRef}
                   cancelPanRef={cancelPanRef}
+                  cancelHoldRef={cancelHoldRef}
                   ownUsername={ownUsername}
+                  eagerCount={isMeasure ? 6 : 0}
                 />
               </div>
             );

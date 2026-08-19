@@ -145,15 +145,22 @@ export function PerfilLiftOverlay({
       onCancelRef.current();
     };
 
+    const onPointerCancel = () => {
+      if (absorbRef.current || doneRef.current) return;
+      if (!armedRef.current) return;
+      doneRef.current = true;
+      onCancelRef.current();
+    };
+
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("pointercancel", onPointerCancel);
     return () => {
       window.clearTimeout(armTimer);
       if (finishTimer != null) window.clearTimeout(finishTimer);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
     };
   }, [lift.obra.id]);
 
