@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
 import { RetoTimeCursor } from "@/components/reto/reto-time-cursor";
@@ -73,6 +79,18 @@ export function RetoHero({
 }: RetoHeroProps) {
   const [detalle, setDetalle] = useState(false);
   const [codigo, setCodigo] = useState("");
+  const [codigoOverlay, setCodigoOverlay] = useState(false);
+  const overlayInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!codigoOverlay) return;
+    const id = requestAnimationFrame(() => overlayInputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [codigoOverlay]);
+
+  useEffect(() => {
+    if (!detalle && codigoOverlay) setCodigoOverlay(false);
+  }, [detalle, codigoOverlay]);
 
   const setOpen = useCallback((open: boolean) => {
     setDetalle(open);
@@ -159,25 +177,77 @@ export function RetoHero({
               <label
                 data-codigo-field=""
                 className="flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal]"
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setCodigoOverlay(true);
+                }}
                 onPointerDown={(event) => event.stopPropagation()}
               >
                 <input
                   type="text"
                   name="codigo"
                   value={codigo}
-                  onChange={(event) => setCodigo(event.target.value)}
+                  onFocus={(event) => {
+                    event.currentTarget.blur();
+                    setCodigoOverlay(true);
+                  }}
+                  readOnly
                   placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
                   aria-label="Introducir codigo de participación"
                   autoComplete="off"
                   autoCorrect="off"
                   spellCheck={false}
                   size={38}
-                  className="w-full min-w-0 touch-auto bg-transparent text-center text-[clamp(18px,4.6vw,26px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
+                  className="w-full min-w-0 cursor-text touch-auto bg-transparent text-center text-[clamp(18px,4.6vw,26px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
                 />
               </label>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Overlay al pulsar codigo: pantalla azul con input centrado y boton participar */}
+      <div
+        className={`fixed inset-0 z-[60] flex flex-col bg-[var(--background)] transition-opacity duration-200 ${
+          codigoOverlay
+            ? "opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setCodigoOverlay(false);
+        }}
+        onTouchStart={(event) => {
+          if (event.target === event.currentTarget) setCodigoOverlay(false);
+        }}
+        aria-hidden={!codigoOverlay}
+      >
+        <div className="flex min-h-0 flex-1 items-center justify-center px-[var(--grid-margin)]">
+          <input
+            ref={overlayInputRef}
+            type="text"
+            value={codigo}
+            onChange={(event) => setCodigo(event.target.value)}
+            placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
+            aria-label="Introducir codigo de participación"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="w-full max-w-2xl bg-transparent text-center text-[clamp(20px,5vw,32px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
+            onBlur={() => setCodigoOverlay(false)}
+          />
+        </div>
+        <div className="flex shrink-0 justify-end px-[var(--grid-margin)] pb-[max(1.5rem,calc(var(--safe-bottom)+0.75rem))]">
+          <button
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => {
+              event.stopPropagation();
+              // TODO: validar y participar
+            }}
+            className="text-[20px] font-normal tracking-wide text-white md:text-[25px]"
+          >
+            [Participar]
+          </button>
         </div>
       </div>
     </div>
