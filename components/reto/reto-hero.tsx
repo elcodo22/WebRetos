@@ -244,9 +244,9 @@ export function RetoHero({
               event.stopPropagation();
               // TODO: validar y participar
             }}
-            className="text-[20px] font-normal tracking-wide text-white md:text-[25px]"
+            className="btn-pixel"
           >
-            [Participar]
+            Participar
           </button>
         </div>
       </div>

@@ -523,6 +523,30 @@ input:-webkit-autofill:active {
   line-height: 1;
 }
 
+/* Boton pixel-art: fondo blanco, borde negro exterior, anillo blanco interior. */
+.btn-pixel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+  border-radius: 9999px;
+  padding: 8px 22px;
+  font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px #000;
+  text-transform: uppercase;
+}
+
+.btn-pixel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (hover: hover) and (pointer: fine) {
   [data-detalle="true"] [data-participar-zone],
   [data-detalle="true"] [data-participar-zone] * {

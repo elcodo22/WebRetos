@@ -569,14 +569,8 @@ export function RegistroForm() {
           {bottomMessage ?? "\u00A0"}
         </p>
         <div className="flex items-end justify-end text-[16px] font-normal tracking-wide md:text-[25px]">
-          <button
-            type="submit"
-            disabled={loading}
-            className={
-              loading ? "cursor-default text-white/[0.72]" : "text-white"
-            }
-          >
-            {loading ? "[...]" : "[Siguiente]"}
+          <button type="submit" disabled={loading} className="btn-pixel">
+            {loading ? "..." : "Siguiente"}
           </button>
         </div>
       </div>

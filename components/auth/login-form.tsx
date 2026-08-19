@@ -233,13 +233,9 @@ export function LoginForm() {
             <button
               type="submit"
               disabled={mode === "forgot" ? !canSubmitForgot : !canSubmitLogin}
-              className={
-                (mode === "forgot" ? canSubmitForgot : canSubmitLogin)
-                  ? "text-white"
-                  : "cursor-default text-white/[0.72]"
-              }
+              className="btn-pixel"
             >
-              {loading ? "[...]" : "[Siguiente]"}
+              {loading ? "..." : "Siguiente"}
             </button>
           )}
         </div>
