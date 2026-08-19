@@ -15,7 +15,7 @@ import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
 const PEEK_VH_DESKTOP = 12;
-const PEEK_VH_MOBILE = 34;
+const PEEK_VH_MOBILE = 16;
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 type RetoFeedNavCtx = {

@@ -42,8 +42,10 @@ const EASE_FACTOR = 0.32;
 const SNAP_EPS = 0.002;
 const REST_RANGE = 2;
 const WHEEL_LOCK_MS = 420;
-/** Arrastrar en vertical esta distancia inicia el lift (sin long-press). */
+/** En desktop, arrastrar en vertical inicia el lift. */
 const DRAG_LIFT_PX = 16;
+const TOUCH_SLOP_PX = 14;
+const LIFT_HOLD_MS = 420;
 
 export type PerfilFocusMeta = {
   retoNumero: string;
@@ -115,10 +117,12 @@ export function PerfilCarousel({
   const itemsRef = useRef(items);
   const metricsRef = useRef({ pad: 0, slot: 0 });
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   const touchStartPos = useRef(0);
   const wheelLockUntil = useRef(0);
   const goToRef = useRef<(next: number) => void>(() => {});
   const liftRef = useRef(false);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dragStartRef = useRef<{
     x: number;
@@ -201,13 +205,23 @@ export function PerfilCarousel({
     return () => window.removeEventListener("perfil-go-home", onGoHome);
   }, [lastParticipationIndex]);
 
+  const clearHold = useCallback(() => {
+    if (holdTimerRef.current != null) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
   const clearDrag = useCallback(() => {
     dragStartRef.current = null;
-  }, []);
+    clearHold();
+  }, [clearHold]);
 
   const beginLift = useCallback(
     (obra: PerfilObra, el: HTMLElement, clientX: number, clientY: number) => {
       if (isOwnUsername(obra.username, viewerUsernameFromUser(user))) return;
+      liftRef.current = true;
+      window.getSelection()?.removeAllRanges();
       const rect = el.getBoundingClientRect();
       setLift({
         obra,
@@ -378,15 +392,27 @@ export function PerfilCarousel({
   ) => {
     if (event.button !== 0) return;
     clickOriginRef.current = { x: event.clientX, y: event.clientY };
+    window.getSelection()?.removeAllRanges();
     if (!isFocus) return;
     if (isOwnUsername(obra.username, viewerUsernameFromUser(user))) return;
 
+    const isTouch =
+      event.pointerType === "touch" || event.pointerType === "pen";
     dragStartRef.current = {
       x: event.clientX,
       y: event.clientY,
       obra,
       el: event.currentTarget,
     };
+    clearHold();
+    if (isTouch) {
+      holdTimerRef.current = setTimeout(() => {
+        holdTimerRef.current = null;
+        const start = dragStartRef.current;
+        if (!start || liftRef.current) return;
+        beginLift(start.obra, start.el, start.x, start.y);
+      }, LIFT_HOLD_MS);
+    }
   };
 
   const onObraPointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -394,7 +420,13 @@ export function PerfilCarousel({
     if (!start || lift) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
-    // Horizontal: es el carrusel, no guardar.
+    const dist = Math.hypot(dx, dy);
+    const isTouch =
+      event.pointerType === "touch" || event.pointerType === "pen";
+    if (isTouch) {
+      if (dist >= TOUCH_SLOP_PX) clearHold();
+      return;
+    }
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
       clearDrag();
       return;
@@ -454,11 +486,14 @@ export function PerfilCarousel({
       >
         <div
           ref={rootRef}
-          className="relative min-h-0 w-full flex-1 overflow-hidden touch-none"
+          className="relative min-h-0 w-full flex-1 overflow-hidden touch-none select-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
+          onContextMenu={(event) => event.preventDefault()}
           onTouchStart={(event) => {
             if (lift) return;
             touchStartX.current = event.touches[0]?.clientX ?? null;
+            touchStartY.current = event.touches[0]?.clientY ?? null;
             touchStartPos.current = positionRef.current;
+            window.getSelection()?.removeAllRanges();
             if (rafRef.current !== null) {
               cancelAnimationFrame(rafRef.current);
               rafRef.current = null;
@@ -468,10 +503,22 @@ export function PerfilCarousel({
             if (lift || touchStartX.current == null || !ribbonRef.current)
               return;
             const x = event.touches[0]?.clientX;
+            const y = event.touches[0]?.clientY;
             if (x == null) return;
+            const dx = x - touchStartX.current;
+            const dy =
+              y != null && touchStartY.current != null
+                ? y - touchStartY.current
+                : 0;
+            if (holdTimerRef.current != null) {
+              if (Math.hypot(dx, dy) < TOUCH_SLOP_PX) {
+                event.preventDefault();
+                return;
+              }
+              clearHold();
+            }
             const { pad, slot } = metricsRef.current;
             if (slot <= 0) return;
-            const dx = x - touchStartX.current;
             positionRef.current = touchStartPos.current - dx / slot;
             ribbonRef.current.style.transform = `translate3d(${pad - positionRef.current * slot}px, 0, 0)`;
             const nearest = Math.round(positionRef.current);
@@ -550,8 +597,9 @@ export function PerfilCarousel({
                   onPointerMove={onObraPointerMove}
                   onPointerUp={(e) => onObraPointerUp(e, obra, i)}
                   onPointerCancel={clearDrag}
+                  onContextMenu={(e) => e.preventDefault()}
                   onClick={(e) => e.preventDefault()}
-                  className="relative aspect-[2/3] shrink-0 overflow-hidden text-left transition-[opacity,transform] duration-300 touch-manipulation"
+                  className="relative aspect-[2/3] shrink-0 overflow-hidden text-left transition-[opacity,transform] duration-300 select-none touch-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
                   style={cardStyle}
                   aria-label={`#${obra.retoNumero} ${obra.retoTitulo}. Arrastra para guardar.`}
                 >
@@ -559,7 +607,7 @@ export function PerfilCarousel({
                   <img
                     src={obra.imageUrl}
                     alt=""
-                    className="pointer-events-none h-full w-full object-cover select-none"
+                    className="pointer-events-none h-full w-full object-cover select-none [-webkit-touch-callout:none]"
                     draggable={false}
                     loading={isFocus ? "eager" : "lazy"}
                     decoding="async"

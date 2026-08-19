@@ -21,6 +21,10 @@ const AT_TOP_PX = 28;
 const TOUCH_SLOP_PX = 14;
 /** En móvil solo se guarda manteniendo, no arrastrando. */
 const LIFT_HOLD_MS = 420;
+const PAN_GAIN_TOUCH = 2.2;
+const PAN_GAIN_WHEEL = 1.8;
+const INERTIA_FRICTION = 0.935;
+const INERTIA_MIN_PX = 0.5;
 
 type RetoInfiniteFeedProps = {
   items: RetoFeedItem[];
@@ -198,7 +202,7 @@ function PosterGrid({
               }
             }}
             onPointerCancel={() => {
-              cancelHold();
+              /* iOS cancela el pointer en el long-press; el hold sigue. */
             }}
             onClick={(event) => {
               if (suppressClickRef.current) {
@@ -260,9 +264,6 @@ function RetoDesktopInfiniteFeed({
   }, [feedActive]);
 
   const liftingRef = useRef(lifting);
-  useEffect(() => {
-    liftingRef.current = lifting;
-  }, [lifting]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -280,6 +281,9 @@ function RetoDesktopInfiniteFeed({
   const lastPointerRef = useRef({ x: 0, y: 0 });
   const pointerStartRef = useRef({ x: 0, y: 0, absY: 0 });
   const isTouchPointerRef = useRef(false);
+  const velRef = useRef({ x: 0, y: 0 });
+  const lastMoveAtRef = useRef(0);
+  const inertiaRafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (lifting) {
@@ -305,6 +309,19 @@ function RetoDesktopInfiniteFeed({
     setAtTop(absYRef.current >= -AT_TOP_PX);
   }, [setAtTop]);
 
+  const stopInertia = useCallback(() => {
+    if (inertiaRafRef.current != null) {
+      cancelAnimationFrame(inertiaRafRef.current);
+      inertiaRafRef.current = null;
+    }
+    velRef.current = { x: 0, y: 0 };
+  }, []);
+
+  useEffect(() => {
+    liftingRef.current = lifting;
+    if (lifting) stopInertia();
+  }, [lifting, stopInertia]);
+
   const panBy = useCallback(
     (dx: number, dy: number) => {
       const { w, h } = tileSizeRef.current;
@@ -319,10 +336,26 @@ function RetoDesktopInfiniteFeed({
     [applyTransform, updateAtTop],
   );
 
+  const coast = useCallback(() => {
+    const { x, y } = velRef.current;
+    if (Math.hypot(x, y) < INERTIA_MIN_PX) {
+      inertiaRafRef.current = null;
+      velRef.current = { x: 0, y: 0 };
+      return;
+    }
+    panBy(x, y);
+    velRef.current = {
+      x: x * INERTIA_FRICTION,
+      y: y * INERTIA_FRICTION,
+    };
+    inertiaRafRef.current = requestAnimationFrame(coast);
+  }, [panBy]);
+
   cancelPanRef.current = () => {
     draggingRef.current = false;
     trackingRef.current = false;
     movedRef.current = false;
+    stopInertia();
   };
 
   useLayoutEffect(() => {
@@ -356,6 +389,8 @@ function RetoDesktopInfiniteFeed({
     updateAtTop();
   }, [feedSession, applyTransform, updateAtTop]);
 
+  useEffect(() => () => stopInertia(), [stopInertia]);
+
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -377,7 +412,7 @@ function RetoDesktopInfiniteFeed({
         if (requestExitToTitle()) return;
       }
 
-      panBy(-dx, -dy);
+      panBy(-dx * PAN_GAIN_WHEEL, -dy * PAN_GAIN_WHEEL);
     };
 
     viewport.addEventListener("wheel", onWheel, { passive: false });
@@ -407,6 +442,9 @@ function RetoDesktopInfiniteFeed({
     trackingRef.current = true;
     draggingRef.current = !isTouch;
     movedRef.current = false;
+    stopInertia();
+    velRef.current = { x: 0, y: 0 };
+    lastMoveAtRef.current = performance.now();
     lastPointerRef.current = { x: event.clientX, y: event.clientY };
     pointerStartRef.current = {
       x: event.clientX,
@@ -450,7 +488,14 @@ function RetoDesktopInfiniteFeed({
     const dx = event.clientX - lastPointerRef.current.x;
     const dy = event.clientY - lastPointerRef.current.y;
     lastPointerRef.current = { x: event.clientX, y: event.clientY };
-    panBy(dx, dy);
+    const gain = isTouchPointerRef.current ? PAN_GAIN_TOUCH : PAN_GAIN_WHEEL;
+    const gx = dx * gain;
+    const gy = dy * gain;
+    const now = performance.now();
+    const dt = Math.max(8, now - lastMoveAtRef.current);
+    lastMoveAtRef.current = now;
+    velRef.current = { x: (gx / dt) * 16.67, y: (gy / dt) * 16.67 };
+    panBy(gx, gy);
   };
 
   const endPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -476,6 +521,8 @@ function RetoDesktopInfiniteFeed({
         Math.abs(totalDx) < 90
       ) {
         requestExitToTitle();
+      } else if (performance.now() - lastMoveAtRef.current < 80) {
+        inertiaRafRef.current = requestAnimationFrame(coast);
       }
       window.setTimeout(() => {
         suppressClickRef.current = false;

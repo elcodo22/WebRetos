@@ -23,7 +23,9 @@
 }
 
 [data-reto-infinite-feed],
-[data-reto-infinite-feed] * {
+[data-reto-infinite-feed] *,
+[data-perfil-card],
+[data-perfil-card] * {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;

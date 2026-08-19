@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { PerfilObra } from "@/lib/mocks/perfil";
 import { CartonBoxIcon } from "@/components/perfil/carton-box-icon";
@@ -29,8 +29,19 @@ type PerfilLiftOverlayProps = {
   mode?: "save" | "remove";
 };
 
+function clientFromEvent(event: Event): { x: number; y: number } | null {
+  if ("clientX" in event && typeof (event as PointerEvent).clientX === "number") {
+    return { x: (event as PointerEvent).clientX, y: (event as PointerEvent).clientY };
+  }
+  const touchEvent = event as TouchEvent;
+  const touch = touchEvent.touches?.[0] ?? touchEvent.changedTouches?.[0];
+  if (!touch) return null;
+  return { x: touch.clientX, y: touch.clientY };
+}
+
 /**
  * Miniatura agarrada + destino: caja (guardar) o X (eliminar).
+ * Posición por transform (sin transition) para que el dedo no vaya a trompicones.
  */
 export function PerfilLiftOverlay({
   lift,
@@ -42,8 +53,9 @@ export function PerfilLiftOverlay({
   mode = "save",
 }: PerfilLiftOverlayProps) {
   const targetRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const posRef = useRef({ x: lift.x, y: lift.y });
   const [overTarget, setOverTarget] = useState(false);
-  const [pos, setPos] = useState({ x: lift.x, y: lift.y });
   const [absorb, setAbsorb] = useState<{ tx: number; ty: number } | null>(
     null,
   );
@@ -51,7 +63,6 @@ export function PerfilLiftOverlay({
 
   const absorbRef = useRef(false);
   const doneRef = useRef(false);
-  const armedRef = useRef(false);
   const grabRef = useRef({ x: lift.grabX, y: lift.grabY });
   const onCancelRef = useRef(onCancel);
   const onDropRef = useRef(onDropInFolder);
@@ -59,6 +70,7 @@ export function PerfilLiftOverlay({
   const requireAuthRef = useRef(requireAuth);
   const onRemoveRef = useRef(onRemove);
   const modeRef = useRef(mode);
+  const overRef = useRef(false);
 
   const isRemove = mode === "remove";
 
@@ -67,7 +79,7 @@ export function PerfilLiftOverlay({
   }, []);
 
   useEffect(() => {
-    setPos({ x: lift.x, y: lift.y });
+    posRef.current = { x: lift.x, y: lift.y };
     grabRef.current = { x: lift.grabX, y: lift.grabY };
   }, [lift.x, lift.y, lift.grabX, lift.grabY]);
 
@@ -80,22 +92,24 @@ export function PerfilLiftOverlay({
     modeRef.current = mode;
   }, [onCancel, onDropInFolder, onAuthRequired, requireAuth, onRemove, mode]);
 
-  useEffect(() => {
+  const applyPos = (x: number, y: number) => {
+    posRef.current = { x, y };
+    const img = imgRef.current;
+    if (!img || absorbRef.current) return;
+    img.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  };
+
+  useLayoutEffect(() => {
     absorbRef.current = false;
     doneRef.current = false;
-    armedRef.current = false;
-
-    const armTimer = window.setTimeout(() => {
-      armedRef.current = true;
-    }, 80);
-
-    let finishTimer: number | null = null;
+    overRef.current = false;
+    window.getSelection()?.removeAllRanges();
 
     const hitTarget = (clientX: number, clientY: number) => {
       const el = targetRef.current;
       if (!el) return false;
       const r = el.getBoundingClientRect();
-      const pad = 28;
+      const pad = 36;
       return (
         clientX >= r.left - pad &&
         clientX <= r.right + pad &&
@@ -111,61 +125,66 @@ export function PerfilLiftOverlay({
       else onDropRef.current?.();
     };
 
-    const onPointerMove = (event: PointerEvent) => {
-      if (absorbRef.current) return;
+    const onMove = (event: Event) => {
+      if (absorbRef.current || doneRef.current) return;
+      const pt = clientFromEvent(event);
+      if (!pt) return;
+      if (event.cancelable) event.preventDefault();
       const { x: gx, y: gy } = grabRef.current;
-      setPos({ x: event.clientX - gx, y: event.clientY - gy });
-      setOverTarget(hitTarget(event.clientX, event.clientY));
+      applyPos(pt.x - gx, pt.y - gy);
+      const over = hitTarget(pt.x, pt.y);
+      if (over !== overRef.current) {
+        overRef.current = over;
+        setOverTarget(over);
+      }
     };
 
-    const onPointerUp = (event: PointerEvent) => {
+    const onEnd = (event: Event) => {
       if (absorbRef.current || doneRef.current) return;
-      if (!armedRef.current) {
-        // Soltar demasiado pronto: cancelar en vez de quedarse pillado.
-        doneRef.current = true;
-        onCancelRef.current();
-        return;
-      }
-      if (hitTarget(event.clientX, event.clientY)) {
+      const pt = clientFromEvent(event) ?? {
+        x: posRef.current.x + grabRef.current.x,
+        y: posRef.current.y + grabRef.current.y,
+      };
+      if (hitTarget(pt.x, pt.y)) {
         if (requireAuthRef.current && modeRef.current !== "remove") {
           doneRef.current = true;
           onAuthRequiredRef.current?.();
           return;
         }
         const r = targetRef.current?.getBoundingClientRect();
-        const tx = (r?.left ?? event.clientX) + (r?.width ?? 0) / 2 - 14;
-        const ty = (r?.top ?? event.clientY) + (r?.height ?? 0) / 2 - 14;
+        const tx = (r?.left ?? pt.x) + (r?.width ?? 0) / 2 - 14;
+        const ty = (r?.top ?? pt.y) + (r?.height ?? 0) / 2 - 14;
         absorbRef.current = true;
         setAbsorb({ tx, ty });
         setOverTarget(true);
-        finishTimer = window.setTimeout(finishDrop, 320);
+        window.setTimeout(finishDrop, 280);
         return;
       }
       doneRef.current = true;
       onCancelRef.current();
     };
 
-    const onPointerCancel = () => {
-      if (absorbRef.current || doneRef.current) return;
-      if (!armedRef.current) return;
-      doneRef.current = true;
-      onCancelRef.current();
-    };
+    const moveOpts: AddEventListenerOptions = { capture: true, passive: false };
+    const endOpts: AddEventListenerOptions = { capture: true };
 
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerCancel);
+    window.addEventListener("pointermove", onMove, moveOpts);
+    window.addEventListener("touchmove", onMove, moveOpts);
+    window.addEventListener("pointerup", onEnd, endOpts);
+    window.addEventListener("touchend", onEnd, endOpts);
+    window.addEventListener("touchcancel", onEnd, endOpts);
+    const blockMenu = (event: Event) => event.preventDefault();
+    window.addEventListener("contextmenu", blockMenu, endOpts);
+
     return () => {
-      window.clearTimeout(armTimer);
-      if (finishTimer != null) window.clearTimeout(finishTimer);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerCancel);
+      window.removeEventListener("pointermove", onMove, moveOpts);
+      window.removeEventListener("touchmove", onMove, moveOpts);
+      window.removeEventListener("pointerup", onEnd, endOpts);
+      window.removeEventListener("touchend", onEnd, endOpts);
+      window.removeEventListener("touchcancel", onEnd, endOpts);
+      window.removeEventListener("contextmenu", blockMenu, endOpts);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- se ancla al gesto de esta obra
   }, [lift.obra.id]);
-
-  const left = absorb ? absorb.tx : pos.x;
-  const top = absorb ? absorb.ty : pos.y;
 
   if (!mounted) return null;
 
@@ -177,9 +196,12 @@ export function PerfilLiftOverlay({
       ? "soltar"
       : "";
 
+  const left = absorb ? absorb.tx : lift.x;
+  const top = absorb ? absorb.ty : lift.y;
+
   return createPortal(
     <div
-      className="pointer-events-auto fixed inset-0 z-[200] bg-black select-none"
+      className="pointer-events-auto fixed inset-0 z-[200] bg-black select-none touch-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
       role="dialog"
       aria-modal
       aria-label={
@@ -187,19 +209,26 @@ export function PerfilLiftOverlay({
           ? "Arrastra la miniatura a la X para eliminar"
           : "Arrastra la miniatura a la caja"
       }
+      onContextMenu={(event) => event.preventDefault()}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
+        ref={imgRef}
         src={lift.obra.imageUrl}
         alt=""
         draggable={false}
-        className="pointer-events-none fixed object-cover shadow-[0_12px_40px_rgba(0,0,0,0.65)] transition-[left,top,width,height,opacity] duration-300 ease-out"
+        className="pointer-events-none fixed object-cover shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
         style={{
-          left,
-          top,
+          left: 0,
+          top: 0,
           width: absorb ? 28 : lift.w,
           height: absorb ? 28 : lift.h,
           opacity: absorb ? 0 : 1,
+          transform: `translate3d(${left}px, ${top}px, 0)`,
+          transition: absorb
+            ? "transform 280ms ease-out, width 280ms ease-out, height 280ms ease-out, opacity 280ms ease-out"
+            : "none",
+          willChange: "transform",
           zIndex: 2,
         }}
       />
