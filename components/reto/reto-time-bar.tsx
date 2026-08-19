@@ -103,7 +103,7 @@ export function RetoTimeBar({ fechaFin, active = true }: RetoTimeBarProps) {
   }, [targetSec, active]);
 
   return (
-    <p className="flex items-baseline justify-center gap-[0.35em] text-center text-[clamp(16px,3vw,20px)] font-normal leading-none tracking-wide text-white tabular-nums [word-spacing:normal]">
+    <p className="flex items-baseline justify-center gap-[0.35em] text-center text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide text-white tabular-nums [word-spacing:normal] md:text-[clamp(16px,3vw,20px)]">
       <span>
         {pad(display.dias)}
         <span className="text-[0.72em]">d</span>

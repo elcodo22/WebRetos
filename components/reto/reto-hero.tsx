@@ -122,7 +122,7 @@ export function RetoHero({
       <div
         className={`absolute left-1/2 z-10 w-full px-[var(--grid-margin)] text-center [word-spacing:0.45em] transition-[top,transform] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           detalle
-            ? "top-[calc(max(12px,var(--safe-top))+68px)] -translate-x-1/2 translate-y-0 md:top-[calc(80px+max(20px,var(--safe-top)))]"
+            ? "top-[calc(max(12px,var(--safe-top))+80px)] -translate-x-1/2 translate-y-0 md:top-[calc(80px+max(20px,var(--safe-top)))]"
             : "top-1/2 -translate-x-1/2 -translate-y-1/2"
         }`}
       >
@@ -130,7 +130,7 @@ export function RetoHero({
       </div>
 
       <div
-        className={`absolute inset-x-0 bottom-0 top-[calc(max(12px,var(--safe-top))+68px)] flex flex-col px-[var(--grid-margin)] text-center [word-spacing:0.45em] md:top-[calc(80px+max(20px,var(--safe-top)))] ${
+        className={`absolute inset-x-0 bottom-0 top-[calc(max(12px,var(--safe-top))+80px)] flex flex-col px-[var(--grid-margin)] text-center [word-spacing:0.45em] md:top-[calc(80px+max(20px,var(--safe-top)))] ${
           detalle ? "pointer-events-auto" : "pointer-events-none"
         }`}
         aria-hidden={!detalle}
