@@ -19,7 +19,7 @@ export function HeaderNav({
   onLoginClick?: () => void;
 }) {
   return (
-    <nav className="flex items-center gap-4 whitespace-nowrap text-[clamp(18px,4.5vw,25px)] font-normal leading-none tracking-wide md:text-[25px]">
+    <nav className="flex items-center gap-4 whitespace-nowrap text-[clamp(18px,4.5vw,25px)] font-normal leading-none tracking-wide md:gap-4 md:text-[25px]">
       {variant === "login" && <Link href="/registro">[Registro]</Link>}
       {variant === "registro" && <Link href="/login">[Login]</Link>}
       {variant === "forgot" && (
@@ -47,9 +47,9 @@ export function HeaderNav({
             </>
           ) : (
             <>
-              <ArchivosSearch />
-              <Link href="/login">[Login]</Link>
-              <Link href="/registro">[Registro]</Link>
+              <span className="max-md:order-2"><Link href="/login">[Login]</Link></span>
+              <span className="max-md:order-3"><Link href="/registro">[Registro]</Link></span>
+              <span className="max-md:order-1"><ArchivosSearch /></span>
             </>
           )}
         </>

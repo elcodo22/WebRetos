@@ -47,7 +47,7 @@ export function SiteHeader({
           </HomeLogoLink>
         </div>
 
-        <div className="z-10 min-w-0 shrink">
+        <div className="z-10 min-w-0 shrink md:ml-auto">
           <HeaderNav
             user={user}
             variant={variant}
