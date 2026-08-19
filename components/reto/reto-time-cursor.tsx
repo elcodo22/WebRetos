@@ -27,10 +27,11 @@ export function RetoTimeCursor({ fechaFin, active }: RetoTimeCursorProps) {
     const onMove = (event: MouseEvent) => {
       const el = ref.current;
       if (!el) return;
-      el.style.transform = `translate3d(${event.clientX + 14}px, ${event.clientY - 10}px, 0)`;
+      el.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0) translate(-50%, -50%)`;
       const target = event.target as Element | null;
       const inZone = target?.closest("[data-participar-zone]") != null;
-      setVisible(inZone);
+      const onCodigo = target?.closest("[data-codigo-field]") != null;
+      setVisible(inZone && !onCodigo);
     };
 
     const onLeave = () => setVisible(false);
