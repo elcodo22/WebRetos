@@ -133,7 +133,7 @@ export function PerfilScreen({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col text-white select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 flex-1 flex-col max-md:-translate-y-[7vh]">
         {showCarousel ? (
           <PerfilCarousel
             obras={perfil.obras}

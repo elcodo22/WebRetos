@@ -21,10 +21,10 @@ const AT_TOP_PX = 28;
 const TOUCH_SLOP_PX = 14;
 /** En móvil solo se guarda manteniendo, no arrastrando. */
 const LIFT_HOLD_MS = 420;
-const PAN_GAIN_TOUCH = 2.2;
-const PAN_GAIN_WHEEL = 1.8;
-const INERTIA_FRICTION = 0.935;
-const INERTIA_MIN_PX = 0.5;
+const PAN_GAIN_TOUCH = 1.85;
+const PAN_GAIN_WHEEL = 1.5;
+const INERTIA_FRICTION = 0.78;
+const INERTIA_MIN_PX = 1.4;
 
 type RetoInfiniteFeedProps = {
   items: RetoFeedItem[];
