@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -63,8 +62,10 @@ export function HomeSnap({
     detalleOpenRef.current = detalleOpen;
   }, [detalleOpen]);
 
-  useLayoutEffect(() => {
-    setChromeTheme(panel === 1 ? "white" : "blue");
+  useEffect(() => {
+    const next = panel === 1 ? "white" : "blue";
+    const id = window.setTimeout(() => setChromeTheme(next), 280);
+    return () => window.clearTimeout(id);
   }, [panel]);
 
   useEffect(() => {
@@ -312,7 +313,7 @@ export function HomeSnap({
   return (
     <div
       ref={rootRef}
-      className={`relative h-full overflow-hidden overscroll-none touch-none text-white pb-[var(--safe-bottom)] ${
+      className={`relative h-full overflow-hidden overscroll-none touch-none text-white pb-[var(--safe-bottom)] transition-colors duration-[560ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
         panel === 1 ? "bg-white" : "bg-[var(--background)]"
       }`}
     >
