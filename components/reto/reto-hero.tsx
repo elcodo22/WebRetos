@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
 import { RetoTimeCursor } from "@/components/reto/reto-time-cursor";
@@ -80,12 +81,27 @@ export function RetoHero({
   const [detalle, setDetalle] = useState(false);
   const [codigo, setCodigo] = useState("");
   const [codigoOverlay, setCodigoOverlay] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
   const overlayInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   useEffect(() => {
     if (!codigoOverlay) return;
     const id = requestAnimationFrame(() => overlayInputRef.current?.focus());
     return () => cancelAnimationFrame(id);
+  }, [codigoOverlay]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "codigo-overlay-open",
+      codigoOverlay,
+    );
+    return () => {
+      document.documentElement.classList.remove("codigo-overlay-open");
+    };
   }, [codigoOverlay]);
 
   useEffect(() => {
@@ -129,7 +145,7 @@ export function RetoHero({
   return (
     <div className="relative h-full w-full overflow-hidden">
       {/* Contador que sigue al cursor, solo desktop y solo en descripcion */}
-      <RetoTimeCursor fechaFin={fechaFin} active={detalle} />
+      <RetoTimeCursor fechaFin={fechaFin} active={detalle && !codigoOverlay} />
 
       {/* Contador arriba centrado, solo movil y solo en descripcion */}
       <div
@@ -206,50 +222,62 @@ export function RetoHero({
         </div>
       </div>
 
-      {/* Overlay al pulsar codigo: pantalla azul con input centrado y boton participar */}
-      <div
-        className={`fixed inset-0 z-[60] flex flex-col bg-[var(--background)] transition-opacity duration-200 ${
-          codigoOverlay
-            ? "opacity-100"
-            : "pointer-events-none opacity-0"
-        }`}
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setCodigoOverlay(false);
-        }}
-        onTouchStart={(event) => {
-          if (event.target === event.currentTarget) setCodigoOverlay(false);
-        }}
-        aria-hidden={!codigoOverlay}
-      >
-        <div className="flex min-h-0 flex-1 items-center justify-center px-[var(--grid-margin)]">
-          <input
-            ref={overlayInputRef}
-            type="text"
-            value={codigo}
-            onChange={(event) => setCodigo(event.target.value)}
-            placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
-            aria-label="Introducir codigo de participación"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className="w-full max-w-2xl bg-transparent text-center text-[clamp(20px,5vw,32px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
-            onBlur={() => setCodigoOverlay(false)}
-          />
-        </div>
-        <div className="flex shrink-0 justify-end px-[var(--grid-margin)] pb-[max(1.5rem,calc(var(--safe-bottom)+0.75rem))]">
-          <button
-            type="button"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={(event) => {
-              event.stopPropagation();
-              // TODO: validar y participar
-            }}
-            className="btn-pixel"
-          >
-            Participar
-          </button>
-        </div>
-      </div>
+      {/* Overlay al pulsar codigo: portal fuera de la zona (cursor del sistema) */}
+      {portalReady
+        ? createPortal(
+            <div
+              data-codigo-overlay=""
+              className={`fixed inset-0 z-[10050] flex flex-col bg-[#ff0000] transition-opacity duration-200 ${
+                codigoOverlay
+                  ? "opacity-100"
+                  : "pointer-events-none opacity-0"
+              }`}
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setCodigoOverlay(false);
+              }}
+              onTouchStart={(event) => {
+                if (event.target === event.currentTarget) setCodigoOverlay(false);
+              }}
+              aria-hidden={!codigoOverlay}
+            >
+              {codigoOverlay ? (
+                <div
+                  className="codigo-heartbeat pointer-events-none absolute inset-0"
+                  aria-hidden
+                />
+              ) : null}
+              <div className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-[var(--grid-margin)]">
+                <input
+                  ref={overlayInputRef}
+                  type="text"
+                  value={codigo}
+                  onChange={(event) => setCodigo(event.target.value)}
+                  placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
+                  aria-label="Introducir codigo de participación"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="w-full max-w-2xl bg-transparent text-center text-[clamp(20px,5vw,32px)] font-normal uppercase leading-none tracking-normal text-white outline-none placeholder:text-white/70"
+                  onBlur={() => setCodigoOverlay(false)}
+                />
+              </div>
+              <div className="relative z-10 flex shrink-0 justify-end px-[var(--grid-margin)] pb-[max(1.5rem,calc(var(--safe-bottom)+0.75rem))]">
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    // TODO: validar y participar
+                  }}
+                  className="text-[20px] font-normal tracking-wide text-white md:text-[25px]"
+                >
+                  [PARTICIPAR]
+                </button>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

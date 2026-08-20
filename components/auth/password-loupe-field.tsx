@@ -1,23 +1,11 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { authFieldSize } from "@/components/auth/auth-field";
+import { PixelarticonsEye } from "@/components/icons/PixelarticonsEye";
+import { PixelarticonsEyeClosed } from "@/components/icons/PixelarticonsEyeClosed";
 
-/** Tamaño del cursor-ojo (px). */
-const ICON = 88;
-/** Centro del ojo (hotspot). */
-const HOTSPOT_X = ICON / 2;
-const HOTSPOT_Y = ICON / 2;
-const MAG = 2.1;
-
-/** Contorno del ojo en viewBox 32×32. */
-const EYE_PATH =
-  "M1 16C1 16 6 6 16 6s15 10 15 10-5 10-15 10S1 16 1 16Z";
-
-/** Misma forma en coordenadas absolutas, escalada al tamaño del cursor. */
-function eyeClipPath(size: number) {
-  const p = (n: number) => (n * size) / 32;
-  return `path('M ${p(1)} ${p(16)} C ${p(1)} ${p(16)} ${p(6)} ${p(6)} ${p(16)} ${p(6)} C ${p(26)} ${p(6)} ${p(31)} ${p(16)} ${p(31)} ${p(16)} C ${p(31)} ${p(16)} ${p(26)} ${p(26)} ${p(16)} ${p(26)} C ${p(6)} ${p(26)} ${p(1)} ${p(16)} ${p(1)} ${p(16)} Z')`;
-}
+const ICON_SIZE = 28;
 
 type PasswordLoupeFieldProps = {
   value: string;
@@ -26,8 +14,60 @@ type PasswordLoupeFieldProps = {
   placeholder?: string;
   autoComplete?: string;
   required?: boolean;
+  shake?: boolean;
   "aria-label"?: string;
 };
+
+type FieldEyeState = {
+  form: HTMLElement | null;
+  hasPassword: boolean;
+  visible: boolean;
+};
+
+const eyeRegistry = new Map<string, FieldEyeState>();
+
+function syncRegistry(
+  fieldId: string,
+  form: HTMLElement | null,
+  hasPassword: boolean,
+  visible: boolean,
+) {
+  eyeRegistry.set(fieldId, { form, hasPassword, visible });
+}
+
+function formHasPassword(form: HTMLElement) {
+  return [...eyeRegistry.values()].some(
+    (entry) => entry.form === form && entry.hasPassword,
+  );
+}
+
+function formPasswordVisible(form: HTMLElement) {
+  return [...eyeRegistry.values()].some(
+    (entry) => entry.form === form && entry.hasPassword && entry.visible,
+  );
+}
+
+function isCursorHost(fieldId: string, form: HTMLElement | null) {
+  if (!form) return false;
+  for (const [id, entry] of eyeRegistry) {
+    if (entry.form === form && entry.hasPassword) return id === fieldId;
+  }
+  return false;
+}
+
+function isFinePointer() {
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+/** Zonas con cursor nativo (texto / pointer), no el ojo. */
+function isNativeCursorTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      "button, a, input, textarea, select, label, [role='button'], [data-password-field]",
+    ),
+  );
+}
 
 export function PasswordLoupeField({
   value,
@@ -36,100 +76,138 @@ export function PasswordLoupeField({
   placeholder = "contraseña",
   autoComplete = "current-password",
   required = true,
+  shake = false,
   "aria-label": ariaLabel = "contraseña",
 }: PasswordLoupeFieldProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [hovering, setHovering] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [rel, setRel] = useState({ x: 0, y: 0, w: 0, h: 0 });
+  const fieldId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  const [showCursor, setShowCursor] = useState(false);
+  const [eyeClosed, setEyeClosed] = useState(false);
+  const [host, setHost] = useState(false);
+  const hasPassword = value.length > 0;
 
-  const updatePos = useCallback((clientX: number, clientY: number) => {
-    const input = inputRef.current;
-    if (!input) return;
+  useEffect(() => {
+    const form = rootRef.current?.closest("form") ?? null;
+    syncRegistry(fieldId, form, hasPassword, visible);
+    setHost(isCursorHost(fieldId, form));
+    if (form) setEyeClosed(formPasswordVisible(form));
 
-    const rect = input.getBoundingClientRect();
-    setPos({ x: clientX, y: clientY });
-    setRel({
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-      w: rect.width,
-      h: rect.height,
-    });
-  }, []);
+    return () => {
+      eyeRegistry.delete(fieldId);
+    };
+  }, [fieldId, hasPassword, visible]);
 
-  // Ojo solo para “espiar”: hay texto, hover, y no estás escribiendo
-  const showEye = hovering && !focused && value.length > 0;
+  useEffect(() => {
+    function updateCursor(clientX: number, clientY: number, target: EventTarget | null) {
+      const form = rootRef.current?.closest("form");
+      if (!form || !isFinePointer() || !formHasPassword(form)) {
+        setShowCursor(false);
+        document.documentElement.classList.remove("cursor-eye-active");
+        return;
+      }
+
+      const overNative = isNativeCursorTarget(target);
+
+      setCursor({ x: clientX, y: clientY });
+      setEyeClosed(formPasswordVisible(form));
+      setHost(isCursorHost(fieldId, form));
+      setShowCursor(!overNative);
+      document.documentElement.classList.toggle(
+        "cursor-eye-active",
+        !overNative,
+      );
+    }
+
+    function onMove(event: PointerEvent) {
+      updateCursor(event.clientX, event.clientY, event.target);
+    }
+
+    function onPointerDown(event: PointerEvent) {
+      if (!isFinePointer()) return;
+
+      const form = rootRef.current?.closest("form");
+      if (!form || !formHasPassword(form)) return;
+
+      updateCursor(event.clientX, event.clientY, event.target);
+
+      if (!hasPassword) return;
+      // Solo toggle al clicar fuera de campos/botones (zona del cursor-ojo).
+      if (isNativeCursorTarget(event.target)) return;
+
+      setVisible((prev) => !prev);
+    }
+
+    function onWindowLeave() {
+      setShowCursor(false);
+      document.documentElement.classList.remove("cursor-eye-active");
+    }
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerdown", onPointerDown);
+    document.documentElement.addEventListener("mouseleave", onWindowLeave);
+
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.documentElement.removeEventListener("mouseleave", onWindowLeave);
+      document.documentElement.classList.remove("cursor-eye-active");
+    };
+  }, [fieldId, hasPassword]);
 
   return (
-    <div
-      className={`relative w-full max-w-xl${showEye ? " cursor-loupe" : ""}`}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
-      onMouseMove={(event) => updatePos(event.clientX, event.clientY)}
-    >
-      <input
-        ref={inputRef}
-        type="password"
-        required={required}
-        autoComplete={autoComplete}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        className={className}
-        style={showEye ? { cursor: "none" } : undefined}
-        aria-label={ariaLabel}
-      />
+    <>
+      <div
+        ref={rootRef}
+        data-password-field=""
+        className={`relative inline-flex max-w-[min(100%,36rem)]${
+          shake ? " field-shake" : ""
+        }`}
+      >
+        <input
+          type={visible ? "text" : "password"}
+          required={required}
+          autoComplete={autoComplete}
+          value={value}
+          size={authFieldSize(value, placeholder)}
+          onChange={(event) => {
+            onChange(event.target.value);
+            if (event.target.value.length === 0) setVisible(false);
+          }}
+          placeholder={placeholder}
+          className={className}
+          aria-label={ariaLabel}
+        />
+      </div>
 
-      {showEye && (
+      {host && showCursor && cursor ? (
         <div
           aria-hidden
-          className="pointer-events-none fixed z-[10000]"
+          className="pointer-events-none fixed z-[10000] text-white"
           style={{
-            left: pos.x - HOTSPOT_X,
-            top: pos.y - HOTSPOT_Y,
-            width: ICON,
-            height: ICON,
+            left: cursor.x,
+            top: cursor.y,
+            width: ICON_SIZE,
+            height: ICON_SIZE,
+            transform: "translate(-50%, -50%)",
           }}
         >
-          {/* Contraseña visible en todo el agujero del ojo */}
-          <div
-            className="absolute inset-0 overflow-hidden bg-[var(--background)]"
-            style={{ clipPath: eyeClipPath(ICON) }}
-          >
-            <div
-              className="absolute flex items-center justify-center whitespace-nowrap font-normal tracking-wide text-white"
-              style={{
-                left: HOTSPOT_X - rel.x * MAG,
-                top: HOTSPOT_Y - rel.y * MAG,
-                width: Math.max(rel.w, 1) * MAG,
-                height: Math.max(rel.h, 1) * MAG,
-                fontSize: 24 * MAG,
-                lineHeight: 1,
-              }}
-            >
-              {value}
-            </div>
-          </div>
-
-          <svg
-            className="absolute inset-0 h-full w-full text-white"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ shapeRendering: "crispEdges" }}
-          >
-            <path
-              d={EYE_PATH}
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinejoin="miter"
+          {eyeClosed ? (
+            <PixelarticonsEyeClosed
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              style={{ display: "block" }}
             />
-          </svg>
+          ) : (
+            <PixelarticonsEye
+              width={ICON_SIZE}
+              height={ICON_SIZE}
+              style={{ display: "block" }}
+            />
+          )}
         </div>
-      )}
-    </div>
+      ) : null}
+    </>
   );
 }

@@ -6,10 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-urls";
 import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
+import {
+  authFieldClassName,
+  authFieldSize,
+} from "@/components/auth/auth-field";
 import { SiteHeader } from "@/components/layout/site-header";
 
-const fieldClassName =
-  "w-full max-w-xl bg-transparent text-center text-[clamp(22px,4.5vw,30px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
+const fieldClassName = authFieldClassName;
 
 type Mode = "login" | "forgot";
 
@@ -32,11 +35,22 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [forgotSent, setForgotSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
+  const [shakeTick, setShakeTick] = useState(0);
+  const [shakeFields, setShakeFields] = useState<Array<"email" | "password">>(
+    [],
+  );
 
   const emailOk = email.trim().length > 0 && email.includes("@");
   const passwordOk = password.length > 0;
-  const canSubmitLogin = !loading && emailOk && passwordOk;
-  const canSubmitForgot = !loading && emailOk && !forgotSent;
+  const canSubmitForgot = !loading && !forgotSent;
+
+  function shake(fields: Array<"email" | "password">) {
+    setShakeFields([]);
+    window.requestAnimationFrame(() => {
+      setShakeFields(fields);
+      setShakeTick((tick) => tick + 1);
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -44,7 +58,14 @@ export function LoginForm() {
       await handleForgotPassword();
       return;
     }
-    if (!canSubmitLogin) return;
+
+    const invalid: Array<"email" | "password"> = [];
+    if (!emailOk) invalid.push("email");
+    if (!passwordOk) invalid.push("password");
+    if (invalid.length > 0) {
+      shake(invalid);
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -62,6 +83,7 @@ export function LoginForm() {
       const msg = signInError.message.toLowerCase();
       if (msg.includes("invalid login") || msg.includes("invalid credentials")) {
         setError("Correo o contraseña incorrectos.");
+        shake(["email", "password"]);
       } else if (msg.includes("email not confirmed")) {
         setError("Confirma tu correo antes de entrar.");
       } else {
@@ -75,7 +97,9 @@ export function LoginForm() {
   }
 
   async function handleForgotPassword() {
-    if (!canSubmitForgot) {
+    if (forgotSent || loading) return;
+    if (!emailOk) {
+      shake(["email"]);
       setError("Introduce tu correo electrónico.");
       return;
     }
@@ -137,6 +161,7 @@ export function LoginForm() {
 
       <form
         onSubmit={handleSubmit}
+        noValidate
         className="relative flex h-full min-h-0 flex-1 flex-col"
       >
         {mode === "forgot" ? (
@@ -155,13 +180,16 @@ export function LoginForm() {
                   </p>
 
                   <input
+                    key={`forgot-email-${shakeTick}`}
                     type="email"
-                    required
                     autoComplete="email"
                     value={email}
+                    size={authFieldSize(email, "correo electrónico")}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="correo electrónico"
-                    className={fieldClassName}
+                    className={`${fieldClassName}${
+                      shakeFields.includes("email") ? " field-shake" : ""
+                    }`}
                     aria-label="correo electrónico"
                     autoFocus
                   />
@@ -178,21 +206,27 @@ export function LoginForm() {
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-6 px-[18px]">
             <input
+              key={`login-email-${shakeTick}`}
               type="email"
-              required
               autoComplete="email"
               value={email}
+              size={authFieldSize(email, "correo electrónico")}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="correo electrónico"
-              className={fieldClassName}
+              className={`${fieldClassName}${
+                shakeFields.includes("email") ? " field-shake" : ""
+              }`}
               aria-label="correo electrónico"
             />
 
             <PasswordLoupeField
+              key={`login-password-${shakeTick}`}
               value={password}
               onChange={setPassword}
               className={fieldClassName}
               autoComplete="current-password"
+              required={false}
+              shake={shakeFields.includes("password")}
             />
 
             {error ? (
@@ -232,23 +266,12 @@ export function LoginForm() {
           {mode === "forgot" && forgotSent ? null : (
             <button
               type="submit"
-              disabled={mode === "forgot" ? !canSubmitForgot : !canSubmitLogin}
+              disabled={loading || (mode === "forgot" && !canSubmitForgot)}
               className={
-                (mode === "forgot" ? canSubmitForgot : canSubmitLogin)
-                  ? "text-white"
-                  : "cursor-default text-white/[0.72]"
+                loading ? "cursor-default text-white/[0.72]" : "text-white"
               }
             >
-              {loading ? (
-                "[...]"
-              ) : (
-                <span className="inline-flex items-center gap-1.5">
-                  SIGUIENTE
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-[1em] w-[1em]" style={{ imageRendering: "pixelated" }} aria-hidden>
-                    <path d="M4 20h16v2H4zM4 2h16v2H4zM2 4h2v16H2zm18 0h2v16h-2zm-5 7v2h-2v-2zm-2-2v2h-2V9zm-2-2v2H9V7zm2 6v2h-2v-2zm-2 2v2H9v-2z" />
-                  </svg>
-                </span>
-              )}
+              {loading ? "[...]" : "[SIGUIENTE]"}
             </button>
           )}
         </div>

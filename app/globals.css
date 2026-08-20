@@ -177,6 +177,26 @@ input:-webkit-autofill:active {
   cursor: none !important;
 }
 
+html.cursor-eye-active,
+html.cursor-eye-active * {
+  cursor: none !important;
+}
+
+html.cursor-eye-active button,
+html.cursor-eye-active a,
+html.cursor-eye-active [role="button"],
+html.cursor-eye-active label {
+  cursor: pointer !important;
+}
+
+html.cursor-eye-active input,
+html.cursor-eye-active textarea,
+html.cursor-eye-active select,
+html.cursor-eye-active [data-password-field],
+html.cursor-eye-active [data-password-field] * {
+  cursor: text !important;
+}
+
 .cursor-stopwatch {
   cursor: url("/cursors/stopwatch/frame_00.png") 16 19, auto;
 }
@@ -523,49 +543,6 @@ input:-webkit-autofill:active {
   line-height: 1;
 }
 
-/* Boton pixel-art: borde SVG con esquinas escalonadas pixel-perfect.
-   Usa border-image con un SVG 20×14 (path evenodd) y 9-slice. */
-.btn-pixel {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: #fff;
-  border-style: solid;
-  border-width: 0;
-  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' fill='%23fff' d='M3 0H17V1H18V2H19V3H20V11H19V12H18V13H17V14H3V13H2V12H1V11H0V3H1V2H2V1H3ZM5 3H15V4H16V5H17V9H16V10H15V11H5V10H4V9H3V5H4V4H5Z'/%3E%3C/svg%3E");
-  border-image-slice: 5;
-  border-image-width: 5px;
-  border-image-repeat: stretch;
-  padding: 6px 18px;
-  font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  text-transform: uppercase;
-  border-radius: 0;
-  outline: none;
-  box-shadow: none;
-}
-
-/* Sobre fondo blanco: bordes y texto azules. */
-html[data-chrome="white"] .btn-pixel {
-  color: var(--background);
-  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' fill='%23006eff' d='M3 0H17V1H18V2H19V3H20V11H19V12H18V13H17V14H3V13H2V12H1V11H0V3H1V2H2V1H3ZM5 3H15V4H16V5H17V9H16V10H15V11H5V10H4V9H3V5H4V4H5Z'/%3E%3C/svg%3E");
-}
-
-/* Sobre fondo negro: bordes y texto blancos. */
-.crt-shell--black .btn-pixel {
-  color: #fff;
-  border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' shape-rendering='crispEdges'%3E%3Cpath fill-rule='evenodd' fill='%23fff' d='M3 0H17V1H18V2H19V3H20V11H19V12H18V13H17V14H3V13H2V12H1V11H0V3H1V2H2V1H3ZM5 3H15V4H16V5H17V9H16V10H15V11H5V10H4V9H3V5H4V4H5Z'/%3E%3C/svg%3E");
-}
-
-.btn-pixel:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 @media (hover: hover) and (pointer: fine) {
   [data-detalle="true"] [data-participar-zone],
   [data-detalle="true"] [data-participar-zone] * {
@@ -584,6 +561,25 @@ html[data-chrome="white"] .btn-pixel {
   [data-participar-zone] [data-codigo-field],
   [data-participar-zone] [data-codigo-field] * {
     cursor: url("/beam_m.png") 15 15, text !important;
+  }
+
+  /* Pantalla introducir código: cursor del sistema (flecha / texto / pointer). */
+  html.codigo-overlay-open,
+  html.codigo-overlay-open *,
+  html.codigo-overlay-open body.crt-body,
+  [data-codigo-overlay],
+  [data-codigo-overlay] * {
+    cursor: default !important;
+  }
+
+  html.codigo-overlay-open [data-codigo-overlay] input,
+  [data-codigo-overlay] input {
+    cursor: text !important;
+  }
+
+  html.codigo-overlay-open [data-codigo-overlay] button,
+  [data-codigo-overlay] button {
+    cursor: pointer !important;
   }
 }
 
@@ -614,9 +610,89 @@ html[data-chrome="white"] .btn-pixel {
   }
 }
 
+@keyframes field-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.field-shake {
+  animation: field-shake 0.42s ease-in-out;
+}
+
+/* Latido de fondo (pantalla código): dos golpes + pausa, con sombra negra. */
+@keyframes codigo-heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  8% {
+    transform: scale(1.14);
+    opacity: 0.95;
+  }
+  16% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  24% {
+    transform: scale(1.08);
+    opacity: 0.82;
+  }
+  34% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+}
+
+.codigo-heartbeat {
+  background:
+    radial-gradient(
+      ellipse 70% 60% at 50% 45%,
+      transparent 0%,
+      transparent 28%,
+      rgba(0, 0, 0, 0.35) 58%,
+      rgba(0, 0, 0, 0.75) 100%
+    ),
+    radial-gradient(
+      circle at 50% 48%,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.2) 32%,
+      transparent 62%
+    );
+  box-shadow:
+    inset 0 0 80px rgba(0, 0, 0, 0.55),
+    inset 0 0 160px rgba(0, 0, 0, 0.4);
+  transform-origin: center center;
+  animation: codigo-heartbeat 1.15s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .crt-beam {
     display: none;
+  }
+
+  .field-shake {
+    animation: none;
+  }
+
+  .codigo-heartbeat {
+    animation: none;
+    opacity: 0.65;
   }
 
   .participar-bulb {

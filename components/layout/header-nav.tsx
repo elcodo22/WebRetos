@@ -42,14 +42,22 @@ export function HeaderNav({
         <>
           {user ? (
             <>
-              <ArchivosSearch />
+              <span className="inline-flex items-center self-center">
+                <ArchivosSearch />
+              </span>
               <ProfileMenu username={profileUsername} />
             </>
           ) : (
             <>
-              <span className="max-md:order-2"><Link href="/login">[Login]</Link></span>
-              <span className="max-md:order-3"><Link href="/registro">[Registro]</Link></span>
-              <span className="max-md:order-1"><ArchivosSearch /></span>
+              <span className="inline-flex items-center self-center max-md:order-2">
+                <Link href="/login">[Login]</Link>
+              </span>
+              <span className="inline-flex items-center self-center max-md:order-3">
+                <Link href="/registro">[Registro]</Link>
+              </span>
+              <span className="inline-flex items-center self-center max-md:order-1">
+                <ArchivosSearch />
+              </span>
             </>
           )}
         </>

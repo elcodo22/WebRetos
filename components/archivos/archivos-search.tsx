@@ -10,7 +10,7 @@ export function ArchivosSearch() {
       type="button"
       onClick={open}
       aria-label="Buscar en archivos"
-      className="inline-flex items-center justify-center leading-none"
+      className="inline-flex h-[1em] w-[1em] shrink-0 items-center justify-center self-center leading-none"
     >
       <LupaIcon />
     </button>
@@ -25,11 +25,9 @@ function LupaIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="18"
-      height="18"
       viewBox="0 0 24 24"
       fill="none"
-      className="block h-[18px] w-[18px] md:h-[24px] md:w-[24px]"
+      className="block h-[1em] w-[1em]"
       style={{ shapeRendering: "crispEdges" }}
       aria-hidden
     >

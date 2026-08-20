@@ -14,9 +14,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-urls";
 import { PasswordLoupeField } from "@/components/auth/password-loupe-field";
+import {
+  authFieldClassName,
+  authFieldSize,
+} from "@/components/auth/auth-field";
 
-const fieldClassName =
-  "w-full max-w-xl bg-transparent text-center text-[clamp(22px,4.5vw,30px)] font-normal tracking-wide text-white outline-none placeholder:text-white/[0.72]";
+const fieldClassName = authFieldClassName;
 
 const OTP_LENGTH = 6;
 
@@ -68,6 +71,8 @@ export function RegistroForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formMessage, setFormMessage] = useState<string | null>(null);
   const [pendingVerify, setPendingVerify] = useState(false);
+  const [shakeTick, setShakeTick] = useState(0);
+  const [shakeFields, setShakeFields] = useState<FieldKey[]>([]);
   const [otpDigits, setOtpDigits] = useState<string[]>(() =>
     Array.from({ length: OTP_LENGTH }, () => ""),
   );
@@ -82,6 +87,14 @@ export function RegistroForm() {
 
   const otpCode = otpDigits.join("");
   const otpComplete = otpCode.length === OTP_LENGTH && /^\d{6}$/.test(otpCode);
+
+  function shake(fields: FieldKey[]) {
+    setShakeFields([]);
+    window.requestAnimationFrame(() => {
+      setShakeFields(fields);
+      setShakeTick((tick) => tick + 1);
+    });
+  }
 
   function clearFieldError(key: FieldKey) {
     setFormMessage(null);
@@ -251,14 +264,15 @@ export function RegistroForm() {
     if (loading || pendingVerify) return;
 
     const username = normalizeUsername(nombreUsuario);
-    const missing =
-      !nombre.trim() ||
-      !nombreUsuario.trim() ||
-      !email.trim() ||
-      !password ||
-      !password2;
+    const invalid: FieldKey[] = [];
+    if (!nombre.trim()) invalid.push("nombre");
+    if (!nombreUsuario.trim()) invalid.push("nombreUsuario");
+    if (!email.trim()) invalid.push("email");
+    if (!password) invalid.push("password");
+    if (!password2) invalid.push("password2");
 
-    if (missing) {
+    if (invalid.length > 0) {
+      shake(invalid);
       setFieldErrors({});
       setFormMessage("rellena todos los campos");
       return;
@@ -282,6 +296,7 @@ export function RegistroForm() {
     }
 
     if (Object.keys(errors).length > 0) {
+      shake(Object.keys(errors) as FieldKey[]);
       setFormMessage(null);
       setFieldErrors(errors);
       return;
@@ -303,6 +318,7 @@ export function RegistroForm() {
     if (lookupError) {
       setLoading(false);
       setFieldErrors({ nombreUsuario: lookupError.message });
+      shake(["nombreUsuario"]);
       return;
     }
     if (existing) {
@@ -310,6 +326,7 @@ export function RegistroForm() {
       setFieldErrors({
         nombreUsuario: "Ese nombre de usuario ya está en uso.",
       });
+      shake(["nombreUsuario"]);
       return;
     }
 
@@ -331,11 +348,13 @@ export function RegistroForm() {
       const msg = signUpError.message.toLowerCase();
       if (msg.includes("already registered") || msg.includes("already been")) {
         setFieldErrors({ email: "Ya existe una cuenta con ese correo." });
+        shake(["email"]);
       } else if (msg.includes("weak_password") || msg.includes("characters")) {
         setFieldErrors({
           password:
             "La contraseña debe tener mínimo 6 caracteres, con mayúscula, minúscula y número.",
         });
+        shake(["password"]);
       } else if (
         msg.includes("confirmation email") ||
         msg.includes("sending confirmation") ||
@@ -347,6 +366,7 @@ export function RegistroForm() {
           "No se pudo enviar el correo de verificación (SMTP/Resend). Revisa Auth → SMTP en Supabase.",
         );
         setFieldErrors({ email: signUpError.message });
+        shake(["email"]);
       } else if (
         msg.includes("database") ||
         msg.includes("trigger") ||
@@ -356,11 +376,14 @@ export function RegistroForm() {
           "Error al crear el perfil en la base de datos. Revisa Logs en Supabase.",
         );
         setFieldErrors({ email: signUpError.message });
+        shake(["email"]);
       } else if (msg.includes("email") && msg.includes("invalid")) {
         setFieldErrors({ email: "Introduce un correo electrónico válido." });
+        shake(["email"]);
       } else {
         setFormMessage(signUpError.message);
         setFieldErrors({ email: signUpError.message });
+        shake(["email"]);
       }
       return;
     }
@@ -369,6 +392,7 @@ export function RegistroForm() {
     if (data.user && identities.length === 0) {
       setLoading(false);
       setFieldErrors({ email: "Ya existe una cuenta con ese correo." });
+      shake(["email"]);
       return;
     }
 
@@ -388,8 +412,10 @@ export function RegistroForm() {
           setFieldErrors({
             nombreUsuario: "Ese nombre de usuario ya está en uso.",
           });
+          shake(["nombreUsuario"]);
         } else {
           setFieldErrors({ nombreUsuario: perfilError.message });
+          shake(["nombreUsuario"]);
         }
         return;
       }
@@ -493,48 +519,61 @@ export function RegistroForm() {
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto scrollbar-none px-[18px] py-6">
         <input
+          key={`nombre-${shakeTick}`}
           type="text"
           autoComplete="name"
           value={nombre}
+          size={authFieldSize(nombre, "nombre")}
           onChange={(event) => {
             setNombre(event.target.value);
             clearFieldError("nombre");
           }}
           placeholder="nombre"
-          className={fieldClassName}
+          className={`${fieldClassName}${
+            shakeFields.includes("nombre") ? " field-shake" : ""
+          }`}
           aria-label="nombre"
           aria-invalid={Boolean(fieldErrors.nombre)}
         />
 
         <input
+          key={`nombreUsuario-${shakeTick}`}
           type="text"
           autoComplete="username"
           value={nombreUsuario}
+          size={authFieldSize(nombreUsuario, "nombre de usuario")}
           onChange={(event) => {
             setNombreUsuario(event.target.value);
             clearFieldError("nombreUsuario");
           }}
           placeholder="nombre de usuario"
-          className={fieldClassName}
+          className={`${fieldClassName}${
+            shakeFields.includes("nombreUsuario") ? " field-shake" : ""
+          }`}
           aria-label="nombre de usuario"
           aria-invalid={Boolean(fieldErrors.nombreUsuario)}
         />
 
         <input
+          key={`email-${shakeTick}`}
           type="email"
           autoComplete="email"
           value={email}
+          size={authFieldSize(email, "correo electrónico")}
           onChange={(event) => {
             setEmail(event.target.value);
             clearFieldError("email");
           }}
           placeholder="correo electrónico"
-          className={fieldClassName}
+          className={`${fieldClassName}${
+            shakeFields.includes("email") ? " field-shake" : ""
+          }`}
           aria-label="correo electrónico"
           aria-invalid={Boolean(fieldErrors.email)}
         />
 
         <PasswordLoupeField
+          key={`password-${shakeTick}`}
           value={password}
           onChange={(value) => {
             setPassword(value);
@@ -545,9 +584,11 @@ export function RegistroForm() {
           autoComplete="new-password"
           aria-label="contraseña"
           required={false}
+          shake={shakeFields.includes("password")}
         />
 
         <PasswordLoupeField
+          key={`password2-${shakeTick}`}
           value={password2}
           onChange={(value) => {
             setPassword2(value);
@@ -558,6 +599,7 @@ export function RegistroForm() {
           autoComplete="new-password"
           aria-label="repetir contraseña"
           required={false}
+          shake={shakeFields.includes("password2")}
         />
       </div>
 
@@ -576,16 +618,7 @@ export function RegistroForm() {
               loading ? "cursor-default text-white/[0.72]" : "text-white"
             }
           >
-            {loading ? (
-              "[...]"
-            ) : (
-              <span className="inline-flex items-center gap-1.5">
-                SIGUIENTE
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[1em] w-[1em]" style={{ imageRendering: "pixelated" }} aria-hidden>
-                  <path d="M4 20h16v2H4zM4 2h16v2H4zM2 4h2v16H2zm18 0h2v16h-2zm-5 7v2h-2v-2zm-2-2v2h-2V9zm-2-2v2H9V7zm2 6v2h-2v-2zm-2 2v2H9v-2z" />
-                </svg>
-              </span>
-            )}
+            {loading ? "[...]" : "[SIGUIENTE]"}
           </button>
         </div>
       </div>
