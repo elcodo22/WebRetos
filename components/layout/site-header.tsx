@@ -5,6 +5,8 @@ import { slugUsername } from "@/lib/mocks/perfil";
 
 type SiteHeaderVariant = "default" | "login" | "registro" | "forgot";
 
+export type { SiteHeaderVariant };
+
 function usernameFromUser(user: User) {
   const meta = user.user_metadata as Record<string, unknown> | undefined;
   const raw =
@@ -22,6 +24,7 @@ export function SiteHeader({
   variant = "default",
   center,
   onLoginClick,
+  navLayout = "row",
 }: {
   user: User | null;
   /** @deprecated El temporizador está en el hero del home. */
@@ -33,18 +36,28 @@ export function SiteHeader({
   center?: ReactNode;
   /** Si se pasa en pantallas auth, [Login] llama a esto en lugar de navegar. */
   onLoginClick?: () => void;
+  /** Disposición del nav: fila (header) o columna (menú móvil). */
+  navLayout?: "row" | "stack";
 }) {
   const profileUsername = user ? usernameFromUser(user) : null;
   const hasCenter = center != null;
+  const isStack = navLayout === "stack";
 
   return (
-    <header className="relative flex w-full flex-col gap-2 bg-transparent px-[var(--grid-margin)] pb-3 pt-[max(1.125rem,var(--safe-top))] text-current [background:transparent] md:pb-4 md:pt-[max(1.625rem,var(--safe-top))]">
-      <div className="z-10 w-full">
+    <header
+      className={`relative flex w-full flex-col bg-transparent text-current [background:transparent] ${
+        isStack
+          ? "items-center gap-0 px-0 pb-0 pt-0"
+          : "gap-2 px-[var(--grid-margin)] pb-3 pt-[max(1.125rem,var(--safe-top))] md:pb-4 md:pt-[max(1.625rem,var(--safe-top))]"
+      }`}
+    >
+      <div className={isStack ? "flex w-full justify-center" : "z-10 w-full"}>
         <HeaderNav
           user={user}
           variant={variant}
           profileUsername={profileUsername}
           onLoginClick={onLoginClick}
+          layout={navLayout}
         />
       </div>
 

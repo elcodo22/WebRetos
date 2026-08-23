@@ -1,9 +1,9 @@
-import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/layout/site-header";
+import { SitePageShell } from "@/components/layout/site-page-shell";
 import { PerfilScreen } from "@/components/perfil/perfil-screen";
 import { getPerfilMock, slugUsername } from "@/lib/mocks/perfil";
 import { getCurrentUser } from "@/lib/home-data";
 import { loadRetosArchivo } from "@/lib/retos-archivo-data";
+import { notFound } from "next/navigation";
 
 type PageProps = {
   params: Promise<{ username: string }>;
@@ -46,15 +46,10 @@ export default async function PerfilPage({ params }: PageProps) {
   if (!perfil) notFound();
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-transparent">
-        <div className="pointer-events-auto bg-transparent">
-          <SiteHeader user={user} showCountdown={false} />
-        </div>
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col pt-[var(--header-offset)] pb-[var(--safe-bottom)]">
+    <SitePageShell user={user} desktopOverlay menuTone="black" className="overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col pb-[var(--safe-bottom)] md:pt-[var(--header-offset)]">
         <PerfilScreen perfil={perfil} isOwnProfile={isOwnProfile} user={user} />
       </div>
-    </div>
+    </SitePageShell>
   );
 }

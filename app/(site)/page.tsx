@@ -45,6 +45,7 @@ export default async function Home() {
   return (
     <div className="h-full min-h-0">
       <HomeSnap
+        user={user}
         header={<SiteHeader user={user} />}
         hero={hero}
         archivos={<ArchivosCarousel retos={retosArchivo} />}

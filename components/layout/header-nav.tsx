@@ -19,18 +19,33 @@ function NavLinks({
   user,
   profileUsername,
   onLoginClick,
+  layout = "row",
 }: {
   variant: SiteHeaderVariant;
   user: User | null;
   profileUsername: string | null;
   onLoginClick?: () => void;
+  layout?: "row" | "stack";
 }) {
+  const itemClass =
+    layout === "stack"
+      ? `${navLinkClass} block w-full text-center`
+      : navLinkClass;
+
+  const searchNode = (className: string) => (
+    <div
+      className={layout === "stack" ? "flex w-full justify-center" : undefined}
+    >
+      <ArchivosSearch className={className} />
+    </div>
+  );
+
   if (variant === "login") {
-    return <Link href="/registro" className={navLinkClass}>[REGISTRO]</Link>;
+    return <Link href="/registro" className={itemClass}>[REGISTRO]</Link>;
   }
 
   if (variant === "registro") {
-    return <Link href="/login" className={navLinkClass}>[LOGIN]</Link>;
+    return <Link href="/login" className={itemClass}>[LOGIN]</Link>;
   }
 
   if (variant === "forgot") {
@@ -40,16 +55,16 @@ function NavLinks({
           <button
             type="button"
             onClick={onLoginClick}
-            className={`cursor-pointer ${navLinkClass}`}
+            className={`cursor-pointer ${itemClass}`}
           >
             [LOGIN]
           </button>
         ) : (
-          <Link href="/login" className={navLinkClass}>
+          <Link href="/login" className={itemClass}>
             [LOGIN]
           </Link>
         )}
-        <Link href="/registro" className={navLinkClass}>
+        <Link href="/registro" className={itemClass}>
           [REGISTRO]
         </Link>
       </>
@@ -59,19 +74,21 @@ function NavLinks({
   if (user) {
     return (
       <>
-        <ArchivosSearch className={navLinkClass} />
-        <ProfileMenu username={profileUsername} />
+        {searchNode(layout === "stack" ? navLinkClass : itemClass)}
+        <div className={layout === "stack" ? "flex w-full justify-center" : undefined}>
+          <ProfileMenu username={profileUsername} />
+        </div>
       </>
     );
   }
 
   return (
     <>
-      <ArchivosSearch className={navLinkClass} />
-      <Link href="/login" className={navLinkClass}>
+      {searchNode(layout === "stack" ? navLinkClass : itemClass)}
+      <Link href="/login" className={itemClass}>
         [LOGIN]
       </Link>
-      <Link href="/registro" className={navLinkClass}>
+      <Link href="/registro" className={itemClass}>
         [REGISTRO]
       </Link>
     </>
@@ -83,11 +100,13 @@ export function HeaderNav({
   variant,
   profileUsername,
   onLoginClick,
+  layout = "row",
 }: {
   user: User | null;
   variant: SiteHeaderVariant;
   profileUsername: string | null;
   onLoginClick?: () => void;
+  layout?: "row" | "stack";
 }) {
   const pathname = usePathname();
   const showHome = pathname !== "/";
@@ -98,8 +117,25 @@ export function HeaderNav({
       user={user}
       profileUsername={profileUsername}
       onLoginClick={onLoginClick}
+      layout={layout}
     />
   );
+
+  if (layout === "stack") {
+    return (
+      <nav
+        className="flex w-full max-w-xs flex-col items-center gap-8 text-center"
+        aria-label="Navegación principal"
+      >
+        {showHome ? (
+          <Link href="/" className={`${navLinkClass} block w-full text-center`}>
+            [HOME]
+          </Link>
+        ) : null}
+        {navLinks}
+      </nav>
+    );
+  }
 
   if (showHome) {
     return (

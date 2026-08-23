@@ -25,6 +25,7 @@ export default async function RetoArchivoPage({ params }: PageProps) {
 
   return (
     <RetoSnap
+      user={user}
       header={<SiteHeader user={user} showCountdown={false} />}
       hero={<RetoTitleNav numero={reto.numero} titulo={reto.titulo} />}
       feed={

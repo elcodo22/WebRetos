@@ -13,9 +13,6 @@ import { readSavedCajasForUi, type SavedCaja } from "@/lib/perfil-caja";
 
 const EMPTY_CAJAS: SavedCaja[] = [];
 
-/** Ancho de la miniatura en móvil (igual que el carrusel). */
-const MOBILE_CARD = "min(48vw, 42vh)";
-
 function RetoFocusLabel({
   focus,
   onOpen,
@@ -131,49 +128,20 @@ export function PerfilScreen({
     }
   }, [perfil.username]);
 
+  const chromeHidden = lifting
+    ? "pointer-events-none opacity-0"
+    : "opacity-100";
+
   return (
     <div className="relative flex h-full min-h-0 flex-col text-white select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
-      <div className="relative flex min-h-0 flex-1 flex-col max-md:-translate-y-[7vh]">
-        {showCarousel ? (
-          <PerfilCarousel
-            obras={perfil.obras}
-            cajas={isOwnProfile ? cajas : EMPTY_CAJAS}
-            user={user}
-            onFocusChange={onFocusChange}
-            onLiftChange={setLifting}
-          />
-        ) : null}
-
-        {showEmptyMessage ? (
-          <p className="pointer-events-none absolute left-1/2 top-1/2 z-10 max-w-md -translate-x-1/2 -translate-y-1/2 text-center text-[25px] font-normal tracking-wide text-white/[0.72]">
-            todavía no hay guardados ni participaciones
-          </p>
-        ) : null}
-
-        {focus && !lifting ? (
-          <div
-            className="absolute inset-x-0 top-1/2 z-20 hidden justify-center px-[var(--grid-margin)] text-center max-md:flex"
-            style={{
-              transform: `translateY(calc(${MOBILE_CARD} * 0.75 + 22px))`,
-            }}
-          >
-            <RetoFocusLabel
-              focus={focus}
-              onOpen={(id) => powerOffTo(`/reto/${id}`)}
-            />
-          </div>
-        ) : null}
-      </div>
-
-      <div
-        className={`site-grid shrink-0 items-center gap-y-3 pb-6 pt-3 transition-opacity duration-200 max-md:absolute max-md:inset-x-0 max-md:bottom-0 max-md:z-20 max-md:flex max-md:flex-col max-md:items-stretch max-md:px-[var(--grid-margin)] max-md:pb-[max(1rem,var(--safe-bottom))] max-md:pt-0 md:pb-8 ${
-          lifting ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
+      {/* Usuario arriba izquierda, participaciones arriba derecha */}
+      <header
+        className={`shrink-0 px-[var(--grid-margin)] pt-[max(1.25rem,var(--safe-top))] pb-3 transition-opacity duration-200 md:pt-4 ${chromeHidden}`}
       >
-        <div className="col-span-3 min-w-0 max-md:col-span-full max-md:flex max-md:w-full max-md:items-center max-md:text-left">
-          <div className="min-w-0 max-md:mr-3 max-md:flex-1">
-            <div className="flex min-w-0 items-center gap-2.5 max-md:justify-start">
-              <p className="truncate text-[clamp(25px,5vw,35px)] font-normal leading-none tracking-wide">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <p className="truncate text-[clamp(20px,5vw,28px)] font-normal leading-none tracking-wide">
                 {formatUsername(perfil.username)}
               </p>
               <div className="relative shrink-0">
@@ -200,26 +168,49 @@ export function PerfilScreen({
                 ) : null}
               </div>
             </div>
-            <p className="mt-1.5 text-[clamp(16px,3.5vw,20px)] font-normal leading-snug tracking-wide text-white/90 md:mt-2 md:truncate md:leading-none">
+            <p className="mt-1 truncate text-[clamp(14px,3.5vw,18px)] font-normal leading-snug tracking-wide text-white/90">
               {perfil.nombreCompleto}
             </p>
           </div>
-          <p className="ml-auto shrink-0 self-center text-right text-[clamp(16px,3.5vw,20px)] font-normal leading-none tracking-wide md:hidden">
+          <p className="shrink-0 pt-0.5 text-right text-[clamp(14px,3.5vw,18px)] font-normal leading-snug tracking-wide">
             {perfil.participaciones} participaciones
           </p>
         </div>
+      </header>
 
-        <div className="col-span-4 hidden min-w-0 px-2 text-center md:block">
-          <RetoFocusLabel
-            focus={focus}
-            onOpen={(id) => powerOffTo(`/reto/${id}`)}
-          />
-        </div>
+      {/* Centro: miniatura + título alineados */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
+          <div className="flex w-full flex-col items-center justify-center max-md:max-w-full md:min-h-0 md:flex-1">
+            {showCarousel ? (
+              <div className="flex w-full min-h-0 items-center justify-center max-md:h-[min(calc(min(48vw,42vh)*1.5),58vh)] md:flex-1">
+                <PerfilCarousel
+                  obras={perfil.obras}
+                  cajas={isOwnProfile ? cajas : EMPTY_CAJAS}
+                  user={user}
+                  onFocusChange={onFocusChange}
+                  onLiftChange={setLifting}
+                />
+              </div>
+            ) : null}
 
-        <div className="col-span-3 hidden text-right md:block">
-          <p className="text-[clamp(18px,3.5vw,20px)] font-normal leading-none tracking-wide">
-            {perfil.participaciones} participaciones
-          </p>
+            {showEmptyMessage ? (
+              <p className="pointer-events-none max-w-md px-[var(--grid-margin)] text-center text-[25px] font-normal tracking-wide text-white/[0.72]">
+                todavía no hay guardados ni participaciones
+              </p>
+            ) : null}
+
+            {focus && !lifting ? (
+              <div
+                className={`mt-4 shrink-0 px-[var(--grid-margin)] text-center transition-opacity duration-200 ${chromeHidden}`}
+              >
+                <RetoFocusLabel
+                  focus={focus}
+                  onOpen={(id) => powerOffTo(`/reto/${id}`)}
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

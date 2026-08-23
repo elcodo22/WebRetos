@@ -7,7 +7,7 @@ import type { PerfilObra } from "@/lib/mocks/perfil";
 import { perfilHref } from "@/lib/mocks/perfil";
 import { FolderIcon } from "@/components/archivos/folder-icon";
 import { useCrtPower } from "@/components/layout/crt-power-transition";
-import { SiteHeader } from "@/components/layout/site-header";
+import { SiteMobileChrome } from "@/components/layout/site-mobile-chrome";
 import {
   PerfilLiftOverlay,
   type LiftState,
@@ -212,11 +212,17 @@ export function PerfilCajaOverlay({
       aria-modal
       aria-label="Guardados"
     >
+      <SiteMobileChrome
+        user={user}
+        desktopOverlay
+        menuTone="black"
+        zIndex={110}
+      >
       {openFolder ? (
         <>
           {/* Lienzo a pantalla completa: las portadas pasan bajo header y pie */}
           <div className="absolute inset-0 overflow-y-auto scrollbar-none">
-            <ul className="m-0 box-border grid w-full list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-28 pt-[88px] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6 md:pt-[100px]">
+            <ul className="m-0 box-border grid w-full list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-28 pt-[max(1.25rem,var(--safe-top))] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6 md:pt-[100px]">
               {folderObras.map((obra) => (
                 <li key={obra.id} className="relative min-w-0">
                   <button
@@ -319,12 +325,6 @@ export function PerfilCajaOverlay({
             </ul>
           </div>
 
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-transparent">
-            <div className="pointer-events-auto bg-transparent [&_header]:bg-transparent">
-              <SiteHeader user={user} showCountdown={false} />
-            </div>
-          </div>
-
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-50 bg-transparent px-[18px] pb-8 pt-10">
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black via-black/55 to-transparent"
@@ -339,13 +339,13 @@ export function PerfilCajaOverlay({
         <>
           <div className="absolute inset-0 overflow-y-auto scrollbar-none">
             {cajas.length === 0 ? (
-              <div className="flex min-h-full items-center justify-center px-[18px] pt-[100px] pb-28">
+              <div className="flex min-h-full items-center justify-center px-[18px] pt-[max(1.25rem,var(--safe-top))] pb-28">
                 <p className="text-center text-[22px] tracking-wide text-white/[0.72]">
                   Arrastra un póster a la carpeta para guardar vídeos.
                 </p>
               </div>
             ) : (
-              <ul className="grid w-full grid-cols-2 justify-items-center gap-x-4 gap-y-10 overflow-visible px-[14px] pb-28 pt-[88px] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-6 md:px-[18px] md:pt-[100px]">
+              <ul className="grid w-full grid-cols-2 justify-items-center gap-x-4 gap-y-10 overflow-visible px-[14px] pb-28 pt-[max(1.25rem,var(--safe-top))] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-6 md:px-[18px] md:pt-[100px]">
                 {cajas.map((caja) => {
                   const key = retoKey(caja.retoNumero, caja.retoTitulo);
                   const label = `#${caja.retoNumero} ${caja.retoTitulo}`;
@@ -396,12 +396,6 @@ export function PerfilCajaOverlay({
             )}
           </div>
 
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-transparent">
-            <div className="pointer-events-auto bg-transparent [&_header]:bg-transparent">
-              <SiteHeader user={user} showCountdown={false} />
-            </div>
-          </div>
-
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-50 bg-transparent px-[18px] pb-8 pt-10">
             <div
               className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black via-black/55 to-transparent"
@@ -416,6 +410,8 @@ export function PerfilCajaOverlay({
           </div>
         </>
       )}
+
+      </SiteMobileChrome>
 
       {lift ? (
         <PerfilLiftOverlay

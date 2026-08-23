@@ -64,8 +64,14 @@ html:has(.crt-shell--black) body.crt-body {
 
 html[data-chrome="white"],
 html[data-chrome="white"] body.crt-body,
-html[data-chrome="white"] .crt-shell:not(.crt-shell--black) {
+html[data-chrome="white"] .crt-shell:not(.crt-shell--black),
+html[data-chrome="white"] .crt-shell:not(.crt-shell--black) .crt-screen,
+html[data-chrome="white"] .search-root {
   background: #fff;
+}
+
+html[data-chrome="white"] {
+  color-scheme: light;
 }
 
 a {

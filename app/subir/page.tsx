@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SiteHeader } from "@/components/layout/site-header";
+import { SitePageShell } from "@/components/layout/site-page-shell";
 import { StreamPlayer } from "@/components/video/stream-player";
 import { UploadForm } from "@/components/video/upload-form";
 import { getMaxVideoDurationSeconds } from "@/lib/cloudflare/stream";
@@ -10,9 +10,11 @@ export default async function SubirPage() {
   const maxDurationSeconds = getMaxVideoDurationSeconds();
 
   return (
-    <div className="flex min-h-full flex-col bg-zinc-50 dark:bg-black">
-      <SiteHeader user={user} />
-
+    <SitePageShell
+      user={user}
+      menuTone="white"
+      className="min-h-full bg-zinc-50 dark:bg-black"
+    >
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-12">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Subir obra</h1>
@@ -65,6 +67,6 @@ export default async function SubirPage() {
           </section>
         )}
       </main>
-    </div>
+    </SitePageShell>
   );
 }

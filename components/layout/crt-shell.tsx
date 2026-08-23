@@ -37,11 +37,25 @@ function applyThemeColor(hex: string) {
   meta.setAttribute("content", hex);
 }
 
+function applyStatusBarStyle(chrome: "blue" | "white" | "black") {
+  let meta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", "apple-mobile-web-app-status-bar-style");
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute(
+    "content",
+    chrome === "white" ? "default" : "black-translucent",
+  );
+}
+
 export function setChromeTheme(chrome: "blue" | "white" | "black") {
   document.documentElement.dataset.chrome = chrome;
   applyThemeColor(
     chrome === "black" ? "#000000" : chrome === "white" ? "#ffffff" : "#006eff",
   );
+  applyStatusBarStyle(chrome);
 }
 
 export function CrtShell({ children }: { children: React.ReactNode }) {
@@ -55,8 +69,9 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (pathname === "/") return;
     setChromeTheme(blackScreen ? "black" : "blue");
-  }, [blackScreen]);
+  }, [blackScreen, pathname]);
 
   const shellClass = [
     "crt-shell",

@@ -10,7 +10,7 @@ import {
   authFieldClassName,
   authFieldSize,
 } from "@/components/auth/auth-field";
-import { SiteHeader } from "@/components/layout/site-header";
+import { SiteMobileChrome } from "@/components/layout/site-mobile-chrome";
 
 const fieldClassName = authFieldClassName;
 
@@ -143,22 +143,11 @@ export function LoginForm() {
   }
 
   return (
-    <>
-      <div className="hidden shrink-0 md:block">
-        <SiteHeader
-          user={null}
-          variant={mode === "forgot" ? "forgot" : "login"}
-          onLoginClick={mode === "forgot" ? exitForgotMode : undefined}
-        />
-      </div>
-
-      {/* Header movil: [Cerrar] arriba */}
-      <div className="flex shrink-0 items-center justify-start px-[var(--grid-margin)] pt-[max(0.75rem,var(--safe-top))] pb-2 text-[18px] font-normal tracking-wide md:hidden">
-        <Link href="/" className="text-white">
-          [Cerrar]
-        </Link>
-      </div>
-
+    <SiteMobileChrome
+      user={null}
+      variant={mode === "forgot" ? "forgot" : "login"}
+      onLoginClick={mode === "forgot" ? exitForgotMode : undefined}
+    >
       <form
         onSubmit={handleSubmit}
         noValidate
@@ -289,6 +278,6 @@ export function LoginForm() {
           </Link>
         </div>
       </form>
-    </>
+    </SiteMobileChrome>
   );
 }

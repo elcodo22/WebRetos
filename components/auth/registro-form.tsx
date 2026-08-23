@@ -437,13 +437,6 @@ export function RegistroForm() {
   if (pendingVerify) {
     return (
       <div className="relative flex h-full min-h-0 flex-1 flex-col">
-        {/* Header movil: [Cerrar] arriba */}
-        <div className="flex shrink-0 items-center justify-start px-[var(--grid-margin)] pt-[max(0.75rem,var(--safe-top))] pb-2 text-[18px] font-normal tracking-wide md:hidden">
-          <Link href="/" className="text-white">
-            [Cerrar]
-          </Link>
-        </div>
-
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-none px-[18px] py-6 text-center">
           <p className="max-w-xl text-[20px] font-normal tracking-wide text-white/[0.72]">
             Te hemos enviado un código a{" "}
@@ -510,13 +503,6 @@ export function RegistroForm() {
       className="relative flex h-full min-h-0 flex-1 flex-col"
       noValidate
     >
-      {/* Header movil: [Cerrar] arriba */}
-      <div className="flex shrink-0 items-center justify-start px-[var(--grid-margin)] pt-[max(0.75rem,var(--safe-top))] pb-2 text-[18px] font-normal tracking-wide md:hidden">
-        <Link href="/" className="text-white">
-          [Cerrar]
-        </Link>
-      </div>
-
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto scrollbar-none px-[18px] py-6">
         <input
           key={`nombre-${shakeTick}`}

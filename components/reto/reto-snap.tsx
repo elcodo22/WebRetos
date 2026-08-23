@@ -9,8 +9,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { User } from "@supabase/supabase-js";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
+import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
@@ -38,6 +40,7 @@ export function useRetoFeedNav(): RetoFeedNavCtx {
 }
 
 type RetoSnapProps = {
+  user: User | null;
   header: ReactNode;
   hero: ReactNode;
   feed: ReactNode;
@@ -46,11 +49,13 @@ type RetoSnapProps = {
 /**
  * Snap título ↔ feed. El feed es un lienzo 2D (pan infinito).
  */
-export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
+export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
   const { isOpen: searchOpen } = useSearchOverlay();
   const { isOpen: diccionarioOpen } = useDiccionario();
   const searchOpenRef = useRef(searchOpen);
   const diccionarioOpenRef = useRef(diccionarioOpen);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuOpenRef = useRef(false);
 
   const [panel, setPanel] = useState(0);
   const [feedSession, setFeedSession] = useState(0);
@@ -84,6 +89,10 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
     diccionarioOpenRef.current = diccionarioOpen;
   }, [diccionarioOpen]);
 
+  useEffect(() => {
+    mobileMenuOpenRef.current = mobileMenuOpen;
+  }, [mobileMenuOpen]);
+
   const goTo = useCallback((next: number) => {
     if (lockedRef.current) return;
     if (next === panelRef.current) return;
@@ -115,6 +124,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
+      if (mobileMenuOpenRef.current) return;
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (lockedRef.current) {
         event.preventDefault();
@@ -138,6 +148,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
 
   useEffect(() => {
     const onTouchStart = (event: TouchEvent) => {
+      if (mobileMenuOpenRef.current) return;
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
       // En el feed el pan táctil lo gestiona el lienzo; solo snap desde el título.
       if (panelRef.current === 1) {
@@ -180,13 +191,25 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
       }}
     >
       <div className="relative h-full overflow-hidden bg-black text-white pb-[var(--safe-bottom)]">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-50 bg-transparent">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-50 hidden bg-transparent md:block">
           <div className="pointer-events-auto bg-transparent [&_header]:bg-transparent">
             {header}
           </div>
         </div>
 
-        <div className="relative h-full overflow-hidden">
+        <SiteMobileMenu
+          user={user}
+          menuTone="black"
+          menuOpen={mobileMenuOpen}
+          onMenuOpenChange={setMobileMenuOpen}
+        />
+
+        <div
+          className={`relative h-full min-h-0${
+            mobileMenuOpen ? " max-md:pointer-events-none max-md:invisible" : ""
+          }`}
+        >
+          <div className="relative h-full overflow-hidden">
           <div
             className="flex h-[200%] flex-col will-change-transform"
             style={{
@@ -214,6 +237,7 @@ export function RetoSnap({ header, hero, feed }: RetoSnapProps) {
               </div>
             </section>
           </div>
+        </div>
         </div>
 
         <div

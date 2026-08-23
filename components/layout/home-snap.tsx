@@ -19,6 +19,8 @@ import {
   type HeroStep,
 } from "@/components/reto/reto-hero";
 import { setChromeTheme } from "@/components/layout/crt-shell";
+import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
+import type { User } from "@supabase/supabase-js";
 
 const PANEL_TRANSITION_MS = 300;
 const PANEL_LOCK_MS = PANEL_TRANSITION_MS + 40;
@@ -35,12 +37,14 @@ const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
 const HERO_REQUEST_EVENT = "carousel-request-hero";
 
 type HomeSnapProps = {
+  user: User | null;
   header: ReactNode;
   hero: ReactNode;
   archivos: ReactNode;
 };
 
 export function HomeSnap({
+  user,
   header,
   hero,
   archivos,
@@ -56,12 +60,14 @@ export function HomeSnap({
   const [panel, setPanel] = useState(0);
   const [heroStep, setHeroStepState] = useState<HeroStep>(0);
   const [codigoFocused, setCodigoFocused] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const runningEntranceRef = useRef(false);
   const heroStepRef = useRef<HeroStep>(0);
   const inputReadyRef = useRef(false);
+  const mobileMenuOpenRef = useRef(false);
   const transitionTimersRef = useRef<number[]>([]);
 
   const clearTransitionTimers = useCallback(() => {
@@ -84,6 +90,16 @@ export function HomeSnap({
   useEffect(() => {
     diccionarioOpenRef.current = diccionarioOpen;
   }, [diccionarioOpen]);
+
+  useEffect(() => {
+    mobileMenuOpenRef.current = mobileMenuOpen;
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    if (searchOpen || diccionarioOpen || codigoFocused) {
+      setMobileMenuOpen(false);
+    }
+  }, [searchOpen, diccionarioOpen, codigoFocused]);
 
   useEffect(() => {
     heroStepRef.current = heroStep;
@@ -343,6 +359,7 @@ export function HomeSnap({
 
     const onWheel = (event: WheelEvent) => {
       if (!inputReadyRef.current) return;
+      if (mobileMenuOpenRef.current) return;
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (document.activeElement instanceof HTMLInputElement) return;
 
@@ -389,6 +406,7 @@ export function HomeSnap({
 
     const onStart = (event: TouchEvent) => {
       if (!inputReadyRef.current) return;
+      if (mobileMenuOpenRef.current) return;
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (fromField(event.target)) {
         tracking = false;
@@ -444,9 +462,10 @@ export function HomeSnap({
   }, [advanceHeroOnHome, retreatHeroOnHome, dispatchArchivoWheel]);
 
   const participarActive =
-    panel === 0 && !searchOpen && !diccionarioOpen;
+    panel === 0 && !searchOpen && !diccionarioOpen && !mobileMenuOpen;
 
   const hideHeader = panel === 0 && codigoFocused;
+  const mobileMenuWhite = panel === 1;
 
   const heroWithStep = isValidElement<{ step?: HeroStep; panel?: 0 | 1 }>(hero)
     ? cloneElement(hero, { step: heroStep, panel: panel as 0 | 1 })
@@ -470,9 +489,24 @@ export function HomeSnap({
           : "bg-[var(--background)] text-white"
       }`}
     >
+      {homeWhiteMode ? (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 top-0 z-[80] bg-white md:hidden"
+            style={{ height: "var(--safe-top)" }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-[80] bg-white md:hidden"
+            style={{ height: "var(--safe-bottom)" }}
+          />
+        </>
+      ) : null}
+
       <div
         data-site-chrome=""
-        className={`pointer-events-none fixed inset-x-0 top-0 z-[70] bg-transparent transition-opacity duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${
+        className={`pointer-events-none fixed inset-x-0 top-0 z-[70] hidden bg-transparent transition-opacity duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] md:block ${
           hideHeader ? "opacity-0" : "opacity-100"
         }`}
         style={{
@@ -484,14 +518,26 @@ export function HomeSnap({
           className={
             hideHeader
               ? "pointer-events-none bg-transparent"
-              : "pointer-events-auto bg-transparent max-md:[&_header]:pt-[max(2.25rem,calc(var(--safe-top)+1rem))]"
+              : "pointer-events-auto bg-transparent md:[&_header]:pt-[max(1.625rem,var(--safe-top))]"
           }
         >
           {header}
         </div>
       </div>
 
-      <div className="absolute inset-0 min-h-0">
+      <SiteMobileMenu
+        user={user}
+        menuTone={mobileMenuWhite ? "white" : "blue"}
+        hideMenu={codigoFocused}
+        menuOpen={mobileMenuOpen}
+        onMenuOpenChange={setMobileMenuOpen}
+      />
+
+      <div
+        className={`absolute inset-0 min-h-0 transition-opacity duration-300 max-md:ease-[cubic-bezier(0.33,1,0.68,1)] ${
+          mobileMenuOpen ? "max-md:pointer-events-none max-md:opacity-0" : ""
+        }`}
+      >
         <section
           data-participar-zone={participarActive ? "" : undefined}
           onContextMenu={(event) => {
@@ -505,7 +551,7 @@ export function HomeSnap({
         </section>
 
         <section
-          className={`${panelLayerClass(panel === 1, "archivos")} flex min-h-0 flex-col bg-white text-[var(--background)] pt-[calc(68px+var(--safe-top))] pb-[var(--safe-bottom)]`}
+          className={`${panelLayerClass(panel === 1, "archivos")} flex min-h-0 flex-col bg-white text-[var(--background)] pt-0 pb-[var(--safe-bottom)] md:pt-[calc(68px+var(--safe-top))]`}
           aria-hidden={panel !== 1}
         >
           <div className="relative min-h-0 flex-1 overflow-hidden">
