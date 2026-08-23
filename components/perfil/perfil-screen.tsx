@@ -132,54 +132,46 @@ export function PerfilScreen({
     ? "pointer-events-none opacity-0"
     : "opacity-100";
 
+  const profileIdentity = (
+    <>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <p className="truncate text-[clamp(24px,5.5vw,32px)] font-normal leading-none tracking-wide md:text-[clamp(25px,5vw,35px)]">
+          {formatUsername(perfil.username)}
+        </p>
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={copyProfileUrl}
+            className="flex items-center justify-center transition-opacity hover:opacity-80"
+            aria-label="Copiar enlace del perfil"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/copy.png"
+              alt=""
+              width={20}
+              height={20}
+              className="h-5 w-5 brightness-0 invert"
+              draggable={false}
+            />
+          </button>
+          {copied ? (
+            <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap bg-black px-2 py-1 text-[15px] font-normal leading-none tracking-wide text-white">
+              copiado
+            </span>
+          ) : null}
+        </div>
+      </div>
+      <p className="mt-1 truncate text-[clamp(16px,4vw,20px)] font-normal leading-snug tracking-wide text-white/90 md:mt-2 md:leading-none">
+        {perfil.nombreCompleto}
+      </p>
+    </>
+  );
+
   return (
     <div className="relative flex h-full min-h-0 flex-col text-white select-none [-webkit-touch-callout:none] [-webkit-user-select:none]">
-      {/* Usuario arriba izquierda, participaciones arriba derecha */}
-      <header
-        className={`shrink-0 px-[var(--grid-margin)] pt-[max(1.25rem,var(--safe-top))] pb-3 transition-opacity duration-200 md:pt-4 ${chromeHidden}`}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <p className="truncate text-[clamp(20px,5vw,28px)] font-normal leading-none tracking-wide">
-                {formatUsername(perfil.username)}
-              </p>
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={copyProfileUrl}
-                  className="flex items-center justify-center transition-opacity hover:opacity-80"
-                  aria-label="Copiar enlace del perfil"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/icons/copy.png"
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="h-5 w-5 brightness-0 invert"
-                    draggable={false}
-                  />
-                </button>
-                {copied ? (
-                  <span className="pointer-events-none absolute left-1/2 top-full z-10 mt-1.5 -translate-x-1/2 whitespace-nowrap bg-black px-2 py-1 text-[15px] font-normal leading-none tracking-wide text-white">
-                    copiado
-                  </span>
-                ) : null}
-              </div>
-            </div>
-            <p className="mt-1 truncate text-[clamp(14px,3.5vw,18px)] font-normal leading-snug tracking-wide text-white/90">
-              {perfil.nombreCompleto}
-            </p>
-          </div>
-          <p className="shrink-0 pt-0.5 text-right text-[clamp(14px,3.5vw,18px)] font-normal leading-snug tracking-wide">
-            {perfil.participaciones} participaciones
-          </p>
-        </div>
-      </header>
-
-      {/* Centro: miniatura + título alineados */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      {/* Centro: miniatura (+ título debajo solo en móvil) */}
+      <div className="relative flex min-h-0 flex-1 flex-col max-md:pt-[max(0.5rem,var(--safe-top))]">
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center">
           <div className="flex w-full flex-col items-center justify-center max-md:max-w-full md:min-h-0 md:flex-1">
             {showCarousel ? (
@@ -202,7 +194,7 @@ export function PerfilScreen({
 
             {focus && !lifting ? (
               <div
-                className={`mt-4 shrink-0 px-[var(--grid-margin)] text-center transition-opacity duration-200 ${chromeHidden}`}
+                className={`mt-4 shrink-0 px-[var(--grid-margin)] text-center transition-opacity duration-200 md:hidden ${chromeHidden}`}
               >
                 <RetoFocusLabel
                   focus={focus}
@@ -210,6 +202,42 @@ export function PerfilScreen({
                 />
               </div>
             ) : null}
+          </div>
+        </div>
+      </div>
+
+      {/* Móvil: usuario y participaciones abajo, separados de [MENÚ] */}
+      <div
+        className={`shrink-0 px-[var(--grid-margin)] pt-2 pb-[calc(max(1.25rem,var(--safe-bottom))+4.25rem)] transition-opacity duration-200 md:hidden ${chromeHidden}`}
+      >
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0 flex-1">{profileIdentity}</div>
+          <p className="shrink-0 pb-0.5 text-right text-[clamp(16px,4vw,20px)] font-normal leading-snug tracking-wide">
+            {perfil.participaciones} participaciones
+          </p>
+        </div>
+      </div>
+
+      {/* Desktop: barra inferior (usuario | título | participaciones) */}
+      <div
+        className={`max-md:hidden shrink-0 transition-opacity duration-200 ${
+          lifting ? "pointer-events-none opacity-0" : "opacity-100"
+        }`}
+      >
+        <div className="site-grid items-center gap-y-3 pb-8 pt-3">
+          <div className="col-span-3 min-w-0">{profileIdentity}</div>
+
+          <div className="col-span-4 min-w-0 px-2 text-center">
+            <RetoFocusLabel
+              focus={focus}
+              onOpen={(id) => powerOffTo(`/reto/${id}`)}
+            />
+          </div>
+
+          <div className="col-span-3 text-right">
+            <p className="text-[clamp(18px,3.5vw,20px)] font-normal leading-none tracking-wide">
+              {perfil.participaciones} participaciones
+            </p>
           </div>
         </div>
       </div>
