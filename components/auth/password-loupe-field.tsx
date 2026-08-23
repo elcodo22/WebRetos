@@ -73,7 +73,7 @@ export function PasswordLoupeField({
   value,
   onChange,
   className,
-  placeholder = "contraseña",
+  placeholder = "Contraseña",
   autoComplete = "current-password",
   required = true,
   shake = false,

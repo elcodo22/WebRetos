@@ -523,12 +523,12 @@ export function RegistroForm() {
           type="text"
           autoComplete="name"
           value={nombre}
-          size={authFieldSize(nombre, "nombre")}
+          size={authFieldSize(nombre, "Nombre")}
           onChange={(event) => {
             setNombre(event.target.value);
             clearFieldError("nombre");
           }}
-          placeholder="nombre"
+          placeholder="Nombre"
           className={`${fieldClassName}${
             shakeFields.includes("nombre") ? " field-shake" : ""
           }`}
@@ -541,12 +541,12 @@ export function RegistroForm() {
           type="text"
           autoComplete="username"
           value={nombreUsuario}
-          size={authFieldSize(nombreUsuario, "nombre de usuario")}
+          size={authFieldSize(nombreUsuario, "Nombre de usuario")}
           onChange={(event) => {
             setNombreUsuario(event.target.value);
             clearFieldError("nombreUsuario");
           }}
-          placeholder="nombre de usuario"
+          placeholder="Nombre de usuario"
           className={`${fieldClassName}${
             shakeFields.includes("nombreUsuario") ? " field-shake" : ""
           }`}
@@ -559,12 +559,12 @@ export function RegistroForm() {
           type="email"
           autoComplete="email"
           value={email}
-          size={authFieldSize(email, "correo electrónico")}
+          size={authFieldSize(email, "Correo electrónico")}
           onChange={(event) => {
             setEmail(event.target.value);
             clearFieldError("email");
           }}
-          placeholder="correo electrónico"
+          placeholder="Correo electrónico"
           className={`${fieldClassName}${
             shakeFields.includes("email") ? " field-shake" : ""
           }`}
@@ -580,7 +580,7 @@ export function RegistroForm() {
             clearFieldError("password");
           }}
           className={fieldClassName}
-          placeholder="contraseña"
+          placeholder="Contraseña"
           autoComplete="new-password"
           aria-label="contraseña"
           required={false}
@@ -595,7 +595,7 @@ export function RegistroForm() {
             clearFieldError("password2");
           }}
           className={fieldClassName}
-          placeholder="repetir contraseña"
+          placeholder="Repetir contraseña"
           autoComplete="new-password"
           aria-label="repetir contraseña"
           required={false}

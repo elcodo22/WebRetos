@@ -40,10 +40,17 @@ function easeOutCubic(t: number) {
 type RetoTimeBarProps = {
   fechaFin?: string | null;
   active?: boolean;
+  size?: "default" | "hero" | "xl";
+  align?: "center" | "start";
 };
 
 /** Contador restante: días, horas, minutos y segundos. */
-export function RetoTimeBar({ fechaFin, active = true }: RetoTimeBarProps) {
+export function RetoTimeBar({
+  fechaFin,
+  active = true,
+  size = "default",
+  align = "center",
+}: RetoTimeBarProps) {
   const [targetSec, setTargetSec] = useState(0);
   const [display, setDisplay] = useState<Tiempo>(ZERO);
   const rafRef = useRef<number | null>(null);
@@ -102,8 +109,19 @@ export function RetoTimeBar({ fechaFin, active = true }: RetoTimeBarProps) {
     setDisplay(splitSeconds(targetSec));
   }, [targetSec, active]);
 
+  const textClass =
+    size === "xl"
+      ? "text-[clamp(40px,9vw,72px)] font-normal leading-none tracking-wide"
+      : size === "hero"
+        ? "text-[clamp(32px,6.5vw,48px)] font-normal leading-none tracking-wide"
+        : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
+
   return (
-    <p className="flex items-baseline justify-center gap-[0.35em] text-center text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide text-white tabular-nums [word-spacing:normal] md:text-[clamp(16px,3vw,20px)]">
+    <p
+      className={`flex items-baseline gap-[0.35em] text-white tabular-nums [word-spacing:normal] ${
+        align === "start" ? "justify-start text-left" : "justify-center text-center"
+      } ${textClass}`}
+    >
       <span>
         {pad(display.dias)}
         <span className="text-[0.72em]">d</span>

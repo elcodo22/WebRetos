@@ -170,7 +170,7 @@ export function ProfileMenu({ username }: { username: string | null }) {
                   className="cursor-pointer whitespace-nowrap text-white disabled:opacity-50"
                   onClick={() => goToProfile()}
                 >
-                  [ver perfil]
+                  [VER PERFIL]
                 </button>
                 <button
                   type="button"
@@ -188,7 +188,7 @@ export function ProfileMenu({ username }: { username: string | null }) {
                   className="cursor-pointer whitespace-nowrap text-white disabled:opacity-50"
                   onClick={() => void signOut()}
                 >
-                  [cerrar sesión]
+                  [CERRAR SESIÓN]
                 </button>
               </div>
             </div>

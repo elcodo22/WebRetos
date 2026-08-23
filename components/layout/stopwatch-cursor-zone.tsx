@@ -20,7 +20,15 @@ function cursorUrl(frame: number) {
   return `url("${frameSrc(frame)}") ${HOTSPOT_X} ${HOTSPOT_Y}, auto`;
 }
 
-export function StopwatchCursorZone({ children }: { children: ReactNode }) {
+export function StopwatchCursorZone({
+  children,
+  className = "inline-flex",
+  active = true,
+}: {
+  children: ReactNode;
+  className?: string;
+  active?: boolean;
+}) {
   const zoneRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,28 +57,23 @@ export function StopwatchCursorZone({ children }: { children: ReactNode }) {
     timerRef.current = setTimeout(tick, delay);
   }, []);
 
-  const onEnter = useCallback(() => {
-    clearAnim();
+  useEffect(() => {
+    const el = zoneRef.current;
+    if (!active) {
+      clearAnim();
+      if (el) el.style.cursor = "";
+      return;
+    }
+
     frameRef.current = 0;
     tick();
-  }, [clearAnim, tick]);
-
-  const onLeave = useCallback(() => {
-    clearAnim();
-    if (zoneRef.current) {
-      zoneRef.current.style.cursor = "";
-    }
-  }, [clearAnim]);
+    return clearAnim;
+  }, [active, clearAnim, tick]);
 
   useEffect(() => () => clearAnim(), [clearAnim]);
 
   return (
-    <div
-      ref={zoneRef}
-      className="cursor-stopwatch inline-flex"
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-    >
+    <div ref={zoneRef} className={`cursor-stopwatch ${className}`}>
       {children}
     </div>
   );

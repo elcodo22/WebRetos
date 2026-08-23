@@ -184,9 +184,9 @@ export function LoginForm() {
                     type="email"
                     autoComplete="email"
                     value={email}
-                    size={authFieldSize(email, "correo electrónico")}
+                    size={authFieldSize(email, "Correo electrónico")}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="correo electrónico"
+                    placeholder="Correo electrónico"
                     className={`${fieldClassName}${
                       shakeFields.includes("email") ? " field-shake" : ""
                     }`}
@@ -210,9 +210,9 @@ export function LoginForm() {
               type="email"
               autoComplete="email"
               value={email}
-              size={authFieldSize(email, "correo electrónico")}
+              size={authFieldSize(email, "Correo electrónico")}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="correo electrónico"
+              placeholder="Correo electrónico"
               className={`${fieldClassName}${
                 shakeFields.includes("email") ? " field-shake" : ""
               }`}
@@ -242,13 +242,13 @@ export function LoginForm() {
           </div>
         )}
 
-        <div className="flex items-end justify-between px-[18px] pb-4 text-[16px] font-normal tracking-wide md:pb-10 md:text-[25px]">
+        <div className="flex items-end justify-between px-[18px] pb-4 font-normal md:pb-10">
           {mode === "forgot" ? (
             <button
               type="button"
               onClick={exitForgotMode}
               disabled={loading}
-              className="text-left text-white disabled:opacity-50"
+              className="text-left text-[18px] font-normal leading-snug tracking-normal text-white disabled:opacity-50 md:text-[20px]"
             >
               volver
             </button>
@@ -257,7 +257,7 @@ export function LoginForm() {
               type="button"
               onClick={enterForgotMode}
               disabled={loading}
-              className="text-left tracking-wide text-white disabled:opacity-50"
+              className="text-left text-[18px] font-normal leading-snug tracking-normal text-white disabled:opacity-50 md:text-[20px]"
             >
               ¿contraseña olvidada?
             </button>
@@ -267,9 +267,9 @@ export function LoginForm() {
             <button
               type="submit"
               disabled={loading || (mode === "forgot" && !canSubmitForgot)}
-              className={
+              className={`text-[20px] font-normal tracking-wide md:text-[25px] ${
                 loading ? "cursor-default text-white/[0.72]" : "text-white"
-              }
+              }`}
             >
               {loading ? "[...]" : "[SIGUIENTE]"}
             </button>

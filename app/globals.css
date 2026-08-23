@@ -172,6 +172,16 @@ input:-webkit-autofill:active {
   background-image: none !important;
 }
 
+[data-codigo-focus] input:-webkit-autofill,
+[data-codigo-focus] input:-webkit-autofill:hover,
+[data-codigo-focus] input:-webkit-autofill:focus,
+[data-codigo-focus] input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--background) !important;
+  caret-color: var(--background);
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
 .cursor-loupe,
 .cursor-loupe * {
   cursor: none !important;
@@ -195,14 +205,6 @@ html.cursor-eye-active select,
 html.cursor-eye-active [data-password-field],
 html.cursor-eye-active [data-password-field] * {
   cursor: text !important;
-}
-
-.cursor-stopwatch {
-  cursor: url("/cursors/stopwatch/frame_00.png") 16 19, auto;
-}
-
-.cursor-stopwatch * {
-  cursor: inherit;
 }
 
 .site-grid {
@@ -544,11 +546,6 @@ html.cursor-eye-active [data-password-field] * {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  [data-detalle="true"] [data-participar-zone],
-  [data-detalle="true"] [data-participar-zone] * {
-    cursor: none !important;
-  }
-
   [data-participar-zone] .diccionario-word,
   [data-participar-zone] .diccionario-word *,
   [data-participar-zone] a,
@@ -561,25 +558,6 @@ html.cursor-eye-active [data-password-field] * {
   [data-participar-zone] [data-codigo-field],
   [data-participar-zone] [data-codigo-field] * {
     cursor: url("/beam_m.png") 15 15, text !important;
-  }
-
-  /* Pantalla introducir código: cursor del sistema (flecha / texto / pointer). */
-  html.codigo-overlay-open,
-  html.codigo-overlay-open *,
-  html.codigo-overlay-open body.crt-body,
-  [data-codigo-overlay],
-  [data-codigo-overlay] * {
-    cursor: default !important;
-  }
-
-  html.codigo-overlay-open [data-codigo-overlay] input,
-  [data-codigo-overlay] input {
-    cursor: text !important;
-  }
-
-  html.codigo-overlay-open [data-codigo-overlay] button,
-  [data-codigo-overlay] button {
-    cursor: pointer !important;
   }
 }
 
@@ -633,52 +611,29 @@ html.cursor-eye-active [data-password-field] * {
   animation: field-shake 0.42s ease-in-out;
 }
 
-/* Latido de fondo (pantalla código): dos golpes + pausa, con sombra negra. */
-@keyframes codigo-heartbeat {
-  0%,
+/* Transición home ↔ archivos: blanco suave con pausa breve en el centro. */
+@keyframes home-panel-flash {
+  0% {
+    opacity: 0;
+  }
+  22% {
+    opacity: 1;
+  }
+  54% {
+    opacity: 1;
+  }
   100% {
-    transform: scale(1);
-    opacity: 0.55;
-  }
-  8% {
-    transform: scale(1.14);
-    opacity: 0.95;
-  }
-  16% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  24% {
-    transform: scale(1.08);
-    opacity: 0.82;
-  }
-  34% {
-    transform: scale(1);
-    opacity: 0.45;
+    opacity: 0;
   }
 }
 
-.codigo-heartbeat {
-  background:
-    radial-gradient(
-      ellipse 70% 60% at 50% 45%,
-      transparent 0%,
-      transparent 28%,
-      rgba(0, 0, 0, 0.35) 58%,
-      rgba(0, 0, 0, 0.75) 100%
-    ),
-    radial-gradient(
-      circle at 50% 48%,
-      rgba(0, 0, 0, 0.55) 0%,
-      rgba(0, 0, 0, 0.2) 32%,
-      transparent 62%
-    );
-  box-shadow:
-    inset 0 0 80px rgba(0, 0, 0, 0.55),
-    inset 0 0 160px rgba(0, 0, 0, 0.4);
-  transform-origin: center center;
-  animation: codigo-heartbeat 1.15s ease-in-out infinite;
-  will-change: transform, opacity;
+.home-panel-flash {
+  animation: home-panel-flash 460ms cubic-bezier(0.45, 0.05, 0.15, 1) both;
+  will-change: opacity;
+}
+
+.home-hero-layer {
+  will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -690,9 +645,8 @@ html.cursor-eye-active [data-password-field] * {
     animation: none;
   }
 
-  .codigo-heartbeat {
+  .home-panel-flash {
     animation: none;
-    opacity: 0.65;
   }
 
   .participar-bulb {

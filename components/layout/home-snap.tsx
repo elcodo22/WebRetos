@@ -5,19 +5,31 @@ import {
   useEffect,
   useRef,
   useState,
+  cloneElement,
+  isValidElement,
   type ReactNode,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
-import { RETO_DETALLE_EVENT } from "@/components/reto/reto-hero";
+import {
+  RETO_CODIGO_FOCUS_EVENT,
+  RETO_DETALLE_EVENT,
+  RETO_HERO_STEP_EVENT,
+  type HeroStep,
+} from "@/components/reto/reto-hero";
 import { setChromeTheme } from "@/components/layout/crt-shell";
 
-const TRANSITION_MS = 560;
-const TRANSITION_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const PANEL_TRANSITION_MS = 300;
+const PANEL_LOCK_MS = PANEL_TRANSITION_MS + 40;
+const PANEL_LAYER_TRANSITION =
+  "transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] will-change-[opacity,transform]";
 const WHEEL_THRESHOLD = 1;
+const WHEEL_STEP_DELTA = 36;
+const WHEEL_GESTURE_IDLE_MS = 160;
 const TOUCH_THRESHOLD = 28;
 const PAUSE_ON_HERO_MS = 80;
+const INPUT_GRACE_MS = 450;
 const STORAGE_KEY = "animate-to-archivos";
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
 const HERO_REQUEST_EVENT = "carousel-request-hero";
@@ -42,13 +54,28 @@ export function HomeSnap({
   const diccionarioOpenRef = useRef(diccionarioOpen);
 
   const [panel, setPanel] = useState(0);
-  const [animate, setAnimate] = useState(true);
-  const [detalleOpen, setDetalleOpen] = useState(false);
+  const [heroStep, setHeroStepState] = useState<HeroStep>(0);
+  const [codigoFocused, setCodigoFocused] = useState(false);
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const runningEntranceRef = useRef(false);
-  const detalleOpenRef = useRef(false);
+  const heroStepRef = useRef<HeroStep>(0);
+  const inputReadyRef = useRef(false);
+  const transitionTimersRef = useRef<number[]>([]);
+
+  const clearTransitionTimers = useCallback(() => {
+    for (const id of transitionTimersRef.current) {
+      window.clearTimeout(id);
+    }
+    transitionTimersRef.current = [];
+  }, []);
+
+  const scheduleTransition = useCallback((fn: () => void, ms: number) => {
+    const id = window.setTimeout(fn, ms);
+    transitionTimersRef.current.push(id);
+    return id;
+  }, []);
 
   useEffect(() => {
     searchOpenRef.current = searchOpen;
@@ -59,93 +86,174 @@ export function HomeSnap({
   }, [diccionarioOpen]);
 
   useEffect(() => {
-    detalleOpenRef.current = detalleOpen;
-  }, [detalleOpen]);
+    heroStepRef.current = heroStep;
+  }, [heroStep]);
 
   useEffect(() => {
-    const next = panel === 1 ? "white" : "blue";
-    const id = window.setTimeout(() => setChromeTheme(next), TRANSITION_MS);
+    function onHeroStep(event: Event) {
+      const next = (event as CustomEvent<{ step?: HeroStep }>).detail?.step;
+      if (next !== 0 && next !== 1 && next !== 2 && next !== 3) return;
+      if (heroStepRef.current === next) return;
+      heroStepRef.current = next;
+      setHeroStepState(next);
+    }
+
+    window.addEventListener(RETO_HERO_STEP_EVENT, onHeroStep);
+    return () => window.removeEventListener(RETO_HERO_STEP_EVENT, onHeroStep);
+  }, []);
+
+  useEffect(() => {
+    function onCodigoFocus(event: Event) {
+      const focused = (event as CustomEvent<{ focused?: boolean }>).detail
+        ?.focused;
+      setCodigoFocused(Boolean(focused));
+    }
+
+    window.addEventListener(RETO_CODIGO_FOCUS_EVENT, onCodigoFocus);
+    return () =>
+      window.removeEventListener(RETO_CODIGO_FOCUS_EVENT, onCodigoFocus);
+  }, []);
+
+  const homeWhiteMode = panel === 1 || (panel === 0 && codigoFocused);
+
+  useEffect(() => {
+    setChromeTheme(homeWhiteMode ? "white" : "blue");
+  }, [homeWhiteMode]);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      inputReadyRef.current = true;
+    }, INPUT_GRACE_MS);
     return () => window.clearTimeout(id);
-  }, [panel]);
+  }, []);
 
   useEffect(() => {
-    function onDetalle(event: Event) {
-      const open = Boolean(
-        (event as CustomEvent<{ open?: boolean }>).detail?.open,
-      );
-      setDetalleOpen(open);
-      detalleOpenRef.current = open;
-    }
-
-    window.addEventListener(RETO_DETALLE_EVENT, onDetalle);
-    return () => window.removeEventListener(RETO_DETALLE_EVENT, onDetalle);
-  }, []);
-
-  const goTo = useCallback((next: number, opts?: { detalle?: boolean }) => {
-    if (lockedRef.current) return;
-    if (next < 0 || next > 1) return;
-
-    // Al bajar a Archivos no cerrar la descripción: si no, se ve el home
-    // a mitad del desliz. El detalle sigue off-screen en el panel 0.
-    const wantDetalle =
-      next === 1 ? detalleOpenRef.current : Boolean(opts?.detalle);
-    const samePanel = next === panelRef.current;
-    if (samePanel && detalleOpenRef.current === wantDetalle) return;
-
-    if (detalleOpenRef.current !== wantDetalle) {
-      window.dispatchEvent(
-        new CustomEvent(RETO_DETALLE_EVENT, { detail: { open: wantDetalle } }),
-      );
-      setDetalleOpen(wantDetalle);
-      detalleOpenRef.current = wantDetalle;
-    }
-
-    lockedRef.current = true;
-
-    if (!samePanel) {
-      setAnimate(true);
-      panelRef.current = next;
-      setPanel(next);
-      window.history.replaceState(
-        null,
-        "",
-        next === 1 ? "/#archivos" : "/#reto",
-      );
-    }
-
-    window.setTimeout(() => {
+    return () => {
+      clearTransitionTimers();
       lockedRef.current = false;
-    }, TRANSITION_MS + 50);
+    };
+  }, [clearTransitionTimers]);
+
+  const releaseCodigoFocus = useCallback(() => {
+    if (document.activeElement instanceof HTMLInputElement) {
+      document.activeElement.blur();
+    }
+    setCodigoFocused(false);
+    window.dispatchEvent(
+      new CustomEvent(RETO_CODIGO_FOCUS_EVENT, { detail: { focused: false } }),
+    );
   }, []);
 
-  /** Principal visible → animación hacia archivos. */
+  const setHeroStep = useCallback((next: HeroStep) => {
+    if (heroStepRef.current === next) return;
+    heroStepRef.current = next;
+    setHeroStepState(next);
+    window.dispatchEvent(
+      new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: next } }),
+    );
+    window.dispatchEvent(
+      new CustomEvent(RETO_DETALLE_EVENT, {
+        detail: { open: next >= 1, step: next },
+      }),
+    );
+  }, []);
+
+  const applyPanel = useCallback((next: number) => {
+    panelRef.current = next;
+    setPanel(next);
+    window.history.replaceState(
+      null,
+      "",
+      next === 1 ? "/#archivos" : "/#reto",
+    );
+  }, []);
+
+  const runPanelTransition = useCallback(
+    (next: number) => {
+      clearTransitionTimers();
+      releaseCodigoFocus();
+      applyPanel(next);
+
+      scheduleTransition(() => {
+        lockedRef.current = false;
+      }, PANEL_LOCK_MS);
+    },
+    [applyPanel, clearTransitionTimers, releaseCodigoFocus, scheduleTransition],
+  );
+
+  const prefersReducedMotion = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
+
+  const goTo = useCallback(
+    (next: number, opts?: { heroStep?: HeroStep; instant?: boolean }) => {
+      if (lockedRef.current) return;
+      if (next < 0 || next > 1) return;
+
+      const samePanel = next === panelRef.current;
+      if (opts?.heroStep !== undefined) {
+        setHeroStep(opts.heroStep);
+      }
+      if (samePanel && opts?.heroStep === undefined) return;
+
+      lockedRef.current = true;
+
+      if (!samePanel && !opts?.instant && !prefersReducedMotion()) {
+        runPanelTransition(next);
+        return;
+      }
+
+      if (!samePanel && next === 1) {
+        releaseCodigoFocus();
+      }
+
+      if (!samePanel) {
+        applyPanel(next);
+      }
+
+      lockedRef.current = false;
+    },
+    [applyPanel, prefersReducedMotion, releaseCodigoFocus, runPanelTransition, setHeroStep],
+  );
+
+  const advanceHeroOnHome = useCallback(() => {
+    if (heroStepRef.current < 3) {
+      setHeroStep((heroStepRef.current + 1) as HeroStep);
+      return;
+    }
+    goTo(1);
+  }, [goTo, setHeroStep]);
+
+  const retreatHeroOnHome = useCallback(() => {
+    if (heroStepRef.current > 0) {
+      setHeroStep((heroStepRef.current - 1) as HeroStep);
+    }
+  }, [setHeroStep]);
+
   const goToArchivosFromTop = useCallback(() => {
     if (lockedRef.current || runningEntranceRef.current) return;
     if (panelRef.current === 1) return;
     window.setTimeout(() => goTo(1), PAUSE_ON_HERO_MS);
   }, [goTo]);
 
-  /** Entrada desde otra ruta: enseñar hero y bajar. */
   const playEntranceFromOtherPage = useCallback(() => {
     if (runningEntranceRef.current) return;
     runningEntranceRef.current = true;
 
     lockedRef.current = true;
-    setAnimate(false);
-    panelRef.current = 0;
-    setPanel(0);
+    applyPanel(0);
     window.history.replaceState(null, "", "/#reto");
     router.replace("/", { scroll: false });
 
     window.requestAnimationFrame(() => {
-      setAnimate(true);
       lockedRef.current = false;
       goTo(1);
       window.setTimeout(() => {
         runningEntranceRef.current = false;
-      }, TRANSITION_MS + 40);
+      }, PANEL_LOCK_MS);
     });
-  }, [goTo, router]);
+  }, [applyPanel, goTo, router]);
 
   const dispatchArchivoWheel = useCallback((delta: number) => {
     window.dispatchEvent(
@@ -156,6 +264,12 @@ export function HomeSnap({
   useEffect(() => {
     panelRef.current = panel;
   }, [panel]);
+
+  useEffect(() => {
+    if (window.location.hash === "#archivos") {
+      applyPanel(1);
+    }
+  }, [applyPanel]);
 
   useEffect(() => {
     if (pathname !== "/") return;
@@ -177,7 +291,7 @@ export function HomeSnap({
   useEffect(() => {
     const onHashChange = () => {
       if (window.location.hash === "#archivos") goToArchivosFromTop();
-      else goTo(0);
+      else goTo(0, { heroStep: 0 });
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -191,46 +305,74 @@ export function HomeSnap({
   }, [goToArchivosFromTop]);
 
   useEffect(() => {
-    const onHeroRequest = () => goTo(0, { detalle: true });
+    const onHeroRequest = () => goTo(0, { heroStep: 3 });
     window.addEventListener(HERO_REQUEST_EVENT, onHeroRequest);
     return () => window.removeEventListener(HERO_REQUEST_EVENT, onHeroRequest);
   }, [goTo]);
 
   useEffect(() => {
+    let wheelAccum = 0;
+    let wheelGestureLocked = false;
+    let wheelIdleTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const releaseWheelGesture = () => {
+      wheelGestureLocked = false;
+      wheelAccum = 0;
+      wheelIdleTimer = null;
+    };
+
+    const bumpWheelGesture = () => {
+      if (wheelIdleTimer) window.clearTimeout(wheelIdleTimer);
+      wheelIdleTimer = window.setTimeout(releaseWheelGesture, WHEEL_GESTURE_IDLE_MS);
+    };
+
+    /** Un gesto de rueda = un paso como máximo (aunque el scroll sea largo). */
+    const consumeWheelStep = (deltaY: number): -1 | 0 | 1 => {
+      if (lockedRef.current) return 0;
+
+      bumpWheelGesture();
+      if (wheelGestureLocked) return 0;
+
+      wheelAccum += deltaY;
+      if (Math.abs(wheelAccum) < WHEEL_STEP_DELTA) return 0;
+
+      wheelGestureLocked = true;
+      wheelAccum = 0;
+      return deltaY > 0 ? 1 : -1;
+    };
+
     const onWheel = (event: WheelEvent) => {
+      if (!inputReadyRef.current) return;
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (document.activeElement instanceof HTMLInputElement) return;
-
-      if (lockedRef.current) {
-        event.preventDefault();
-        return;
-      }
 
       const delta = event.deltaY;
       if (Math.abs(delta) < WHEEL_THRESHOLD) return;
 
+      if (panelRef.current === 0 || panelRef.current === 1) {
+        event.preventDefault();
+      }
+
+      if (lockedRef.current) return;
+
+      const dir = consumeWheelStep(delta);
+      if (dir === 0) return;
+
       if (panelRef.current === 1) {
-        event.preventDefault();
-        dispatchArchivoWheel(delta);
+        dispatchArchivoWheel(dir * WHEEL_STEP_DELTA);
         return;
       }
 
-      if (detalleOpenRef.current) {
-        event.preventDefault();
-        if (delta > 0) goTo(1);
-        else goTo(0);
-        return;
-      }
-
-      if (delta > 0) {
-        event.preventDefault();
-        goTo(0, { detalle: true });
-      }
+      if (dir > 0) advanceHeroOnHome();
+      else retreatHeroOnHome();
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
-  }, [goTo, dispatchArchivoWheel]);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      if (wheelIdleTimer) window.clearTimeout(wheelIdleTimer);
+    };
+  }, [advanceHeroOnHome, retreatHeroOnHome, dispatchArchivoWheel]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -246,6 +388,7 @@ export function HomeSnap({
       Boolean(target.closest("input, textarea, [data-codigo-field]"));
 
     const onStart = (event: TouchEvent) => {
+      if (!inputReadyRef.current) return;
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
       if (fromField(event.target)) {
         tracking = false;
@@ -284,15 +427,8 @@ export function HomeSnap({
         return;
       }
 
-      if (detalleOpenRef.current) {
-        if (delta > 0) goTo(1);
-        else goTo(0);
-        return;
-      }
-
-      if (delta > 0) {
-        goTo(0, { detalle: true });
-      }
+      if (delta > 0) advanceHeroOnHome();
+      else retreatHeroOnHome();
     };
 
     root.addEventListener("touchstart", onStart, { passive: true });
@@ -305,54 +441,71 @@ export function HomeSnap({
       root.removeEventListener("touchend", onEnd);
       root.removeEventListener("touchcancel", onEnd);
     };
-  }, [goTo, dispatchArchivoWheel]);
+  }, [advanceHeroOnHome, retreatHeroOnHome, dispatchArchivoWheel]);
 
   const participarActive =
     panel === 0 && !searchOpen && !diccionarioOpen;
 
+  const hideHeader = panel === 0 && codigoFocused;
+
+  const heroWithStep = isValidElement(hero)
+    ? cloneElement(hero, { step: heroStep, panel: panel as 0 | 1 })
+    : hero;
+
+  const panelLayerClass = (active: boolean, kind: "hero" | "archivos") =>
+    `${PANEL_LAYER_TRANSITION} absolute inset-0 overflow-hidden ${
+      active
+        ? "z-[2] translate-y-0 opacity-100 pointer-events-auto"
+        : kind === "archivos"
+          ? "z-0 translate-y-3 opacity-0 pointer-events-none"
+          : "z-0 -translate-y-2 opacity-0 pointer-events-none"
+    }`;
+
   return (
     <div
       ref={rootRef}
-      data-detalle={detalleOpen ? "true" : undefined}
-      className={`relative h-full overflow-hidden overscroll-none touch-none text-white pb-[var(--safe-bottom)] ${
-        panel === 1 ? "bg-white" : "bg-[var(--background)]"
+      className={`relative h-full min-h-0 overflow-hidden overscroll-none touch-none pb-[var(--safe-bottom)] transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${
+        homeWhiteMode
+          ? "bg-white text-[var(--background)]"
+          : "bg-[var(--background)] text-white"
       }`}
     >
       <div
-        className="pointer-events-none fixed inset-x-0 z-50 bg-transparent max-md:bottom-0 max-md:top-auto md:top-0"
+        data-site-chrome=""
+        className={`pointer-events-none fixed inset-x-0 z-[70] bg-transparent transition-opacity duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] max-md:bottom-0 max-md:top-auto md:top-0 ${
+          hideHeader ? "opacity-0" : "opacity-100"
+        }`}
         style={{
-          color: panel === 0 ? "#fff" : "var(--background)",
-          transition: animate
-            ? `color ${TRANSITION_MS}ms ${TRANSITION_EASE}`
-            : "none",
+          color: homeWhiteMode ? "var(--background)" : "#fff",
         }}
+        aria-hidden={hideHeader}
       >
-        <div className="pointer-events-auto bg-transparent max-md:[&_header]:pt-2.5 max-md:[&_header]:pb-[max(0.5rem,var(--safe-bottom))]">
+        <div
+          className={`bg-transparent max-md:[&_header]:pt-3.5 max-md:[&_header]:pb-[max(0.5rem,var(--safe-bottom))] ${
+            hideHeader ? "pointer-events-none" : "pointer-events-auto"
+          }`}
+        >
           {header}
         </div>
       </div>
 
-      <div
-        className="h-full will-change-transform"
-        style={{
-          transform: `translate3d(0, -${panel * 100}%, 0)`,
-          transition: animate
-            ? `transform ${TRANSITION_MS}ms ${TRANSITION_EASE}`
-            : "none",
-        }}
-      >
+      <div className="absolute inset-0 min-h-0">
         <section
           data-participar-zone={participarActive ? "" : undefined}
           onContextMenu={(event) => {
             if (event.target instanceof HTMLInputElement) return;
             event.preventDefault();
           }}
-          className="relative h-full overflow-hidden"
+          className={panelLayerClass(panel === 0, "hero")}
+          aria-hidden={panel !== 0}
         >
-          <div className="absolute inset-0">{hero}</div>
+          <div className="h-full w-full">{heroWithStep}</div>
         </section>
 
-        <section className="flex h-full flex-col overflow-hidden bg-white text-[var(--background)] pt-0 pb-[calc(72px+var(--safe-bottom))] md:pt-[calc(68px+var(--safe-top))] md:pb-0">
+        <section
+          className={`${panelLayerClass(panel === 1, "archivos")} flex min-h-0 flex-col bg-white text-[var(--background)] pt-0 pb-[calc(72px+var(--safe-bottom))] md:pt-[calc(68px+var(--safe-top))] md:pb-0`}
+          aria-hidden={panel !== 1}
+        >
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {archivos}
           </div>

@@ -30,8 +30,8 @@ export function RetoTimeCursor({ fechaFin, active }: RetoTimeCursorProps) {
       el.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0) translate(-50%, -50%)`;
       const target = event.target as Element | null;
       const inZone = target?.closest("[data-participar-zone]") != null;
-      const onCodigo = target?.closest("[data-codigo-field]") != null;
-      setVisible(inZone && !onCodigo);
+      const onCodigoField = target?.closest("[data-codigo-field]") != null;
+      setVisible(inZone && !onCodigoField);
     };
 
     const onLeave = () => setVisible(false);
@@ -49,7 +49,7 @@ export function RetoTimeCursor({ fechaFin, active }: RetoTimeCursorProps) {
     <div
       ref={ref}
       aria-hidden
-      className={`pointer-events-none fixed left-0 top-0 z-[9999] hidden select-none transition-opacity duration-150 md:block ${
+      className={`pointer-events-none fixed left-0 top-0 z-[80] hidden select-none transition-opacity duration-150 md:block ${
         visible && active ? "opacity-100" : "opacity-0"
       }`}
     >
