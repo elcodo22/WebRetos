@@ -61,7 +61,10 @@ export function setChromeTheme(chrome: "blue" | "white" | "black") {
 export function CrtShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const blackScreen =
-    pathname.startsWith("/reto/") || pathname.startsWith("/u/");
+    pathname.startsWith("/reto/") ||
+    pathname.startsWith("/u/") ||
+    pathname.startsWith("/ajustes") ||
+    pathname.startsWith("/admin");
   const [perf, setPerf] = useState(false);
 
   useEffect(() => {

@@ -9,7 +9,6 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-urls";
@@ -18,6 +17,7 @@ import {
   authFieldClassName,
   authFieldSize,
 } from "@/components/auth/auth-field";
+import { AuthMobileTopNav } from "@/components/auth/auth-mobile-top-nav";
 
 const fieldClassName = authFieldClassName;
 
@@ -437,6 +437,7 @@ export function RegistroForm() {
   if (pendingVerify) {
     return (
       <div className="relative flex h-full min-h-0 flex-1 flex-col">
+        <AuthMobileTopNav oppositeLabel="[LOGIN]" oppositeHref="/login" />
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-none px-[18px] py-6 text-center">
           <p className="max-w-xl text-[20px] font-normal tracking-wide text-white/[0.72]">
             Te hemos enviado un código a{" "}
@@ -481,7 +482,7 @@ export function RegistroForm() {
           </p>
         </div>
 
-        <div className="flex items-end justify-start px-[18px] pb-10 text-[25px] font-normal tracking-wide">
+        <div className="flex items-end justify-start px-[18px] pb-[max(1rem,var(--safe-bottom))] ui-btn-text font-normal tracking-wide md:pb-10">
           <button
             type="button"
             disabled={otpLoading}
@@ -503,6 +504,7 @@ export function RegistroForm() {
       className="relative flex h-full min-h-0 flex-1 flex-col"
       noValidate
     >
+      <AuthMobileTopNav oppositeLabel="[LOGIN]" oppositeHref="/login" />
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto scrollbar-none px-[18px] py-6">
         <input
           key={`nombre-${shakeTick}`}
@@ -589,14 +591,14 @@ export function RegistroForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-4 px-[18px] pb-4 md:pb-10">
+      <div className="flex flex-col gap-4 px-[18px] pb-[max(1rem,var(--safe-bottom))] md:pb-10">
         <p
           className="min-h-[24px] text-center text-[16px] tracking-wide text-white md:text-[20px]"
           role={bottomMessage ? "alert" : undefined}
         >
           {bottomMessage ?? "\u00A0"}
         </p>
-        <div className="flex items-end justify-end text-[16px] font-normal tracking-wide md:text-[25px]">
+        <div className="flex items-end justify-end ui-btn-text font-normal tracking-wide">
           <button
             type="submit"
             disabled={loading}
@@ -607,19 +609,6 @@ export function RegistroForm() {
             {loading ? "[...]" : "[SIGUIENTE]"}
           </button>
         </div>
-      </div>
-
-      {/* Footer movil */}
-      <div className="flex flex-col items-center gap-1 pb-[max(1.5rem,var(--safe-bottom))] text-center text-white md:hidden">
-        <p className="text-[16px] font-normal tracking-wide">
-          ¿ya tienes cuenta?
-        </p>
-        <Link
-          href="/login"
-          className="text-[20px] font-normal tracking-wide"
-        >
-          [Login]
-        </Link>
       </div>
     </form>
   );

@@ -8,7 +8,7 @@ export default function RegistroPage() {
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-[var(--background)] text-white">
       <RedirectIfAuthed />
-      <SitePageShell user={null} variant="registro">
+      <SitePageShell user={null} variant="registro" hideMenu>
         <RegistroForm />
       </SitePageShell>
     </div>

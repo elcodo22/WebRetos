@@ -18,7 +18,12 @@ export type SiteMenuTone = "blue" | "white" | "black";
 
 /** Tono del menú según la pantalla (fondo negro → menú negro). */
 export function menuToneForPath(pathname: string): SiteMenuTone {
-  if (pathname.startsWith("/reto/") || pathname.startsWith("/u/")) {
+  if (
+    pathname.startsWith("/reto/") ||
+    pathname.startsWith("/u/") ||
+    pathname.startsWith("/ajustes") ||
+    pathname.startsWith("/admin")
+  ) {
     return "black";
   }
   return "blue";
@@ -99,7 +104,7 @@ export function SiteMobileMenu({
       {showMenuButton ? (
         <button
           type="button"
-          className={`fixed inset-x-0 bottom-0 flex justify-center px-[var(--grid-margin)] pb-[max(1.25rem,calc(var(--safe-bottom)+0.5rem))] text-[20px] font-normal tracking-wide md:hidden ${styles.button}`}
+          className={`fixed inset-x-0 bottom-0 flex justify-center px-[var(--grid-margin)] pb-[max(1.25rem,calc(var(--safe-bottom)+0.5rem))] ui-btn-text font-normal tracking-wide md:hidden ${styles.button}`}
           style={{ zIndex }}
           onClick={() => setMenuOpen(true)}
           aria-label="Abrir menú"
@@ -134,7 +139,7 @@ export function SiteMobileMenu({
           <div className="flex w-full shrink-0 justify-center px-[var(--grid-margin)] pb-[max(1.25rem,calc(var(--safe-bottom)+0.5rem))]">
             <button
               type="button"
-              className="text-[20px] font-normal tracking-wide"
+              className="ui-btn-text font-normal tracking-wide"
               onClick={() => setMenuOpen(false)}
               aria-label="Cerrar menú"
             >

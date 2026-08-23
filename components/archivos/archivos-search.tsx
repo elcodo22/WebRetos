@@ -6,8 +6,7 @@ type ArchivosSearchProps = {
   className?: string;
 };
 
-const defaultNavClass =
-  "text-[clamp(18px,4.5vw,25px)] md:text-[25px]";
+const defaultNavClass = "ui-btn-text";
 
 export function ArchivosSearch({ className }: ArchivosSearchProps) {
   const { open } = useSearchOverlay();

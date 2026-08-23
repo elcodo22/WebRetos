@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { ProfileMenu } from "@/components/layout/profile-menu";
 import { ArchivosSearch } from "@/components/archivos/archivos-search";
+import { perfilHref } from "@/lib/mocks/perfil";
 
 type SiteHeaderVariant = "default" | "login" | "registro" | "forgot";
 
 const navLinkClass =
-  "whitespace-nowrap text-[clamp(18px,4.5vw,25px)] font-normal leading-none tracking-wide md:text-[25px]";
+  "ui-btn-text whitespace-nowrap font-normal leading-none tracking-wide";
 
 const navGroupClass =
   "flex flex-wrap items-center gap-6 md:gap-8";
@@ -27,6 +27,7 @@ function NavLinks({
   onLoginClick?: () => void;
   layout?: "row" | "stack";
 }) {
+  const pathname = usePathname();
   const itemClass =
     layout === "stack"
       ? `${navLinkClass} block w-full text-center`
@@ -72,12 +73,28 @@ function NavLinks({
   }
 
   if (user) {
+    const ownProfileHref = profileUsername
+      ? perfilHref(profileUsername)
+      : null;
+    const pathSlug = pathname.startsWith("/u/")
+      ? decodeURIComponent(pathname.slice(3)).toLowerCase()
+      : "";
+    const onOwnProfile =
+      Boolean(profileUsername) &&
+      pathSlug === profileUsername!.toLowerCase();
+
     return (
       <>
         {searchNode(layout === "stack" ? navLinkClass : itemClass)}
-        <div className={layout === "stack" ? "flex w-full justify-center" : undefined}>
-          <ProfileMenu username={profileUsername} />
-        </div>
+        {onOwnProfile ? (
+          <Link href="/ajustes" className={itemClass}>
+            [AJUSTES]
+          </Link>
+        ) : (
+          <Link href={ownProfileHref ?? "/"} className={itemClass}>
+            [PERFIL]
+          </Link>
+        )}
       </>
     );
   }
@@ -137,28 +154,18 @@ export function HeaderNav({
     );
   }
 
-  if (showHome) {
-    return (
-      <nav
-        className={`${navGroupClass} w-full justify-between`}
-        aria-label="Navegación principal"
-      >
-        <div className="shrink-0">
-          <Link href="/" className={navLinkClass}>
-            [HOME]
-          </Link>
-        </div>
-        <div className={`${navGroupClass} justify-end`}>{navLinks}</div>
-      </nav>
-    );
-  }
-
+  /* Home y resto: [HOME] izq · resto dcha (sin solaparse con el marco). */
   return (
     <nav
-      className={`${navGroupClass} justify-center`}
+      className={`${navGroupClass} w-full justify-between`}
       aria-label="Navegación principal"
     >
-      {navLinks}
+      <div className="shrink-0">
+        <Link href="/" className={navLinkClass}>
+          [HOME]
+        </Link>
+      </div>
+      <div className={`${navGroupClass} justify-end`}>{navLinks}</div>
     </nav>
   );
 }

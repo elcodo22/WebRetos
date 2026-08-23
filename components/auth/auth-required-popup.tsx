@@ -54,7 +54,7 @@ export function AuthRequiredPopup({
         >
           {message}
         </p>
-        <div className="flex items-center gap-6 text-[25px] font-normal leading-none tracking-wide">
+        <div className="flex items-center gap-6 ui-btn-text font-normal leading-none tracking-wide">
           <Link href="/login" className="text-black hover:opacity-70">
             [Login]
           </Link>

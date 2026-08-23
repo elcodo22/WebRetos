@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { authCallbackUrl } from "@/lib/auth-urls";
@@ -11,6 +10,7 @@ import {
   authFieldSize,
 } from "@/components/auth/auth-field";
 import { SiteMobileChrome } from "@/components/layout/site-mobile-chrome";
+import { AuthMobileTopNav } from "@/components/auth/auth-mobile-top-nav";
 
 const fieldClassName = authFieldClassName;
 
@@ -147,7 +147,13 @@ export function LoginForm() {
       user={null}
       variant={mode === "forgot" ? "forgot" : "login"}
       onLoginClick={mode === "forgot" ? exitForgotMode : undefined}
+      hideMenu
     >
+      <AuthMobileTopNav
+        oppositeLabel={mode === "forgot" ? "[LOGIN]" : "[REGISTRO]"}
+        oppositeHref={mode === "forgot" ? undefined : "/registro"}
+        onOppositeClick={mode === "forgot" ? exitForgotMode : undefined}
+      />
       <form
         onSubmit={handleSubmit}
         noValidate
@@ -231,13 +237,13 @@ export function LoginForm() {
           </div>
         )}
 
-        <div className="flex items-end justify-between px-[18px] pb-4 font-normal md:pb-10">
+        <div className="flex items-end justify-between px-[18px] pb-[max(1rem,var(--safe-bottom))] font-normal md:pb-10">
           {mode === "forgot" ? (
             <button
               type="button"
               onClick={exitForgotMode}
               disabled={loading}
-              className="text-left text-[18px] font-normal leading-snug tracking-normal text-white disabled:opacity-50 md:text-[20px]"
+              className="text-left ui-btn-text font-normal leading-snug tracking-normal text-white disabled:opacity-50"
             >
               volver
             </button>
@@ -246,7 +252,7 @@ export function LoginForm() {
               type="button"
               onClick={enterForgotMode}
               disabled={loading}
-              className="text-left text-[18px] font-normal leading-snug tracking-normal text-white disabled:opacity-50 md:text-[20px]"
+              className="text-left ui-btn-text font-normal leading-snug tracking-normal text-white disabled:opacity-50"
             >
               ¿contraseña olvidada?
             </button>
@@ -256,26 +262,13 @@ export function LoginForm() {
             <button
               type="submit"
               disabled={loading || (mode === "forgot" && !canSubmitForgot)}
-              className={`text-[20px] font-normal tracking-wide md:text-[25px] ${
+              className={`ui-btn-text font-normal tracking-wide ${
                 loading ? "cursor-default text-white/[0.72]" : "text-white"
               }`}
             >
               {loading ? "[...]" : "[SIGUIENTE]"}
             </button>
           )}
-        </div>
-
-        {/* Footer movil */}
-        <div className="flex flex-col items-center gap-1 pb-[max(1.5rem,var(--safe-bottom))] text-center text-white md:hidden">
-          <p className="text-[16px] font-normal tracking-wide">
-            ¿todavía no tienes cuenta?
-          </p>
-          <Link
-            href="/registro"
-            className="text-[20px] font-normal tracking-wide"
-          >
-            [Registro]
-          </Link>
         </div>
       </form>
     </SiteMobileChrome>

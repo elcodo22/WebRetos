@@ -1,3 +1,5 @@
+"use client";
+
 import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { HeaderNav } from "@/components/layout/header-nav";
@@ -48,7 +50,7 @@ export function SiteHeader({
       className={`relative flex w-full flex-col bg-transparent text-current [background:transparent] ${
         isStack
           ? "items-center gap-0 px-0 pb-0 pt-0"
-          : "gap-2 px-[var(--grid-margin)] pb-3 pt-[max(1.125rem,var(--safe-top))] md:pb-4 md:pt-[max(1.625rem,var(--safe-top))]"
+          : "gap-2 px-[var(--header-inset-x)] pb-3 pt-[var(--header-inset-top)] md:pb-4"
       }`}
     >
       <div className={isStack ? "flex w-full justify-center" : "z-10 w-full"}>
@@ -63,7 +65,7 @@ export function SiteHeader({
 
       {hasCenter ? (
         <div className="z-10 flex w-full justify-center text-center font-normal leading-none tracking-wide">
-          <div className="pointer-events-auto truncate text-[clamp(18px,3.8vw,25px)]">
+          <div className="pointer-events-auto truncate ui-btn-text">
             {center}
           </div>
         </div>

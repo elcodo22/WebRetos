@@ -26,9 +26,11 @@ const PANEL_TRANSITION_MS = 300;
 const PANEL_LOCK_MS = PANEL_TRANSITION_MS + 40;
 const PANEL_LAYER_TRANSITION =
   "transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] will-change-[opacity,transform]";
-const WHEEL_THRESHOLD = 1;
-const WHEEL_STEP_DELTA = 36;
-const WHEEL_GESTURE_IDLE_MS = 160;
+/** Sin eventos = scroll anterior terminado. */
+const WHEEL_GESTURE_GAP_MS = 80;
+/** Impulso bajo entre deslizamientos → el siguiente scroll puede contar ya. */
+const WHEEL_QUIET_PX = 12;
+const WHEEL_THRESHOLD = 4;
 const TOUCH_THRESHOLD = 28;
 const PAUSE_ON_HERO_MS = 80;
 const INPUT_GRACE_MS = 450;
@@ -327,35 +329,9 @@ export function HomeSnap({
   }, [goTo]);
 
   useEffect(() => {
-    let wheelAccum = 0;
-    let wheelGestureLocked = false;
-    let wheelIdleTimer: number | null = null;
-
-    const releaseWheelGesture = () => {
-      wheelGestureLocked = false;
-      wheelAccum = 0;
-      wheelIdleTimer = null;
-    };
-
-    const bumpWheelGesture = () => {
-      if (wheelIdleTimer) window.clearTimeout(wheelIdleTimer);
-      wheelIdleTimer = window.setTimeout(releaseWheelGesture, WHEEL_GESTURE_IDLE_MS);
-    };
-
-    /** Un gesto de rueda = un paso como máximo (aunque el scroll sea largo). */
-    const consumeWheelStep = (deltaY: number): -1 | 0 | 1 => {
-      if (lockedRef.current) return 0;
-
-      bumpWheelGesture();
-      if (wheelGestureLocked) return 0;
-
-      wheelAccum += deltaY;
-      if (Math.abs(wheelAccum) < WHEEL_STEP_DELTA) return 0;
-
-      wheelGestureLocked = true;
-      wheelAccum = 0;
-      return deltaY > 0 ? 1 : -1;
-    };
+    let gestureUsed = false;
+    let sawQuiet = false;
+    let lastEventAt = 0;
 
     const onWheel = (event: WheelEvent) => {
       if (!inputReadyRef.current) return;
@@ -364,19 +340,51 @@ export function HomeSnap({
       if (document.activeElement instanceof HTMLInputElement) return;
 
       const delta = event.deltaY;
-      if (Math.abs(delta) < WHEEL_THRESHOLD) return;
+      const abs = Math.abs(delta);
+      if (abs < WHEEL_THRESHOLD) return;
 
       if (panelRef.current === 0 || panelRef.current === 1) {
         event.preventDefault();
       }
 
-      if (lockedRef.current) return;
+      const now = performance.now();
+      const gap = lastEventAt === 0 ? Infinity : now - lastEventAt;
+      lastEventAt = now;
 
-      const dir = consumeWheelStep(delta);
-      if (dir === 0) return;
+      // Pausa clara entre eventos → scroll nuevo.
+      if (gap >= WHEEL_GESTURE_GAP_MS) {
+        gestureUsed = false;
+        sawQuiet = false;
+      }
+
+      if (lockedRef.current) {
+        gestureUsed = true;
+        sawQuiet = false;
+        return;
+      }
+
+      if (gestureUsed) {
+        // Entre un deslizamiento y el siguiente el impulso baja un momento.
+        if (abs <= WHEEL_QUIET_PX) {
+          sawQuiet = true;
+          return;
+        }
+        // Nuevo deslizamiento justo después → contar sin esperar.
+        if (sawQuiet) {
+          gestureUsed = false;
+          sawQuiet = false;
+        } else {
+          // Mismo scroll continuo (aún fuerte) → no bajar otra pantalla.
+          return;
+        }
+      }
+
+      gestureUsed = true;
+      sawQuiet = false;
+      const dir = delta > 0 ? 1 : -1;
 
       if (panelRef.current === 1) {
-        dispatchArchivoWheel(dir * WHEEL_STEP_DELTA);
+        dispatchArchivoWheel(dir);
         return;
       }
 
@@ -385,10 +393,7 @@ export function HomeSnap({
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
-    return () => {
-      window.removeEventListener("wheel", onWheel);
-      if (wheelIdleTimer) window.clearTimeout(wheelIdleTimer);
-    };
+    return () => window.removeEventListener("wheel", onWheel);
   }, [advanceHeroOnHome, retreatHeroOnHome, dispatchArchivoWheel]);
 
   useEffect(() => {
@@ -518,7 +523,7 @@ export function HomeSnap({
           className={
             hideHeader
               ? "pointer-events-none bg-transparent"
-              : "pointer-events-auto bg-transparent md:[&_header]:pt-[max(1.625rem,var(--safe-top))]"
+              : "pointer-events-auto bg-transparent md:[&_header]:pt-[var(--header-inset-top)]"
           }
         >
           {header}

@@ -485,7 +485,7 @@ export function RetoVideoPlayer({
       <button
         type="button"
         onClick={onClose}
-        className={`absolute right-[18px] top-[22px] z-40 text-[25px] font-normal leading-none tracking-wide text-white/90 transition-opacity duration-300 hover:text-white ${
+        className={`absolute right-[18px] top-[22px] z-40 ui-btn-text font-normal leading-none tracking-wide text-white/90 transition-opacity duration-300 hover:text-white ${
           showUi ? "opacity-100" : "opacity-0"
         }`}
         aria-label="Cerrar vídeo"

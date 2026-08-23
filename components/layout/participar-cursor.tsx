@@ -1,8 +1,8 @@
 "use client";
 
-/** Botón fijo (móvil): mismo estilo de texto, sin fondo. */
+/** Botón fijo: mismo tamaño de texto que el header. */
 export const PARTICIPAR_BTN_CLASS =
-  "inline-flex items-center justify-center whitespace-nowrap text-center text-[clamp(24px,5vw,34px)] font-normal normal-case leading-none tracking-normal text-white [word-spacing:0.06em]";
+  "ui-btn-text inline-flex items-center justify-center whitespace-nowrap text-center font-normal normal-case leading-none tracking-normal text-white [word-spacing:0.06em]";
 
 function isParticiparHover(target: EventTarget | null) {
   if (!(target instanceof Element)) return false;

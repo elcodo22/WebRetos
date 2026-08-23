@@ -276,13 +276,13 @@ export function RetoHero({
       >
         <button
           type="button"
-          className="text-left text-[18px] font-normal leading-snug tracking-normal text-[var(--background)] md:text-[20px]"
+          className="text-left ui-btn-text font-normal leading-snug tracking-normal text-[var(--background)]"
         >
           ¿Cómo consigo un código?
         </button>
         <button
           type="button"
-          className="shrink-0 text-[20px] font-normal tracking-wide text-[var(--background)] md:text-[25px]"
+          className="shrink-0 ui-btn-text font-normal tracking-wide text-[var(--background)]"
         >
           [PARTICIPAR]
         </button>

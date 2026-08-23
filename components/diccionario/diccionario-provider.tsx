@@ -171,7 +171,7 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-end px-[18px] pt-3 md:pt-6">
               <button
                 type="button"
-                className="pointer-events-auto text-[22px] font-normal tracking-wide text-black/70 hover:text-black"
+                className="pointer-events-auto ui-btn-text font-normal tracking-wide text-black/70 hover:text-black"
                 style={{ cursor: 'url("/xp_link_xl.cur"), pointer' }}
                 onClick={close}
                 aria-label="Cerrar diccionario"
