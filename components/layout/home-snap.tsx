@@ -472,7 +472,7 @@ export function HomeSnap({
     >
       <div
         data-site-chrome=""
-        className={`pointer-events-none fixed inset-x-0 z-[70] bg-transparent transition-opacity duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] max-md:bottom-0 max-md:top-auto md:top-0 ${
+        className={`pointer-events-none fixed inset-x-0 top-0 z-[70] bg-transparent transition-opacity duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${
           hideHeader ? "opacity-0" : "opacity-100"
         }`}
         style={{
@@ -481,9 +481,9 @@ export function HomeSnap({
         aria-hidden={hideHeader}
       >
         <div
-          className={`bg-transparent max-md:[&_header]:pt-3.5 max-md:[&_header]:pb-[max(0.5rem,var(--safe-bottom))] ${
-            hideHeader ? "pointer-events-none" : "pointer-events-auto"
-          }`}
+          className={
+            hideHeader ? "pointer-events-none bg-transparent" : "pointer-events-auto bg-transparent"
+          }
         >
           {header}
         </div>
@@ -503,7 +503,7 @@ export function HomeSnap({
         </section>
 
         <section
-          className={`${panelLayerClass(panel === 1, "archivos")} flex min-h-0 flex-col bg-white text-[var(--background)] pt-0 pb-[calc(72px+var(--safe-bottom))] md:pt-[calc(68px+var(--safe-top))] md:pb-0`}
+          className={`${panelLayerClass(panel === 1, "archivos")} flex min-h-0 flex-col bg-white text-[var(--background)] pt-[calc(68px+var(--safe-top))] pb-[var(--safe-bottom)]`}
           aria-hidden={panel !== 1}
         >
           <div className="relative min-h-0 flex-1 overflow-hidden">
