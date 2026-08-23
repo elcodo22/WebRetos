@@ -707,3 +707,14 @@ html.cursor-eye-active [data-password-field] * {
   transform-origin: center bottom;
   transform: scale(1.06);
 }
+
+/* Marco home — móvil: una sola capa con border-image (9-slice nativo) */
+.home-lace-frame__mobile {
+  border-style: solid;
+  border-color: transparent;
+  border-width: clamp(72px, 22vmin, 180px);
+  border-image-source: url("/frames/home-lace-frame.png?v=12");
+  border-image-slice: 100;
+  border-image-width: clamp(72px, 22vmin, 180px);
+  border-image-repeat: stretch;
+}

@@ -482,7 +482,9 @@ export function HomeSnap({
       >
         <div
           className={
-            hideHeader ? "pointer-events-none bg-transparent" : "pointer-events-auto bg-transparent"
+            hideHeader
+              ? "pointer-events-none bg-transparent"
+              : "pointer-events-auto bg-transparent max-md:[&_header]:pt-[max(2.25rem,calc(var(--safe-top)+1rem))]"
           }
         >
           {header}

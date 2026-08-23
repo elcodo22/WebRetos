@@ -10,7 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { HomeLaceFrame } from "@/components/layout/home-lace-frame";
 import { categoryLabel, type DiccionarioResult } from "@/lib/diccionario";
 
 type HoverWordState = {
@@ -237,9 +236,8 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
             aria-hidden
             className="pointer-events-none fixed inset-0 z-[9990] bg-white"
           >
-            <HomeLaceFrame tone="dark" />
             <span
-              className="diccionario-hover-word absolute z-20 whitespace-nowrap text-black"
+              className="diccionario-hover-word absolute whitespace-nowrap text-black"
               style={{
                 top: hoverWord.top,
                 left: hoverWord.left,
