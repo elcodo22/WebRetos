@@ -313,7 +313,7 @@ export function HomeSnap({
   useEffect(() => {
     let wheelAccum = 0;
     let wheelGestureLocked = false;
-    let wheelIdleTimer: ReturnType<typeof setTimeout> | null = null;
+    let wheelIdleTimer: number | null = null;
 
     const releaseWheelGesture = () => {
       wheelGestureLocked = false;
@@ -448,7 +448,7 @@ export function HomeSnap({
 
   const hideHeader = panel === 0 && codigoFocused;
 
-  const heroWithStep = isValidElement(hero)
+  const heroWithStep = isValidElement<{ step?: HeroStep; panel?: 0 | 1 }>(hero)
     ? cloneElement(hero, { step: heroStep, panel: panel as 0 | 1 })
     : hero;
 
