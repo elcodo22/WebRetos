@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { ArchivosSearch } from "@/components/archivos/archivos-search";
+import { HOME_RESET_EVENT } from "@/components/layout/home-events";
 import { perfilHref } from "@/lib/mocks/perfil";
+import type { MouseEvent } from "react";
 
 type SiteHeaderVariant = "default" | "login" | "registro" | "forgot";
 
@@ -13,6 +15,12 @@ const navLinkClass =
 
 const navGroupClass =
   "flex flex-wrap items-center gap-6 md:gap-8";
+
+function goHome(event: MouseEvent<HTMLAnchorElement>, pathname: string) {
+  if (pathname !== "/") return;
+  event.preventDefault();
+  window.dispatchEvent(new Event(HOME_RESET_EVENT));
+}
 
 function NavLinks({
   variant,
@@ -126,7 +134,6 @@ export function HeaderNav({
   layout?: "row" | "stack";
 }) {
   const pathname = usePathname();
-  const showHome = pathname !== "/";
 
   const navLinks = (
     <NavLinks
@@ -144,11 +151,13 @@ export function HeaderNav({
         className="flex w-full max-w-xs flex-col items-center gap-8 text-center"
         aria-label="Navegación principal"
       >
-        {showHome ? (
-          <Link href="/" className={`${navLinkClass} block w-full text-center`}>
-            [HOME]
-          </Link>
-        ) : null}
+        <Link
+          href="/"
+          className={`${navLinkClass} block w-full text-center`}
+          onClick={(event) => goHome(event, pathname)}
+        >
+          [HOME]
+        </Link>
         {navLinks}
       </nav>
     );
@@ -161,7 +170,11 @@ export function HeaderNav({
       aria-label="Navegación principal"
     >
       <div className="shrink-0">
-        <Link href="/" className={navLinkClass}>
+        <Link
+          href="/"
+          className={navLinkClass}
+          onClick={(event) => goHome(event, pathname)}
+        >
           [HOME]
         </Link>
       </div>

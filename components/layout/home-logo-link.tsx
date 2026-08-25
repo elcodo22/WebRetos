@@ -3,23 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-
-const HERO_REQUEST_EVENT = "carousel-request-hero";
+import { HOME_RESET_EVENT } from "@/components/layout/home-events";
 
 export function HomeLogoLink({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   return (
     <Link
-      href="/#reto"
+      href="/"
       aria-label="Ir a la pantalla principal"
       className="inline-flex items-center leading-none"
       onClick={(event) => {
         if (pathname !== "/") return;
-
-        // En home: subir al reto con la animación del snap (desde archivos).
         event.preventDefault();
-        window.dispatchEvent(new Event(HERO_REQUEST_EVENT));
+        window.dispatchEvent(new Event(HOME_RESET_EVENT));
       }}
     >
       {children}

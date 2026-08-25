@@ -113,7 +113,7 @@ export function RetoTimeBar({
     size === "xl"
       ? "text-[clamp(40px,9vw,72px)] font-normal leading-none tracking-wide"
       : size === "hero"
-        ? "text-[clamp(32px,6.5vw,48px)] font-normal leading-none tracking-wide"
+        ? "text-[clamp(22px,4.2vw,30px)] font-normal leading-none tracking-wide"
         : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
 
   return (

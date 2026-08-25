@@ -21,6 +21,7 @@ import {
 } from "@/components/reto/reto-hero";
 import { setChromeTheme } from "@/components/layout/crt-shell";
 import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
+import { HOME_RESET_EVENT } from "@/components/layout/home-events";
 import type { User } from "@supabase/supabase-js";
 
 const PANEL_TRANSITION_MS = 300;
@@ -601,6 +602,48 @@ export function HomeSnap({
     window.setTimeout(() => goTo(1), PAUSE_ON_HERO_MS);
   }, [goTo]);
 
+  /** Inicio del home: título visible, sin tiempo/código/archivos. */
+  const resetHomeToStart = useCallback(() => {
+    releaseCodigoFocus();
+    lockedRef.current = false;
+    codigoPlantedAtRef.current = 0;
+    lastStepChangeAtRef.current = 0;
+
+    if (archivosLerpRafRef.current) {
+      cancelAnimationFrame(archivosLerpRafRef.current);
+      archivosLerpRafRef.current = 0;
+    }
+    archivosRevealTargetRef.current = 0;
+    archivosRevealDisplayRef.current = 0;
+    archivosRevealRef.current = 0;
+    setArchivosRevealState(0);
+
+    if (panelRef.current !== 0) {
+      panelRef.current = 0;
+      setPanel(0);
+    }
+
+    heroStepRef.current = 0;
+    setHeroStepState(0);
+    introProgressRef.current = 0;
+    setIntroProgressState(0);
+
+    const el = rootRef.current?.querySelector(
+      HERO_INTRO_SCROLL_SELECTOR,
+    ) as HTMLElement | null;
+    if (el) el.scrollTop = 0;
+
+    window.dispatchEvent(
+      new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 0 } }),
+    );
+    window.dispatchEvent(
+      new CustomEvent(RETO_DETALLE_EVENT, {
+        detail: { open: false, step: 0 },
+      }),
+    );
+    window.history.replaceState(null, "", "/#reto");
+  }, [releaseCodigoFocus]);
+
   const playEntranceFromOtherPage = useCallback(() => {
     if (runningEntranceRef.current) return;
     runningEntranceRef.current = true;
@@ -655,11 +698,11 @@ export function HomeSnap({
   useEffect(() => {
     const onHashChange = () => {
       if (window.location.hash === "#archivos") goToArchivosFromTop();
-      else goTo(0, { heroStep: 0 });
+      else resetHomeToStart();
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, [goTo, goToArchivosFromTop]);
+  }, [goToArchivosFromTop, resetHomeToStart]);
 
   useEffect(() => {
     const onNavigate = () => goToArchivosFromTop();
@@ -667,6 +710,12 @@ export function HomeSnap({
     return () =>
       window.removeEventListener("navigate-archivos-from-top", onNavigate);
   }, [goToArchivosFromTop]);
+
+  useEffect(() => {
+    const onHomeReset = () => resetHomeToStart();
+    window.addEventListener(HOME_RESET_EVENT, onHomeReset);
+    return () => window.removeEventListener(HOME_RESET_EVENT, onHomeReset);
+  }, [resetHomeToStart]);
 
   useEffect(() => {
     const onHeroRequest = () => {
