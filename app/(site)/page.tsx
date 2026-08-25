@@ -1,5 +1,4 @@
 import { ArchivosCarousel } from "@/components/archivos/archivos-carousel";
-import { HomeLaceFrame } from "@/components/layout/home-lace-frame";
 import { HomeSnap } from "@/components/layout/home-snap";
 import { SiteHeader } from "@/components/layout/site-header";
 import { RetoHero } from "@/components/reto/reto-hero";
@@ -30,7 +29,6 @@ export default async function Home() {
     />
   ) : (
     <div className="relative flex h-full w-full items-center justify-center">
-      <HomeLaceFrame />
       <div className="relative z-10 w-full max-w-3xl px-[var(--grid-margin)] text-center [word-spacing:0.45em]">
         <p className="text-[clamp(28px,5.5vw,40px)] font-normal uppercase leading-none tracking-normal">
           #---

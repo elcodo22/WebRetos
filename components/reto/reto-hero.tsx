@@ -7,7 +7,6 @@ import {
   type ReactNode,
 } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
-import { HomeLaceFrame } from "@/components/layout/home-lace-frame";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
 
 export type HeroStep = 0 | 1 | 2 | 3;
@@ -183,8 +182,6 @@ export function RetoHero({
       }`}
       data-codigo-focus={codigoMode ? "" : undefined}
     >
-      <HomeLaceFrame visible={panel === 0 && !codigoFocused} />
-
       <div className="absolute inset-0 [word-spacing:0.45em]">
         <div
           className={layerClass(showTitle)}
@@ -201,7 +198,7 @@ export function RetoHero({
           style={layerStyle}
           aria-hidden={!showDescripcion}
         >
-          <p className="w-full max-w-[92%] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:max-w-[80%]">
+          <p className="w-full max-w-[min(48rem,90%)] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:max-w-[52rem]">
             {renderDescripcion(descripcion)}
           </p>
         </div>
@@ -216,11 +213,11 @@ export function RetoHero({
               <RetoTimeBar
                 fechaFin={fechaFin}
                 active={showTiempo}
-                size="xl"
-                align="start"
+                size="hero"
+                align="center"
               />
             ) : (
-              <RetoTimeBar active={showTiempo} size="xl" align="start" />
+              <RetoTimeBar active={showTiempo} size="hero" align="center" />
             )}
           </div>
         </div>
