@@ -36,8 +36,8 @@ type RetoHeroProps = {
   panel?: 0 | 1;
 };
 
-const EASE = "cubic-bezier(0.33, 1, 0.68, 1)";
-const STEP_MS = 380;
+const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const STEP_MS = 480;
 
 function renderDescripcion(texto: string): ReactNode[] {
   const parts = texto.split(/(\*\*[^*]+\*\*)/g);
@@ -223,7 +223,7 @@ export function RetoHero({
     `home-hero-layer absolute inset-0 flex flex-col items-center justify-center px-[var(--grid-margin)] text-center ${
       visible
         ? "z-[2] pointer-events-auto translate-y-0 scale-100 opacity-100"
-        : "z-0 pointer-events-none translate-y-2 scale-[0.992] opacity-0"
+        : "z-0 pointer-events-none translate-y-3 scale-[0.985] opacity-0"
     }`;
 
   const layerStyle = {
