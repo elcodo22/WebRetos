@@ -30,11 +30,9 @@ export default async function Home() {
   ) : (
     <div className="relative flex h-full w-full items-center justify-center">
       <div className="relative z-10 w-full max-w-3xl px-[var(--grid-margin)] text-center [word-spacing:0.45em]">
-        <p className="text-[clamp(28px,5.5vw,40px)] font-normal uppercase leading-none tracking-normal">
-          #---
-        </p>
-        <h1 className="mt-3 text-[clamp(36px,7vw,56px)] font-medium uppercase leading-tight tracking-normal md:mt-4">
-          Sin reto activo
+        <h1 className="flex flex-wrap items-baseline justify-center gap-x-[0.35em] gap-y-1 text-center text-[clamp(26px,4.5vw,38px)] font-medium uppercase leading-tight tracking-normal">
+          <span className="font-normal">#---</span>
+          <span>Sin reto activo</span>
         </h1>
       </div>
     </div>

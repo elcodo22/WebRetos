@@ -163,13 +163,13 @@ export function LoginForm() {
           <div className="relative flex flex-1 flex-col items-center px-[18px]">
             <div className="absolute left-1/2 top-[38%] flex w-full max-w-xl -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-8">
               {forgotSent ? (
-                <p className="text-center text-[22px] font-normal tracking-wide text-white">
+                <p className="text-center text-[16px] font-normal tracking-wide text-white">
                   Se ha enviado un enlace a {sentEmail} para restablecer tu
                   contraseña.
                 </p>
               ) : (
                 <>
-                  <p className="text-center text-[22px] font-normal tracking-wide text-white/[0.72]">
+                  <p className="text-center text-[16px] font-normal tracking-wide text-white">
                     Ingresa tu email y te enviaremos un enlace para restablecer
                     tu contraseña.
                   </p>
@@ -190,7 +190,7 @@ export function LoginForm() {
                   />
 
                   {error ? (
-                    <p className="text-center text-[20px] tracking-wide text-white/[0.72]">
+                    <p className="text-center text-[15px] tracking-wide text-white/[0.72]">
                       {error}
                     </p>
                   ) : null}
@@ -225,12 +225,12 @@ export function LoginForm() {
             />
 
             {error ? (
-              <p className="max-w-xl text-center text-[20px] tracking-wide text-white/[0.72]">
+              <p className="max-w-xl text-center text-[15px] tracking-wide text-white/[0.72]">
                 {error}
               </p>
             ) : null}
             {message ? (
-              <p className="max-w-xl text-center text-[20px] tracking-wide text-white/[0.72]">
+              <p className="max-w-xl text-center text-[15px] tracking-wide text-white/[0.72]">
                 {message}
               </p>
             ) : null}

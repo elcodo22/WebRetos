@@ -13,6 +13,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import {
+  HERO_INTRO_SCROLL_SELECTOR,
   RETO_CODIGO_FOCUS_EVENT,
   RETO_DETALLE_EVENT,
   RETO_HERO_STEP_EVENT,
@@ -24,15 +25,26 @@ import type { User } from "@supabase/supabase-js";
 
 const PANEL_TRANSITION_MS = 300;
 const PANEL_LOCK_MS = PANEL_TRANSITION_MS + 40;
-const PANEL_LAYER_TRANSITION =
-  "transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] will-change-[opacity,transform]";
 /** Sin eventos = scroll anterior terminado. */
 const WHEEL_GESTURE_GAP_MS = 80;
+/** Tras cambiar de pantalla (tiempo/código/archivos), ignorar el resto del flick. */
+const SCREEN_LOCK_GAP_MS = 420;
 /** Impulso bajo entre deslizamientos → el siguiente scroll puede contar ya. */
 const WHEEL_QUIET_PX = 12;
 const WHEEL_THRESHOLD = 4;
 const TOUCH_THRESHOLD = 28;
 const PAUSE_ON_HERO_MS = 80;
+/** Tope por evento de rueda en el intro (un scroll fuerte no lo recorre entero). */
+const INTRO_WHEEL_CAP_PX = 52;
+/** Tope de progreso por gesto de rueda. */
+const INTRO_GESTURE_CAP = 0.34;
+/** Tope de progreso por gesto táctil. */
+const INTRO_TOUCH_GESTURE_CAP = 0.36;
+/** Scroll (px) para revelar archivos desde el código. */
+const ARCHIVOS_REVEAL_SCROLL_PX = 360;
+const ARCHIVOS_WHEEL_CAP_PX = 48;
+const ARCHIVOS_GESTURE_CAP = 0.38;
+const ARCHIVOS_TOUCH_GESTURE_CAP = 0.4;
 const INPUT_GRACE_MS = 450;
 const STORAGE_KEY = "animate-to-archivos";
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
@@ -61,6 +73,8 @@ export function HomeSnap({
 
   const [panel, setPanel] = useState(0);
   const [heroStep, setHeroStepState] = useState<HeroStep>(0);
+  const [introProgress, setIntroProgressState] = useState(0);
+  const [archivosReveal, setArchivosRevealState] = useState(0);
   const [codigoFocused, setCodigoFocused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const panelRef = useRef(0);
@@ -68,9 +82,29 @@ export function HomeSnap({
   const rootRef = useRef<HTMLDivElement>(null);
   const runningEntranceRef = useRef(false);
   const heroStepRef = useRef<HeroStep>(0);
+  const introProgressRef = useRef(0);
+  const archivosRevealRef = useRef(0);
+  const codigoFocusedRef = useRef(false);
   const inputReadyRef = useRef(false);
   const mobileMenuOpenRef = useRef(false);
+  const screenLockRef = useRef(false);
+  const screenLockAtRef = useRef(0);
+  /** Dirección del salto bloqueado (+1 abajo / -1 arriba). Al contrario se libera. */
+  const screenLockDirRef = useRef<1 | -1>(1);
   const transitionTimersRef = useRef<number[]>([]);
+
+  const armScreenLock = useCallback((dir: 1 | -1 = 1) => {
+    screenLockRef.current = true;
+    screenLockDirRef.current = dir;
+    screenLockAtRef.current = performance.now();
+  }, []);
+
+  const clearScreenLockIfReady = useCallback(() => {
+    if (!screenLockRef.current) return;
+    if (performance.now() - screenLockAtRef.current >= SCREEN_LOCK_GAP_MS) {
+      screenLockRef.current = false;
+    }
+  }, []);
 
   const clearTransitionTimers = useCallback(() => {
     for (const id of transitionTimersRef.current) {
@@ -108,12 +142,33 @@ export function HomeSnap({
   }, [heroStep]);
 
   useEffect(() => {
+    codigoFocusedRef.current = codigoFocused;
+  }, [codigoFocused]);
+
+  useEffect(() => {
+    // Estado inicial limpio: título visible
+    heroStepRef.current = 0;
+    setHeroStepState(0);
+    introProgressRef.current = 0;
+    setIntroProgressState(0);
+    archivosRevealRef.current = 0;
+    setArchivosRevealState(0);
+  }, []);
+
+  useEffect(() => {
     function onHeroStep(event: Event) {
       const next = (event as CustomEvent<{ step?: HeroStep }>).detail?.step;
       if (next !== 0 && next !== 1 && next !== 2 && next !== 3) return;
       if (heroStepRef.current === next) return;
       heroStepRef.current = next;
       setHeroStepState(next);
+      if (next >= 1) {
+        introProgressRef.current = 1;
+        setIntroProgressState(1);
+      } else {
+        introProgressRef.current = 0;
+        setIntroProgressState(0);
+      }
     }
 
     window.addEventListener(RETO_HERO_STEP_EVENT, onHeroStep);
@@ -132,7 +187,10 @@ export function HomeSnap({
       window.removeEventListener(RETO_CODIGO_FOCUS_EVENT, onCodigoFocus);
   }, []);
 
-  const homeWhiteMode = panel === 1 || (panel === 0 && codigoFocused);
+  const homeWhiteMode =
+    panel === 1 ||
+    (panel === 0 && codigoFocused) ||
+    (panel === 0 && archivosReveal >= 0.98);
 
   useEffect(() => {
     setChromeTheme(homeWhiteMode ? "white" : "blue");
@@ -166,6 +224,13 @@ export function HomeSnap({
     if (heroStepRef.current === next) return;
     heroStepRef.current = next;
     setHeroStepState(next);
+    if (next >= 1) {
+      introProgressRef.current = 1;
+      setIntroProgressState(1);
+    } else {
+      introProgressRef.current = 0;
+      setIntroProgressState(0);
+    }
     window.dispatchEvent(
       new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: next } }),
     );
@@ -176,15 +241,171 @@ export function HomeSnap({
     );
   }, []);
 
+  /** Progreso del intro. Al completar → pantalla azul vacía (step 1). */
+  const setIntroProgress = useCallback((next: number) => {
+    const p = Math.min(1, Math.max(0, next));
+    introProgressRef.current = p;
+    setIntroProgressState(p);
+
+    if (p >= 1) {
+      if (heroStepRef.current === 0) {
+        heroStepRef.current = 1;
+        setHeroStepState(1);
+        window.dispatchEvent(
+          new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 1 } }),
+        );
+        window.dispatchEvent(
+          new CustomEvent(RETO_DETALLE_EVENT, {
+            detail: { open: true, step: 1 },
+          }),
+        );
+      }
+      return;
+    }
+
+    if (heroStepRef.current === 1) {
+      heroStepRef.current = 0;
+      setHeroStepState(0);
+      window.dispatchEvent(
+        new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 0 } }),
+      );
+      window.dispatchEvent(
+        new CustomEvent(RETO_DETALLE_EVENT, {
+          detail: { open: false, step: 0 },
+        }),
+      );
+    }
+  }, []);
+
+  /** Scroll del intro con topes: un impulso fuerte no lo manda arriba de golpe. */
+  const scrollIntroBy = useCallback(
+    (deltaPx: number, opts?: { gestureStart?: number; gestureCap?: number }) => {
+      const el = rootRef.current?.querySelector(
+        HERO_INTRO_SCROLL_SELECTOR,
+      ) as HTMLElement | null;
+      const approx = Math.max(440, window.innerHeight * 1.75);
+
+      let nextP = introProgressRef.current + deltaPx / approx;
+      if (el) {
+        const rawMax = el.scrollHeight - el.clientHeight;
+        if (rawMax >= 80) {
+          const nextTop = Math.min(
+            rawMax,
+            Math.max(0, el.scrollTop + deltaPx),
+          );
+          nextP = nextTop / rawMax;
+        }
+      }
+
+      if (
+        opts?.gestureStart !== undefined &&
+        opts.gestureCap !== undefined &&
+        deltaPx > 0
+      ) {
+        nextP = Math.min(nextP, opts.gestureStart + opts.gestureCap);
+      }
+      if (
+        opts?.gestureStart !== undefined &&
+        opts.gestureCap !== undefined &&
+        deltaPx < 0
+      ) {
+        nextP = Math.max(nextP, opts.gestureStart - opts.gestureCap);
+      }
+
+      nextP = Math.min(1, Math.max(0, nextP));
+
+      if (el) {
+        const rawMax = el.scrollHeight - el.clientHeight;
+        if (rawMax >= 80) {
+          el.scrollTop = nextP * rawMax;
+        }
+      }
+
+      setIntroProgress(nextP);
+      return nextP;
+    },
+    [setIntroProgress],
+  );
+
+  const wheelDeltaPx = (event: WheelEvent) => {
+    if (event.deltaMode === 1) return event.deltaY * 16;
+    if (event.deltaMode === 2) {
+      return event.deltaY * (window.innerHeight || 800);
+    }
+    return event.deltaY;
+  };
+
   const applyPanel = useCallback((next: number) => {
     panelRef.current = next;
     setPanel(next);
+    if (next === 1) {
+      archivosRevealRef.current = 1;
+      setArchivosRevealState(1);
+    } else {
+      archivosRevealRef.current = 0;
+      setArchivosRevealState(0);
+    }
     window.history.replaceState(
       null,
       "",
       next === 1 ? "/#archivos" : "/#reto",
     );
   }, []);
+
+  /** 0 = solo código/azul, 1 = archivos a pantalla completa. */
+  const setArchivosReveal = useCallback(
+    (next: number) => {
+      const prev = archivosRevealRef.current;
+      const p = Math.min(1, Math.max(0, next));
+      archivosRevealRef.current = p;
+      setArchivosRevealState(p);
+
+      if (p >= 1) {
+        if (panelRef.current !== 1) {
+          releaseCodigoFocus();
+          panelRef.current = 1;
+          setPanel(1);
+          window.history.replaceState(null, "", "/#archivos");
+        }
+        return;
+      }
+
+      if (prev > 0 && p <= 0) {
+        armScreenLock(-1);
+      }
+
+      if (panelRef.current === 1 && p < 1) {
+        panelRef.current = 0;
+        setPanel(0);
+        window.history.replaceState(null, "", "/#reto");
+      }
+    },
+    [releaseCodigoFocus, armScreenLock],
+  );
+
+  const scrollArchivosRevealBy = useCallback(
+    (deltaPx: number, opts?: { gestureStart?: number; gestureCap?: number }) => {
+      let nextP =
+        archivosRevealRef.current + deltaPx / ARCHIVOS_REVEAL_SCROLL_PX;
+      if (
+        opts?.gestureStart !== undefined &&
+        opts.gestureCap !== undefined &&
+        deltaPx > 0
+      ) {
+        nextP = Math.min(nextP, opts.gestureStart + opts.gestureCap);
+      }
+      if (
+        opts?.gestureStart !== undefined &&
+        opts.gestureCap !== undefined &&
+        deltaPx < 0
+      ) {
+        nextP = Math.max(nextP, opts.gestureStart - opts.gestureCap);
+      }
+      setArchivosReveal(nextP);
+      return archivosRevealRef.current;
+    },
+    [setArchivosReveal],
+  );
 
   const runPanelTransition = useCallback(
     (next: number) => {
@@ -236,18 +457,91 @@ export function HomeSnap({
   );
 
   const advanceHeroOnHome = useCallback(() => {
-    if (heroStepRef.current < 3) {
-      setHeroStep((heroStepRef.current + 1) as HeroStep);
+    const step = heroStepRef.current;
+    if (step === 0) {
+      setHeroStep(1);
       return;
     }
-    goTo(1);
-  }, [goTo, setHeroStep]);
+    if (step === 1) {
+      setHeroStep(2);
+      armScreenLock(1);
+      return;
+    }
+    if (step === 2) {
+      setHeroStep(3);
+      armScreenLock(1);
+      return;
+    }
+    // Desde código: solo un tramo hacia archivos (nunca saltar entero).
+    scrollArchivosRevealBy(ARCHIVOS_WHEEL_CAP_PX, {
+      gestureStart: archivosRevealRef.current,
+      gestureCap: ARCHIVOS_GESTURE_CAP,
+    });
+  }, [setHeroStep, scrollArchivosRevealBy, armScreenLock]);
 
   const retreatHeroOnHome = useCallback(() => {
-    if (heroStepRef.current > 0) {
-      setHeroStep((heroStepRef.current - 1) as HeroStep);
+    if (archivosRevealRef.current > 0 && panelRef.current === 0) {
+      scrollArchivosRevealBy(-ARCHIVOS_WHEEL_CAP_PX, {
+        gestureStart: archivosRevealRef.current,
+        gestureCap: ARCHIVOS_GESTURE_CAP,
+      });
+      return;
     }
-  }, [setHeroStep]);
+    const step = heroStepRef.current;
+    if (step >= 3) {
+      setHeroStep(2);
+      armScreenLock(-1);
+      return;
+    }
+    if (step === 2) {
+      // Volver al vacío / descripción: sin lock para poder seguir subiendo.
+      setHeroStep(1);
+      return;
+    }
+    if (step === 1) {
+      heroStepRef.current = 0;
+      setHeroStepState(0);
+      introProgressRef.current = 1;
+      setIntroProgressState(1);
+      const el = rootRef.current?.querySelector(
+        HERO_INTRO_SCROLL_SELECTOR,
+      ) as HTMLElement | null;
+      if (el) el.scrollTop = el.scrollHeight;
+      window.dispatchEvent(
+        new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 0 } }),
+      );
+      window.dispatchEvent(
+        new CustomEvent(RETO_DETALLE_EVENT, {
+          detail: { open: false, step: 0 },
+        }),
+      );
+    }
+  }, [setHeroStep, scrollArchivosRevealBy, armScreenLock]);
+
+  /** Salir de archivos hacia el código con el mismo slide (reversa). */
+  const beginArchivosExit = useCallback(() => {
+    if (panelRef.current === 1) {
+      panelRef.current = 0;
+      setPanel(0);
+      window.history.replaceState(null, "", "/#reto");
+    }
+    archivosRevealRef.current = 1;
+    setArchivosRevealState(1);
+    if (heroStepRef.current !== 3) {
+      heroStepRef.current = 3;
+      setHeroStepState(3);
+      introProgressRef.current = 1;
+      setIntroProgressState(1);
+      window.dispatchEvent(
+        new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 3 } }),
+      );
+      window.dispatchEvent(
+        new CustomEvent(RETO_DETALLE_EVENT, {
+          detail: { open: true, step: 3 },
+        }),
+      );
+    }
+  }, []);
 
   const goToArchivosFromTop = useCallback(() => {
     if (lockedRef.current || runningEntranceRef.current) return;
@@ -323,15 +617,31 @@ export function HomeSnap({
   }, [goToArchivosFromTop]);
 
   useEffect(() => {
-    const onHeroRequest = () => goTo(0, { heroStep: 3 });
+    const onHeroRequest = () => {
+      // Desde la primera carpeta hacia arriba: empezar a bajar la blanca
+      // solo un poco (mismo tope que un evento de rueda, no medio panel).
+      if (screenLockRef.current) {
+        clearScreenLockIfReady();
+        if (screenLockRef.current) return;
+      }
+      beginArchivosExit();
+      scrollArchivosRevealBy(-ARCHIVOS_WHEEL_CAP_PX, {
+        gestureStart: 1,
+        gestureCap: ARCHIVOS_GESTURE_CAP,
+      });
+    };
     window.addEventListener(HERO_REQUEST_EVENT, onHeroRequest);
     return () => window.removeEventListener(HERO_REQUEST_EVENT, onHeroRequest);
-  }, [goTo]);
+  }, [beginArchivosExit, scrollArchivosRevealBy, clearScreenLockIfReady]);
 
   useEffect(() => {
     let gestureUsed = false;
     let sawQuiet = false;
     let lastEventAt = 0;
+    let introGestureStart = 0;
+    let introGestureActive = false;
+    let archivosGestureStart = 0;
+    let archivosGestureActive = false;
 
     const onWheel = (event: WheelEvent) => {
       if (!inputReadyRef.current) return;
@@ -347,9 +657,121 @@ export function HomeSnap({
         event.preventDefault();
       }
 
+      if (lockedRef.current) return;
+
       const now = performance.now();
       const gap = lastEventAt === 0 ? Infinity : now - lastEventAt;
       lastEventAt = now;
+
+      if (gap >= WHEEL_GESTURE_GAP_MS) {
+        gestureUsed = false;
+        sawQuiet = false;
+        introGestureActive = false;
+        archivosGestureActive = false;
+      }
+
+      if (gap >= SCREEN_LOCK_GAP_MS) {
+        screenLockRef.current = false;
+      }
+
+      // Bloqueo solo en la dirección del salto; al revés se libera.
+      if (screenLockRef.current) {
+        const dir: 1 | -1 = delta > 0 ? 1 : -1;
+        if (dir === screenLockDirRef.current) return;
+        screenLockRef.current = false;
+        gestureUsed = false;
+        sawQuiet = false;
+      }
+
+      // Intro: scroll hasta azul vacío; el mismo impulso fuerte puede seguir al tiempo.
+      if (panelRef.current === 0) {
+        const step = heroStepRef.current;
+        if (step === 0 || (step === 1 && delta < 0)) {
+          if (step === 1 && delta < 0) {
+            heroStepRef.current = 0;
+            setHeroStepState(0);
+            introProgressRef.current = 1;
+            setIntroProgressState(1);
+            const el = rootRef.current?.querySelector(
+              HERO_INTRO_SCROLL_SELECTOR,
+            ) as HTMLElement | null;
+            if (el) el.scrollTop = el.scrollHeight;
+          }
+
+          if (!introGestureActive) {
+            introGestureActive = true;
+            introGestureStart = introProgressRef.current;
+          }
+
+          const raw = wheelDeltaPx(event);
+          const capped =
+            Math.sign(raw) * Math.min(Math.abs(raw), INTRO_WHEEL_CAP_PX);
+          const before = introProgressRef.current;
+          const after = scrollIntroBy(capped, {
+            gestureStart: introGestureStart,
+            gestureCap: INTRO_GESTURE_CAP,
+          });
+          if (before < 1 && after >= 1) {
+            // No marcar gestureUsed: el resto del flick puede pasar al tiempo.
+            introGestureActive = false;
+            sawQuiet = false;
+          }
+          return;
+        }
+
+        // Azul vacío → tiempo (también en el mismo flick que cerró la descripción).
+        if (step === 1 && delta > 0) {
+          if (gestureUsed) {
+            if (abs <= WHEEL_QUIET_PX) {
+              sawQuiet = true;
+              return;
+            }
+            if (sawQuiet) {
+              gestureUsed = false;
+              sawQuiet = false;
+            } else {
+              return;
+            }
+          }
+          setHeroStep(2);
+          gestureUsed = true;
+          sawQuiet = false;
+          armScreenLock(1); // no saltar al código; subir libera el lock
+          return;
+        }
+
+        // Tiempo → vacío (mismo flick fuerte puede seguir a la descripción).
+        if (step === 2 && delta < 0) {
+          setHeroStep(1);
+          gestureUsed = false;
+          sawQuiet = false;
+          introGestureActive = false;
+          return;
+        }
+
+        // Código → archivos: la blanca sube con cada scroll.
+        if (
+          !codigoFocusedRef.current &&
+          (step === 3 || archivosRevealRef.current > 0)
+        ) {
+          const reveal = archivosRevealRef.current;
+          if (!(step === 3 && reveal <= 0 && delta < 0)) {
+            if (!archivosGestureActive) {
+              archivosGestureActive = true;
+              archivosGestureStart = reveal;
+            }
+            const raw = wheelDeltaPx(event);
+            const capped =
+              Math.sign(raw) *
+              Math.min(Math.abs(raw), ARCHIVOS_WHEEL_CAP_PX);
+            scrollArchivosRevealBy(capped, {
+              gestureStart: archivosGestureStart,
+              gestureCap: ARCHIVOS_GESTURE_CAP,
+            });
+            return;
+          }
+        }
+      }
 
       // Pausa clara entre eventos → scroll nuevo.
       if (gap >= WHEEL_GESTURE_GAP_MS) {
@@ -357,24 +779,15 @@ export function HomeSnap({
         sawQuiet = false;
       }
 
-      if (lockedRef.current) {
-        gestureUsed = true;
-        sawQuiet = false;
-        return;
-      }
-
       if (gestureUsed) {
-        // Entre un deslizamiento y el siguiente el impulso baja un momento.
         if (abs <= WHEEL_QUIET_PX) {
           sawQuiet = true;
           return;
         }
-        // Nuevo deslizamiento justo después → contar sin esperar.
         if (sawQuiet) {
           gestureUsed = false;
           sawQuiet = false;
         } else {
-          // Mismo scroll continuo (aún fuerte) → no bajar otra pantalla.
           return;
         }
       }
@@ -394,7 +807,15 @@ export function HomeSnap({
 
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
-  }, [advanceHeroOnHome, retreatHeroOnHome, dispatchArchivoWheel]);
+  }, [
+    advanceHeroOnHome,
+    retreatHeroOnHome,
+    dispatchArchivoWheel,
+    scrollIntroBy,
+    scrollArchivosRevealBy,
+    setHeroStep,
+    armScreenLock,
+  ]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -404,10 +825,17 @@ export function HomeSnap({
     let startX = 0;
     let startY = 0;
     let lastY = 0;
+    let touchScrollBase = 0;
+    let touchArchivosBase = 0;
+    let scrubbingIntro = false;
+    let scrubbingArchivos = false;
 
     const fromField = (target: EventTarget | null) =>
       target instanceof Element &&
       Boolean(target.closest("input, textarea, [data-codigo-field]"));
+
+    const introEl = () =>
+      root.querySelector(HERO_INTRO_SCROLL_SELECTOR) as HTMLElement | null;
 
     const onStart = (event: TouchEvent) => {
       if (!inputReadyRef.current) return;
@@ -423,6 +851,18 @@ export function HomeSnap({
       startX = touch.clientX;
       startY = touch.clientY;
       lastY = startY;
+      const el = introEl();
+      touchScrollBase = el?.scrollTop ?? 0;
+      touchArchivosBase = archivosRevealRef.current;
+      clearScreenLockIfReady();
+      const step = heroStepRef.current;
+      scrubbingIntro =
+        panelRef.current === 0 && (step === 0 || step === 1);
+      scrubbingArchivos =
+        panelRef.current === 0 &&
+        !codigoFocusedRef.current &&
+        !screenLockRef.current &&
+        (step === 3 || archivosRevealRef.current > 0);
     };
 
     const onMove = (event: TouchEvent) => {
@@ -435,6 +875,74 @@ export function HomeSnap({
       if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) {
         event.preventDefault();
       }
+
+      if (lockedRef.current || panelRef.current !== 0) return;
+
+      if (scrubbingArchivos) {
+        let nextP =
+          touchArchivosBase + dy / ARCHIVOS_REVEAL_SCROLL_PX;
+        if (dy > 0) {
+          nextP = Math.min(
+            nextP,
+            touchArchivosBase + ARCHIVOS_TOUCH_GESTURE_CAP,
+          );
+        } else {
+          nextP = Math.max(
+            nextP,
+            touchArchivosBase - ARCHIVOS_TOUCH_GESTURE_CAP,
+          );
+        }
+        setArchivosReveal(nextP);
+        return;
+      }
+
+      if (!scrubbingIntro) return;
+
+      const step = heroStepRef.current;
+      if (step === 1 && dy >= 0) return;
+      if (step > 1) return;
+
+      if (step === 1 && dy < 0) {
+        heroStepRef.current = 0;
+        setHeroStepState(0);
+        introProgressRef.current = 1;
+        setIntroProgressState(1);
+        const scroller = introEl();
+        if (scroller) {
+          scroller.scrollTop = scroller.scrollHeight;
+          touchScrollBase = scroller.scrollHeight;
+        }
+      }
+
+      const approx = Math.max(440, window.innerHeight * 1.75);
+      let nextP =
+        (touchScrollBase || 0) / Math.max(1, approx) + dy / approx;
+
+      const scroller = introEl();
+      if (scroller) {
+        const rawMax = scroller.scrollHeight - scroller.clientHeight;
+        if (rawMax >= 80) {
+          const baseP = touchScrollBase / rawMax;
+          nextP = baseP + dy / rawMax;
+          if (dy > 0) {
+            nextP = Math.min(nextP, baseP + INTRO_TOUCH_GESTURE_CAP);
+          } else {
+            nextP = Math.max(nextP, baseP - INTRO_TOUCH_GESTURE_CAP);
+          }
+          nextP = Math.min(1, Math.max(0, nextP));
+          scroller.scrollTop = nextP * rawMax;
+          setIntroProgress(nextP);
+          return;
+        }
+      }
+
+      const baseP = introProgressRef.current;
+      if (dy > 0) {
+        nextP = Math.min(nextP, baseP + INTRO_TOUCH_GESTURE_CAP);
+      } else {
+        nextP = Math.max(nextP, baseP - INTRO_TOUCH_GESTURE_CAP);
+      }
+      setIntroProgress(nextP);
     };
 
     const onEnd = () => {
@@ -443,6 +951,24 @@ export function HomeSnap({
       if (lockedRef.current) return;
 
       const delta = startY - lastY;
+      clearScreenLockIfReady();
+
+      if (scrubbingArchivos) {
+        scrubbingArchivos = false;
+        scrubbingIntro = false;
+        return;
+      }
+
+      if (scrubbingIntro) {
+        const step = heroStepRef.current;
+        scrubbingIntro = false;
+        if (step === 0) return;
+        if (step === 1 && delta < TOUCH_THRESHOLD) return;
+      } else {
+        scrubbingIntro = false;
+      }
+
+      if (screenLockRef.current) return;
       if (Math.abs(delta) < TOUCH_THRESHOLD) return;
 
       if (panelRef.current === 1) {
@@ -464,26 +990,38 @@ export function HomeSnap({
       root.removeEventListener("touchend", onEnd);
       root.removeEventListener("touchcancel", onEnd);
     };
-  }, [advanceHeroOnHome, retreatHeroOnHome, dispatchArchivoWheel]);
+  }, [
+    advanceHeroOnHome,
+    retreatHeroOnHome,
+    dispatchArchivoWheel,
+    setIntroProgress,
+    setArchivosReveal,
+    clearScreenLockIfReady,
+  ]);
 
   const participarActive =
-    panel === 0 && !searchOpen && !diccionarioOpen && !mobileMenuOpen;
+    panel === 0 &&
+    archivosReveal < 0.15 &&
+    !searchOpen &&
+    !diccionarioOpen &&
+    !mobileMenuOpen;
 
   const hideHeader = panel === 0 && codigoFocused;
-  const mobileMenuWhite = panel === 1;
+  const mobileMenuWhite = panel === 1 || archivosReveal >= 0.98;
+  const reveal = panel === 1 ? 1 : archivosReveal;
+  const archivosInteractive = reveal >= 0.98 || panel === 1;
 
-  const heroWithStep = isValidElement<{ step?: HeroStep; panel?: 0 | 1 }>(hero)
-    ? cloneElement(hero, { step: heroStep, panel: panel as 0 | 1 })
+  const heroWithStep = isValidElement<{
+    step?: HeroStep;
+    panel?: 0 | 1;
+    introProgress?: number;
+  }>(hero)
+    ? cloneElement(hero, {
+        step: heroStep,
+        panel: panel as 0 | 1,
+        introProgress,
+      })
     : hero;
-
-  const panelLayerClass = (active: boolean, kind: "hero" | "archivos") =>
-    `${PANEL_LAYER_TRANSITION} absolute inset-0 overflow-hidden ${
-      active
-        ? "z-[2] translate-y-0 opacity-100 pointer-events-auto"
-        : kind === "archivos"
-          ? "z-0 translate-y-3 opacity-0 pointer-events-none"
-          : "z-0 -translate-y-2 opacity-0 pointer-events-none"
-    }`;
 
   return (
     <div
@@ -549,15 +1087,27 @@ export function HomeSnap({
             if (event.target instanceof HTMLInputElement) return;
             event.preventDefault();
           }}
-          className={panelLayerClass(panel === 0, "hero")}
-          aria-hidden={panel !== 0}
+          className={`absolute inset-0 overflow-hidden ${
+            archivosInteractive
+              ? "z-0 pointer-events-none"
+              : "z-[2] pointer-events-auto"
+          }`}
+          aria-hidden={archivosInteractive}
         >
           <div className="h-full w-full">{heroWithStep}</div>
         </section>
 
         <section
-          className={`${panelLayerClass(panel === 1, "archivos")} flex min-h-0 flex-col bg-white text-[var(--background)] pt-0 pb-[var(--safe-bottom)] md:pt-[calc(68px+var(--safe-top))]`}
-          aria-hidden={panel !== 1}
+          className={`absolute inset-0 flex min-h-0 flex-col overflow-hidden bg-white text-[var(--background)] pt-0 pb-[var(--safe-bottom)] md:pt-[calc(68px+var(--safe-top))] ${
+            archivosInteractive
+              ? "z-[2] pointer-events-auto"
+              : "z-[3] pointer-events-none"
+          }`}
+          style={{
+            transform: `translateY(${(1 - reveal) * 100}%)`,
+            willChange: "transform",
+          }}
+          aria-hidden={reveal < 0.02}
         >
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {archivos}

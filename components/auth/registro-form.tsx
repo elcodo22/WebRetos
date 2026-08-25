@@ -439,7 +439,7 @@ export function RegistroForm() {
       <div className="relative flex h-full min-h-0 flex-1 flex-col">
         <AuthMobileTopNav oppositeLabel="[LOGIN]" oppositeHref="/login" />
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto scrollbar-none px-[18px] py-6 text-center">
-          <p className="max-w-xl text-[20px] font-normal tracking-wide text-white/[0.72]">
+          <p className="max-w-xl text-[16px] font-normal tracking-wide text-white/[0.72]">
             Te hemos enviado un código a{" "}
             <span className="text-white">{email.trim()}</span>. Introduce los 6
             dígitos.
@@ -467,13 +467,13 @@ export function RegistroForm() {
                 onPaste={onOtpPaste}
                 onFocus={(event) => event.currentTarget.select()}
                 aria-label={`Dígito ${index + 1} de ${OTP_LENGTH}`}
-                className="h-12 w-10 border border-white bg-transparent text-center text-[30px] font-normal tracking-wide text-white outline-none disabled:opacity-60 sm:h-14 sm:w-12 sm:text-[35px]"
+                className="h-10 w-8 border border-white bg-transparent text-center text-[22px] font-normal tracking-wide text-white outline-none disabled:opacity-60 sm:h-11 sm:w-9 sm:text-[24px]"
               />
             ))}
           </div>
 
           <p
-            className="min-h-[24px] max-w-xl text-[20px] tracking-wide text-white"
+            className="min-h-[24px] max-w-xl text-[15px] tracking-wide text-white"
             role={otpError ? "alert" : undefined}
           >
             {otpLoading && !otpError
@@ -593,7 +593,7 @@ export function RegistroForm() {
 
       <div className="flex flex-col gap-4 px-[18px] pb-[max(1rem,var(--safe-bottom))] md:pb-10">
         <p
-          className="min-h-[24px] text-center text-[16px] tracking-wide text-white md:text-[20px]"
+          className="min-h-[24px] text-center text-[15px] tracking-wide text-white"
           role={bottomMessage ? "alert" : undefined}
         >
           {bottomMessage ?? "\u00A0"}
