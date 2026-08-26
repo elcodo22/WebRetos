@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
@@ -41,95 +40,49 @@ type RetoHeroProps = {
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const STEP_MS = 480;
-/** Altura aprox. de la fila # + título (para fijarla al centro). */
-const TITLE_BAR_H = 32;
-const TITLE_BAR_BOTTOM_PAD = 40;
-/** En móvil: título abajo, encima del safe-bottom. */
-const TITLE_BAR_BOTTOM_PAD_MOBILE = 56;
-
-function titleBarTop(
-  portH: number,
-  introProgress: number,
-  step: HeroStep,
-  mobile: boolean,
-  tiempoProgress = 1,
-): number {
-  if (mobile) {
-    // No se usa con `bottom` fijo; se mantiene por tipado del call site.
-    return TITLE_BAR_BOTTOM_PAD_MOBILE;
-  }
-  if (portH <= 0) return TITLE_BAR_BOTTOM_PAD;
-  const trailer = Math.max(1, portH * 0.75);
-  // Centro solo con QUEDAN/código a pantalla completa; si bajan, el título baja con ellos.
-  const pinCenter =
-    step >= 3 || (step >= 2 && tiempoProgress >= 0.999);
-  const scrollTop = pinCenter ? trailer : introProgress * trailer;
-  const naturalTop = portH - TITLE_BAR_BOTTOM_PAD - TITLE_BAR_H - scrollTop;
-  const pinnedTop = (portH - TITLE_BAR_H) / 2;
-  return Math.max(naturalTop, pinnedTop);
-}
 
 function TitleBar({
   numero,
   titulo,
-  top,
+  descripcion,
   visible,
   dark,
-  mobile,
+  descripcionOpacity,
 }: {
   numero: string;
   titulo: string;
-  top: number;
+  descripcion: string;
   visible: boolean;
   dark: boolean;
-  mobile: boolean;
+  descripcionOpacity: number;
 }) {
   return (
     <div
-      className={`pointer-events-none absolute inset-x-0 z-30 transition-opacity duration-300 ${
+      className={`pointer-events-none absolute inset-x-0 top-1/2 z-30 -translate-y-1/2 transition-opacity duration-300 ${
         visible ? "opacity-100" : "opacity-0"
       } ${dark ? "text-[var(--background)]" : "text-white"}`}
-      style={
-        mobile
-          ? {
-              bottom:
-                "max(1rem, calc(var(--safe-bottom, 0px) + 0.85rem))",
-            }
-          : {
-              top,
-              height: TITLE_BAR_H,
-            }
-      }
       aria-hidden={!visible}
     >
-      <div className="site-grid w-full items-center">
-        <div className="col-span-2 col-start-1 truncate text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-2">
-          <span className="pointer-events-auto">
+      {/* Descripción anclada al centro real de la pantalla. */}
+      <p
+        className="absolute left-1/2 top-1/2 w-[min(72%,28rem)] -translate-x-1/2 -translate-y-1/2 text-center text-[clamp(12px,2.1vw,15px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal]"
+        style={{ opacity: descripcionOpacity }}
+      >
+        {descripcion}
+      </p>
+
+      <div className="site-grid relative w-full items-center">
+        <div className="col-span-4 col-start-1 flex min-w-0 items-center justify-between gap-4 text-[clamp(13px,2.6vw,18px)] font-normal uppercase leading-none tracking-wide md:col-span-8 md:col-start-2">
+          <span className="relative z-10 min-w-0 max-w-[34%] truncate pointer-events-auto">
             <ClickableText text={titulo} enabled={visible} />
           </span>
-        </div>
-        <div className="col-span-2 col-start-3 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-8">
-          #{formatRetoNumero(numero)}
+          <span className="relative z-10 shrink-0 whitespace-nowrap">
+            #{formatRetoNumero(numero)}
+          </span>
         </div>
       </div>
     </div>
   );
-}
-
-function renderDescripcion(texto: string): ReactNode[] {
-  const parts = texto.split(/(\*\*[^*]+\*\*)/g);
-
-  return parts.map((part, index) => {
-    const bold = part.match(/^\*\*([^*]+)\*\*$/);
-    if (bold) {
-      return (
-        <strong key={index} className="font-bold">
-          {bold[1]}
-        </strong>
-      );
-    }
-    return <span key={index}>{part}</span>;
-  });
 }
 
 function dispatchCodigoFocus(focused: boolean) {
@@ -158,12 +111,10 @@ export function RetoHero({
   panel = 0,
 }: RetoHeroProps) {
   const [step, setStep] = useState<HeroStep>(stepProp ?? 0);
-  const [introProgress, setIntroProgress] = useState(introProgressProp);
   const [tiempoProgress, setTiempoProgress] = useState(tiempoProgressProp);
   const [codigo, setCodigo] = useState("");
   const [codigoFocused, setCodigoFocused] = useState(false);
   const [portH, setPortH] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -171,20 +122,8 @@ export function RetoHero({
   }, [stepProp]);
 
   useEffect(() => {
-    setIntroProgress(introProgressProp);
-  }, [introProgressProp]);
-
-  useEffect(() => {
     setTiempoProgress(tiempoProgressProp);
   }, [tiempoProgressProp]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setIsMobile(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -277,15 +216,18 @@ export function RetoHero({
   }, [step, setHeroStep]);
 
   const tiempoP = Math.min(1, Math.max(0, tiempoProgress));
-  // Descripción visible en intro/vacío, y asomándose mientras QUEDAN baja.
+  // Descripción solo en step 0 (y al bajar QUEDAN en step 2). Nunca en azul vacío.
   const showIntro = step <= 1 || (step === 2 && tiempoP < 0.999);
-  const introOpacity =
-    step === 2 ? Math.min(1, Math.max(0, (1 - tiempoP) * 1.15)) : showIntro ? 1 : 0;
+  const descripcionOpacity =
+    step === 0
+      ? Math.min(1, Math.max(0, 1 - tiempoP * 1.85))
+      : step === 2
+        ? Math.min(1, Math.max(0, (1 - tiempoP) * 1.25))
+        : 0;
+  const introOpacity = descripcionOpacity;
   const showTiempo = tiempoP > 0.002 && step < 3;
   const showCodigo = step === 3;
   const codigoMode = showCodigo && codigoFocused && panel === 0;
-  const p = Math.min(1, Math.max(0, introProgress));
-  const barTop = titleBarTop(portH, p, step, isMobile, tiempoP);
   const showTitleBar = panel === 0 && step <= 3;
 
   const layerClass = (visible: boolean) =>
@@ -302,12 +244,13 @@ export function RetoHero({
   } as const;
 
   const sectionH = portH > 0 ? portH : undefined;
-  // Sube desde abajo → centro con el scroll; con código solo se funde.
-  // En step 2 (tiempo) siempre anclado al centro si el progreso está completo.
+  // Sube desde abajo → centro; no gana opacidad hasta que la descripción ya se ha ido.
   const tiempoOffsetY =
     step >= 3 ? 0 : step === 2 && tiempoP >= 0.999 ? 0 : (1 - tiempoP) * 52;
   const tiempoOpacity =
-    step >= 3 ? 0 : Math.min(1, Math.max(0, tiempoP * 1.4));
+    step >= 3
+      ? 0
+      : Math.min(1, Math.max(0, (tiempoP - 0.12) / 0.88));
 
   return (
     <div
@@ -321,13 +264,13 @@ export function RetoHero({
         <TitleBar
           numero={numero}
           titulo={titulo}
-          top={barTop}
+          descripcion={descripcion}
           visible={showTitleBar}
           dark={codigoMode}
-          mobile={isMobile}
+          descripcionOpacity={descripcionOpacity}
         />
 
-        {/* Scroll: descripción → azul vacío (se asoma al bajar QUEDAN) */}
+        {/* Scroll: azul vacío (se asoma al bajar QUEDAN) */}
         <div
           className={`absolute inset-0 ${
             showIntro ? "z-[1]" : "z-0"
@@ -346,20 +289,10 @@ export function RetoHero({
             className="absolute inset-0 z-0 overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             <section
-              className="relative flex w-full shrink-0 flex-col"
+              className="relative w-full shrink-0"
               style={{ height: sectionH ?? "100%" }}
-            >
-              <div
-                className={`flex min-h-0 flex-1 items-center justify-center px-[var(--grid-margin)] ${
-                  isMobile ? "pb-20 pt-14" : "pb-16"
-                }`}
-              >
-                <p className="w-full max-w-[min(48rem,90%)] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:max-w-[52rem]">
-                  {renderDescripcion(descripcion)}
-                </p>
-              </div>
-            </section>
-
+              aria-hidden
+            />
             <div
               className="w-full shrink-0"
               style={{ height: sectionH ? Math.round(sectionH * 0.75) : "75%" }}
@@ -432,7 +365,7 @@ export function RetoHero({
               autoCorrect="off"
               spellCheck={false}
               size={38}
-              className={`w-full min-w-0 bg-transparent text-center text-[clamp(18px,4.6vw,26px)] font-normal uppercase leading-none tracking-normal outline-none ${
+              className={`w-full min-w-0 bg-transparent text-center text-[clamp(16px,3vw,22px)] font-normal uppercase leading-none tracking-normal outline-none ${
                 codigoMode
                   ? "text-[var(--background)] placeholder:text-[var(--background)]/55"
                   : "text-white placeholder:text-white/70"

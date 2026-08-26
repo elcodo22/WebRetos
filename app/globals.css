@@ -17,6 +17,10 @@
   --header-inset-x: clamp(120px, 14vw, 220px);
   /* Tamaño de texto del header y de todos los botones UI. */
   --ui-btn-text: 18px;
+  /* Marco CRT negro (bezel). */
+  --crt-bezel-x: clamp(3px, 0.7vw, 8px);
+  --crt-bezel-y: clamp(6px, 1.2vh, 16px);
+  --side-stripe: var(--crt-bezel-x);
 }
 
 @theme inline {
@@ -54,7 +58,7 @@ html {
   min-height: 100dvh;
   min-height: -webkit-fill-available;
   margin: 0;
-  background: var(--background);
+  background: #000;
 }
 
 body.crt-body {
@@ -68,7 +72,7 @@ body.crt-body {
   color: var(--foreground);
   font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
   cursor: url("/larrow.cur"), auto;
-  background: var(--background);
+  background: #000;
 }
 
 html:has(.crt-shell--black),
@@ -77,8 +81,10 @@ html:has(.crt-shell--black) body.crt-body {
 }
 
 html[data-chrome="white"],
-html[data-chrome="white"] body.crt-body,
-html[data-chrome="white"] .crt-shell:not(.crt-shell--black),
+html[data-chrome="white"] body.crt-body {
+  background: #000;
+}
+
 html[data-chrome="white"] .crt-shell:not(.crt-shell--black) .crt-screen,
 html[data-chrome="white"] .search-root {
   background: #fff;
@@ -264,15 +270,35 @@ html.cursor-eye-active [data-password-field] * {
   display: none;
 }
 
-/* ——— Efecto CRT ligero: scanlines estáticas + 2 barridos con transform ——— */
+/* ——— CRT: marco negro + cristal curvado (pantalla antigua) ——— */
 .crt-shell {
   position: relative;
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   min-height: 100dvh;
   min-height: -webkit-fill-available;
+  padding: var(--crt-bezel-y) var(--crt-bezel-x);
   overflow: hidden;
-  background: var(--background);
+  background: #000;
+}
+
+.crt-glass {
+  --crt-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill='white' d='M1.2.7C24.5.1 75.5.1 98.8.7C99.9 24.5 99.9 75.5 98.8 99.3C75.5 99.9 24.5 99.9 1.2 99.3C.1 75.5.1 24.5 1.2.7Z'/%3E%3C/svg%3E");
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: clamp(10px, 1.4vw, 18px) / clamp(12px, 1.6vh, 20px);
+  -webkit-mask-image: var(--crt-mask);
+  mask-image: var(--crt-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  background: #000;
 }
 
 .crt-screen {
@@ -293,35 +319,114 @@ html.cursor-eye-active [data-password-field] * {
 }
 
 .crt-scanlines,
-.crt-beam {
+.crt-beam,
+.crt-phosphor,
+.crt-grain,
+.crt-sheen {
   pointer-events: none;
   position: absolute;
   inset: 0;
   z-index: 40;
 }
 
-/* Estáticas: se ven y no animan (barato) */
+/* Tríada RGB / máscara de apertura. */
+.crt-phosphor {
+  z-index: 41;
+  opacity: 0.58;
+  mix-blend-mode: overlay;
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 60, 60, 0.32) 0px,
+      rgba(255, 60, 60, 0.32) 1px,
+      rgba(60, 255, 100, 0.26) 1px,
+      rgba(60, 255, 100, 0.26) 2px,
+      rgba(70, 130, 255, 0.32) 2px,
+      rgba(70, 130, 255, 0.32) 3px
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.28) 0px,
+      rgba(0, 0, 0, 0.28) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  background-size: 3px 100%, 3px 100%;
+}
+
+.crt-shell--black .crt-phosphor {
+  opacity: 0.48;
+}
+
+/* Scanlines horizontales: trama más marcada. */
 .crt-scanlines {
-  z-index: 40;
+  z-index: 42;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
   background-image: repeating-linear-gradient(
     to bottom,
-    transparent 0px,
+    rgba(255, 255, 255, 0.09) 0px,
+    rgba(255, 255, 255, 0.09) 1px,
+    rgba(0, 0, 0, 0.32) 1px,
+    rgba(0, 0, 0, 0.32) 2px,
     transparent 2px,
-    rgba(255, 255, 255, 0.065) 2px,
-    rgba(255, 255, 255, 0.065) 3px
+    transparent 3px
   );
   background-size: 100% 3px;
 }
 
 .crt-shell--black .crt-scanlines {
+  opacity: 0.42;
+  mix-blend-mode: soft-light;
   background-image: repeating-linear-gradient(
     to bottom,
-    transparent 0px,
+    rgba(255, 255, 255, 0.1) 0px,
+    rgba(255, 255, 255, 0.1) 1px,
+    rgba(0, 0, 0, 0.36) 1px,
+    rgba(0, 0, 0, 0.36) 2px,
     transparent 2px,
-    rgba(255, 255, 255, 0.05) 2px,
-    rgba(255, 255, 255, 0.05) 3px
+    transparent 3px
   );
-  opacity: 0.75;
+}
+
+/* Grano del tubo. */
+.crt-grain {
+  z-index: 44;
+  opacity: 0.12;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.95'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+.crt-shell--black .crt-grain {
+  opacity: 0.1;
+}
+
+/* Brillo de cristal (sin viñeta negra). */
+.crt-sheen {
+  z-index: 45;
+  opacity: 0.6;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.13) 0%,
+    rgba(255, 255, 255, 0.05) 12%,
+    transparent 32%,
+    transparent 100%
+  );
+  mix-blend-mode: soft-light;
+}
+
+.crt-shell--perf .crt-phosphor {
+  opacity: 0.42;
+}
+
+.crt-shell--perf .crt-scanlines {
+  opacity: 0.38;
+}
+
+.crt-shell--perf .crt-grain,
+.crt-shell--perf .crt-sheen {
+  display: none;
 }
 
 /*
@@ -334,7 +439,7 @@ html.cursor-eye-active [data-password-field] * {
   right: 0;
   top: 0;
   height: 18vh;
-  z-index: 42;
+  z-index: 43;
   opacity: 0;
   background: linear-gradient(
     to bottom,
@@ -398,10 +503,10 @@ html.cursor-eye-active [data-password-field] * {
     opacity: 0;
   }
   22% {
-    opacity: 0.55;
+    opacity: 0.72;
   }
   55% {
-    opacity: 0.65;
+    opacity: 0.82;
   }
   62%,
   100% {
@@ -417,10 +522,10 @@ html.cursor-eye-active [data-password-field] * {
     opacity: 0;
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.68;
   }
   72% {
-    opacity: 0.6;
+    opacity: 0.78;
   }
   78%,
   100% {

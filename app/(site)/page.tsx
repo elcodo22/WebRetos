@@ -17,7 +17,7 @@ export default async function Home() {
   ]);
 
   const descripcionLarga = retoActivo
-    ? `Este reto te pide crear una pieza audiovisual alrededor de **${retoActivo.titulo}**. No hace falta que sea perfecta: busca una idea clara, un gesto visual y una intención que se entienda en poco tiempo. Grábala en vertical o horizontal, con lo que tengas a mano. La duración es de **15 a 60 segundos**; si te pasas un poco no pasa nada, pero evita piezas largas sin foco. Cuando se acabe el tiempo, tu vídeo aparecerá en la ficha de este reto y más adelante en Archivos, junto al resto de participaciones. Para poder subirla necesitas un **código de participación**: introdúcelo abajo y, si es válido, podrás enviar tu pieza antes de que cierre el reto.`
+    ? `Graba una pieza audiovisual de entre 30 segundos y 4 minutos usando únicamente planos fijos. Sin mover la cámara, haz que todo pase dentro del encuadre. Sube tu pieza antes de que termine el tiempo del reto y, tranqui, puedes hacer scroll por la web para participar. ¿Qué puedes contar sin mover la cámara?`
     : "";
 
   const hero = retoActivo ? (

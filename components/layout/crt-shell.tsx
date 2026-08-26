@@ -86,16 +86,19 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={shellClass}>
-      <div className="crt-screen">{children}</div>
-      {/* Estático: sin animación = casi gratis */}
-      <div className="crt-scanlines" aria-hidden />
-      {/* Solo 2 barridos con transform (GPU), no background-position */}
-      {!perf ? (
-        <>
-          <div className="crt-beam crt-beam--a" aria-hidden />
-          <div className="crt-beam crt-beam--b" aria-hidden />
-        </>
-      ) : null}
+      <div className="crt-glass">
+        <div className="crt-screen">{children}</div>
+        <div className="crt-phosphor" aria-hidden />
+        <div className="crt-scanlines" aria-hidden />
+        <div className="crt-grain" aria-hidden />
+        <div className="crt-sheen" aria-hidden />
+        {!perf ? (
+          <>
+            <div className="crt-beam crt-beam--a" aria-hidden />
+            <div className="crt-beam crt-beam--b" aria-hidden />
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

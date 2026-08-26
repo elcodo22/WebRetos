@@ -76,11 +76,15 @@ type RetoTimeBarProps = {
   active?: boolean;
   size?: "default" | "hero" | "xl";
   align?: "center" | "start" | "end";
-  /** compact = "05d" · phrase = "QUEDAN 5 DÍAS" */
+  /** compact = "05d" · phrase = "4 DÍAS 12 HORAS 12 MINUTOS 23 SEGUNDOS" */
   format?: "compact" | "phrase";
 };
 
-/** Contador restante: solo la unidad mayor (días / horas / min / seg). */
+function labelFor(value: number, singular: string, plural: string) {
+  return value === 1 ? singular : plural;
+}
+
+/** Contador restante. */
 export function RetoTimeBar({
   fechaFin,
   active = true,
@@ -157,18 +161,23 @@ export function RetoTimeBar({
     size === "xl"
       ? "text-[clamp(40px,9vw,72px)] font-normal leading-none tracking-wide"
       : size === "hero"
-        ? "text-[clamp(22px,4.2vw,30px)] font-normal leading-none tracking-wide"
+        ? "text-[clamp(16px,3vw,22px)] font-normal leading-none tracking-wide"
         : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
 
   const unit = primaryUnit(display);
-  const unitLabel = unit.value === 1 ? unit.singular : unit.plural;
-  const quedanWord = unit.value === 1 ? "QUEDA" : "QUEDAN";
   const compactLabel =
     unit.suffix === "d" ? String(unit.value) : pad(unit.value);
 
+  const phraseParts = [
+    { key: "d", text: `${display.dias} ${labelFor(display.dias, "DÍA", "DÍAS")}` },
+    { key: "h", text: `${display.horas} ${labelFor(display.horas, "HORA", "HORAS")}` },
+    { key: "m", text: `${display.minutos} ${labelFor(display.minutos, "MINUTO", "MINUTOS")}` },
+    { key: "s", text: `${display.segundos} ${labelFor(display.segundos, "SEGUNDO", "SEGUNDOS")}` },
+  ];
+
   return (
     <p
-      className={`flex items-baseline gap-[0.35em] text-white tabular-nums [word-spacing:normal] ${
+      className={`flex flex-wrap items-baseline gap-x-[0.45em] gap-y-1 text-white tabular-nums [word-spacing:normal] ${
         align === "start"
           ? "justify-start text-left"
           : align === "end"
@@ -177,28 +186,15 @@ export function RetoTimeBar({
       } ${textClass}`}
     >
       {format === "phrase" ? (
-        <>
-          <span>{quedanWord}</span>
-          <span className="relative inline-flex items-baseline justify-center px-[0.35em] py-[0.15em]">
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-[-22%_-14%] bg-[url('/icons/circle-hand.png')] bg-contain bg-center bg-no-repeat mix-blend-screen"
-            />
-            <span className="relative whitespace-nowrap">
-              {unit.value} {unitLabel}
-            </span>
+        phraseParts.map((part) => (
+          <span key={part.key} className="whitespace-nowrap">
+            {part.text}
           </span>
-        </>
+        ))
       ) : (
-        <span className="relative inline-flex items-baseline justify-center px-[0.4em] py-[0.2em]">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-[-26%_-18%] bg-[url('/icons/circle-hand.png')] bg-contain bg-center bg-no-repeat mix-blend-screen"
-          />
-          <span className="relative">
-            {compactLabel}
-            <span className="text-[0.72em]">{unit.suffix}</span>
-          </span>
+        <span>
+          {compactLabel}
+          <span className="text-[0.72em]">{unit.suffix}</span>
         </span>
       )}
     </p>
