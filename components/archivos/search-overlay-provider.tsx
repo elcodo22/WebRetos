@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { UsuarioBusqueda } from "@/lib/usuario-busqueda";
 import type { RetoArchivo } from "@/lib/supabase/retos";
 import { ArchivosSearchScreen } from "./archivos-search-screen";
 
@@ -46,19 +47,26 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<Phase>("closed");
   const [session, setSession] = useState(0);
   const [retos, setRetos] = useState<RetoArchivo[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioBusqueda[]>([]);
   const fetchedRef = useRef(false);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isVisible = phase !== "closed";
   const isOpen = phase === "open";
 
-  const ensureRetos = useCallback(() => {
+  const ensureData = useCallback(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
     fetch("/api/retos-archivo")
       .then((res) => (res.ok ? res.json() : []))
       .then((data: RetoArchivo[]) => setRetos(Array.isArray(data) ? data : []))
       .catch(() => setRetos([]));
+    fetch("/api/usuarios")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: UsuarioBusqueda[]) =>
+        setUsuarios(Array.isArray(data) ? data : []),
+      )
+      .catch(() => setUsuarios([]));
   }, []);
 
   const open = useCallback(() => {
@@ -66,10 +74,10 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
       clearTimeout(exitTimerRef.current);
       exitTimerRef.current = null;
     }
-    ensureRetos();
+    ensureData();
     setSession((n) => n + 1);
     setPhase("open");
-  }, [ensureRetos]);
+  }, [ensureData]);
 
   const close = useCallback(() => {
     setPhase((current) => (current === "closed" ? current : "closing"));
@@ -119,7 +127,11 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
                 : "search-panel search-panel--out"
             }
           >
-            <ArchivosSearchScreen retos={retos} onClose={close} />
+            <ArchivosSearchScreen
+              retos={retos}
+              usuarios={usuarios}
+              onClose={close}
+            />
           </div>
         )}
       </div>

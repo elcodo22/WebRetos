@@ -11,6 +11,7 @@ import {
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
+import { ARCHIVOS_CONTACT_EVENT } from "@/components/archivos/archivos-carousel";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import {
   HERO_INTRO_SCROLL_SELECTOR,
@@ -88,6 +89,7 @@ export function HomeSnap({
   const [introProgress, setIntroProgressState] = useState(0);
   const [tiempoProgress, setTiempoProgressState] = useState(0);
   const [archivosReveal, setArchivosRevealState] = useState(0);
+  const [archivosContact, setArchivosContact] = useState(0);
   const [codigoFocused, setCodigoFocused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const panelRef = useRef(0);
@@ -114,6 +116,15 @@ export function HomeSnap({
    * Se libera al acabar el gesto de rueda / al iniciar uno nuevo hacia abajo.
    */
   const pinTiempoCenteredRef = useRef(false);
+  /**
+   * Al llegar QUEDAN al centro desde abajo, el mismo flick no pasa a código.
+   * Hay que soltar el gesto y volver a scrollear.
+   */
+  const blockAdvanceFromTiempoRef = useRef(false);
+  /**
+   * Tras cerrar archivos, el código debe asentarse: el mismo flick no sube a tiempo.
+   */
+  const pinCodigoAfterArchivosRef = useRef(false);
   const lastHomeWheelAtRef = useRef(0);
 
   const clearTransitionTimers = useCallback(() => {
@@ -218,6 +229,23 @@ export function HomeSnap({
   useEffect(() => {
     setChromeTheme(homeWhiteMode ? "white" : "blue");
   }, [homeWhiteMode]);
+
+  useEffect(() => {
+    const onContact = (event: Event) => {
+      const progress = (event as CustomEvent<{ progress?: number }>).detail
+        ?.progress;
+      if (typeof progress === "number") {
+        setArchivosContact(Math.min(1, Math.max(0, progress)));
+      }
+    };
+    window.addEventListener(ARCHIVOS_CONTACT_EVENT, onContact);
+    return () => window.removeEventListener(ARCHIVOS_CONTACT_EVENT, onContact);
+  }, []);
+
+  useEffect(() => {
+    if (panel === 1 || archivosReveal >= 0.92) return;
+    if (archivosContact !== 0) setArchivosContact(0);
+  }, [panel, archivosReveal, archivosContact]);
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -334,6 +362,8 @@ export function HomeSnap({
         heroStepRef.current = 2;
         setHeroStepState(2);
         applyIntroProgressOnly(1);
+        // Acaba de centrarse: no saltar a código con el mismo scroll.
+        if (prev < 0.999) blockAdvanceFromTiempoRef.current = true;
         window.dispatchEvent(
           new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 2 } }),
         );
@@ -343,6 +373,8 @@ export function HomeSnap({
           }),
         );
         lastStepChangeAtRef.current = performance.now();
+      } else if (next >= 1 && prev < 0.999 && heroStepRef.current === 2) {
+        blockAdvanceFromTiempoRef.current = true;
       } else if (next <= 0 && heroStepRef.current === 2) {
         heroStepRef.current = 1;
         setHeroStepState(1);
@@ -382,6 +414,7 @@ export function HomeSnap({
     if (tp >= 1 && heroStepRef.current < 2) {
       heroStepRef.current = 2;
       setHeroStepState(2);
+      blockAdvanceFromTiempoRef.current = true;
       window.dispatchEvent(
         new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 2 } }),
       );
@@ -579,13 +612,15 @@ export function HomeSnap({
       // Mientras la blanca se mueve, el código no está “plantado”.
       if (p > 0.001) {
         codigoPlantedAtRef.current = 0;
+        pinCodigoAfterArchivosRef.current = false;
       } else if (
         heroStepRef.current === 3 &&
         prevTarget > 0.001 &&
         p <= 0.001
       ) {
-        // Blanca cerrada del todo → empieza a contar el asiento en código.
+        // Blanca cerrada → asentar código; no subir a tiempo en el mismo gesto.
         codigoPlantedAtRef.current = performance.now();
+        pinCodigoAfterArchivosRef.current = true;
       }
 
       if (opts?.instant) {
@@ -666,6 +701,16 @@ export function HomeSnap({
     [applyPanel, prefersReducedMotion, releaseCodigoFocus, runPanelTransition, setHeroStep],
   );
 
+  const goToCodigoFromTiempo = useCallback(() => {
+    if (tiempoProgressRef.current < 0.999) return false;
+    if (blockAdvanceFromTiempoRef.current) return false;
+    blockAdvanceFromTiempoRef.current = false;
+    pinTiempoCenteredRef.current = false;
+    setHeroStep(3);
+    lastStepChangeAtRef.current = performance.now();
+    return true;
+  }, [setHeroStep]);
+
   const advanceHeroOnHome = useCallback(() => {
     const step = heroStepRef.current;
     if (step === 0) {
@@ -677,22 +722,54 @@ export function HomeSnap({
       return;
     }
     if (step === 2) {
-      pinTiempoCenteredRef.current = false;
-      setHeroStep(3);
-      lastStepChangeAtRef.current = performance.now();
+      if (tiempoProgressRef.current < 0.999) {
+        scrollTiempoBy(TIEMPO_SCROLL_PX);
+        return;
+      }
+      // Touch: un gesto = un paso si ya está centrado.
+      blockAdvanceFromTiempoRef.current = false;
+      goToCodigoFromTiempo();
       return;
     }
     scrollArchivosRevealBy(ARCHIVOS_WHEEL_CAP_PX);
-  }, [setHeroStep, scrollArchivosRevealBy, scrollTiempoBy]);
+  }, [setHeroStep, scrollArchivosRevealBy, scrollTiempoBy, goToCodigoFromTiempo]);
+
+  /** Código a pantalla natural (sin blanca ni pin tras archivos). */
+  const codigoIsNatural = useCallback(() => {
+    if (archivosRevealTargetRef.current > 0.001) return false;
+    if (archivosRevealDisplayRef.current > 0.02) return false;
+    if (pinCodigoAfterArchivosRef.current) return false;
+    return true;
+  }, []);
+
+  /**
+   * Tras archivos, esperar planted + gesto nuevo antes de poder subir a tiempo.
+   * true = este tick no debe subir (aún asentando o solo desbloquea).
+   */
+  const tryReleaseCodigoAfterArchivos = useCallback(
+    (now: number, wheelGap: number) => {
+      if (!pinCodigoAfterArchivosRef.current) return false;
+      if (archivosRevealTargetRef.current > 0.001) return true;
+      if (archivosRevealDisplayRef.current > 0.02) return true;
+      const plantedAt = codigoPlantedAtRef.current;
+      if (!plantedAt || now - plantedAt < CODIGO_PLANTED_MS) return true;
+      if (wheelGap < TIEMPO_PIN_GAP_MS) return true;
+      pinCodigoAfterArchivosRef.current = false;
+      return true; // primer tick del gesto nuevo: solo desbloquea
+    },
+    [],
+  );
 
   /** Código → tiempo centrado de golpe (sin scrub del flick). */
   const returnToTiempoFromCodigo = useCallback(() => {
+    if (!codigoIsNatural()) return false;
     pinTiempoCenteredRef.current = true;
     tiempoProgressRef.current = 1;
     setTiempoProgressState(1);
     setHeroStep(2);
     lastStepChangeAtRef.current = performance.now();
-  }, [setHeroStep]);
+    return true;
+  }, [setHeroStep, codigoIsNatural]);
 
   const retreatHeroOnHome = useCallback(() => {
     if (archivosRevealTargetRef.current > 0 && panelRef.current === 0) {
@@ -706,6 +783,18 @@ export function HomeSnap({
         archivosRevealDisplayRef.current > 0.02
       ) {
         scrollArchivosRevealBy(-ARCHIVOS_WHEEL_CAP_PX);
+        return;
+      }
+      // Tras archivos: primero asentar código; un swipe solo desbloquea.
+      if (pinCodigoAfterArchivosRef.current) {
+        const plantedAt = codigoPlantedAtRef.current;
+        if (
+          !plantedAt ||
+          performance.now() - plantedAt < CODIGO_PLANTED_MS
+        ) {
+          return;
+        }
+        pinCodigoAfterArchivosRef.current = false;
         return;
       }
       returnToTiempoFromCodigo();
@@ -771,6 +860,7 @@ export function HomeSnap({
     releaseCodigoFocus();
     lockedRef.current = false;
     codigoPlantedAtRef.current = 0;
+    pinCodigoAfterArchivosRef.current = false;
     lastStepChangeAtRef.current = 0;
 
     if (archivosLerpRafRef.current) {
@@ -781,6 +871,7 @@ export function HomeSnap({
     archivosRevealDisplayRef.current = 0;
     archivosRevealRef.current = 0;
     setArchivosRevealState(0);
+    setArchivosContact(0);
 
     if (panelRef.current !== 0) {
       panelRef.current = 0;
@@ -922,11 +1013,18 @@ export function HomeSnap({
         lastHomeWheelAtRef.current === 0
           ? Infinity
           : now - lastHomeWheelAtRef.current;
-      // Solo soltar el ancla al empezar un gesto nuevo (no en huecos del mismo flick).
+      // Solo soltar anclas al empezar un gesto nuevo (no en huecos del mismo flick).
       let pinJustReleased = false;
-      if (pinTiempoCenteredRef.current && wheelGap >= TIEMPO_PIN_GAP_MS) {
-        pinTiempoCenteredRef.current = false;
-        pinJustReleased = true;
+      let advanceJustUnlocked = false;
+      if (wheelGap >= TIEMPO_PIN_GAP_MS) {
+        if (pinTiempoCenteredRef.current) {
+          pinTiempoCenteredRef.current = false;
+          pinJustReleased = true;
+        }
+        if (blockAdvanceFromTiempoRef.current) {
+          blockAdvanceFromTiempoRef.current = false;
+          advanceJustUnlocked = true;
+        }
       }
       lastHomeWheelAtRef.current = now;
 
@@ -996,20 +1094,30 @@ export function HomeSnap({
           return;
         }
 
-        // Tiempo centrado + scroll abajo → introducir código.
+        // Tiempo centrado + scroll abajo → código (solo si ya estaba centrado antes del gesto).
         if (step === 2 && delta > 0 && tiempoProgressRef.current >= 0.999) {
-          pinTiempoCenteredRef.current = false;
-          setHeroStep(3);
-          lastStepChangeAtRef.current = now;
+          if (blockAdvanceFromTiempoRef.current || advanceJustUnlocked) {
+            return;
+          }
+          goToCodigoFromTiempo();
           return;
         }
 
-        // Código → tiempo centrado de golpe (da igual lo fuerte del scroll).
-        if (
-          step === 3 &&
-          delta < 0 &&
-          archivosRevealTargetRef.current <= 0.001
-        ) {
+        // Código → tiempo solo con código natural (tras archivos, no en el mismo flick).
+        if (step === 3 && delta < 0) {
+          if (
+            archivosRevealTargetRef.current > 0.001 ||
+            archivosRevealDisplayRef.current > 0.02
+          ) {
+            const capped =
+              Math.sign(raw) *
+              Math.min(Math.abs(raw), ARCHIVOS_WHEEL_CAP_PX);
+            scrollArchivosRevealBy(capped);
+            return;
+          }
+          if (tryReleaseCodigoAfterArchivos(now, wheelGap)) {
+            return;
+          }
           returnToTiempoFromCodigo();
           return;
         }
@@ -1020,13 +1128,11 @@ export function HomeSnap({
           (step === 3 || archivosRevealTargetRef.current > 0.001)
         ) {
           const reveal = archivosRevealTargetRef.current;
-          // Subir con reveal ~0 → tiempo (lo decide la acumulación más abajo).
-          if (step === 3 && reveal <= 0.001 && delta < 0) {
-            // caer a acumulación de pasos
-          } else if (step === 3 && reveal <= 0.001 && delta > 0) {
+          if (step === 3 && reveal <= 0.001 && delta > 0) {
             // Scroll fuerte desde tiempo: no abrir blanca hasta código plantado.
             const plantedAt = codigoPlantedAtRef.current;
             if (
+              pinCodigoAfterArchivosRef.current ||
               !plantedAt ||
               now - plantedAt < CODIGO_PLANTED_MS ||
               archivosRevealDisplayRef.current > 0.02
@@ -1039,13 +1145,12 @@ export function HomeSnap({
               Math.min(Math.abs(raw), ARCHIVOS_WHEEL_CAP_PX);
             scrollArchivosRevealBy(capped);
             return;
-          } else {
-            const capped =
-              Math.sign(raw) *
-              Math.min(Math.abs(raw), ARCHIVOS_WHEEL_CAP_PX);
-            scrollArchivosRevealBy(capped);
-            return;
           }
+          const capped =
+            Math.sign(raw) *
+            Math.min(Math.abs(raw), ARCHIVOS_WHEEL_CAP_PX);
+          scrollArchivosRevealBy(capped);
+          return;
         }
 
         // Vacío / tiempo / código: acumulación suave (scroll continuo funciona).
@@ -1064,9 +1169,15 @@ export function HomeSnap({
             if (step === 1) {
               scrollTiempoBy(TIEMPO_WHEEL_CAP_PX * 1.5);
             } else if (step === 2) {
-              // Tiempo → código: consumir el resto del flick (sin blanca).
-              pinTiempoCenteredRef.current = false;
-              setHeroStep(3);
+              // Sin centro completo no hay código; el flick que centra tampoco salta.
+              if (tiempoProgressRef.current < 0.999) {
+                scrollTiempoBy(TIEMPO_WHEEL_CAP_PX * 1.5);
+              } else if (
+                !blockAdvanceFromTiempoRef.current &&
+                !advanceJustUnlocked
+              ) {
+                goToCodigoFromTiempo();
+              }
               stepAcc = 0;
             } else {
               const plantedAt = codigoPlantedAtRef.current;
@@ -1082,13 +1193,18 @@ export function HomeSnap({
           }
 
           if (stepAcc <= -STEP_WHEEL_THRESHOLD && delta < 0) {
-            // Código → tiempo centrado (sin esperar planted; planted solo abre blanca).
             if (step === 3) {
-              if (archivosRevealTargetRef.current > 0.001) {
-                stepAcc = 0;
+              stepAcc = 0;
+              if (
+                archivosRevealTargetRef.current > 0.001 ||
+                archivosRevealDisplayRef.current > 0.02
+              ) {
+                scrollArchivosRevealBy(-ARCHIVOS_WHEEL_CAP_PX * 1.4);
                 return;
               }
-              stepAcc = 0;
+              if (tryReleaseCodigoAfterArchivos(now, wheelGap)) {
+                return;
+              }
               returnToTiempoFromCodigo();
               return;
             }
@@ -1134,6 +1250,8 @@ export function HomeSnap({
     setHeroStep,
     returnToTiempoFromCodigo,
     reenterIntroFromStep1,
+    goToCodigoFromTiempo,
+    tryReleaseCodigoAfterArchivos,
   ]);
 
   useEffect(() => {
@@ -1369,17 +1487,24 @@ export function HomeSnap({
 
       <div
         data-site-chrome=""
-        className={`pointer-events-none fixed inset-x-0 top-0 z-[70] hidden bg-transparent transition-opacity duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] md:block ${
-          hideHeader ? "opacity-0" : "opacity-100"
+        className={`pointer-events-none fixed inset-x-0 top-0 z-[70] hidden bg-transparent md:block ${
+          hideHeader ? "opacity-0" : ""
         }`}
         style={{
           color: homeWhiteMode ? "var(--background)" : "#fff",
+          opacity: hideHeader ? 0 : Math.max(0, 1 - archivosContact * archivosContact * (3 - 2 * archivosContact) * 0.95),
+          transform: `translate3d(0, ${-(archivosContact * archivosContact * (3 - 2 * archivosContact)) * 85}%, 0)`,
+          willChange: archivosContact > 0.01 ? "transform, opacity" : undefined,
+          transition:
+            archivosContact > 0.01
+              ? undefined
+              : "opacity 300ms cubic-bezier(0.33,1,0.68,1)",
         }}
-        aria-hidden={hideHeader}
+        aria-hidden={hideHeader || archivosContact > 0.7}
       >
         <div
           className={
-            hideHeader
+            hideHeader || archivosContact > 0.45
               ? "pointer-events-none bg-transparent"
               : "pointer-events-auto bg-transparent md:[&_header]:pt-[var(--header-inset-top)]"
           }
@@ -1391,7 +1516,7 @@ export function HomeSnap({
       <SiteMobileMenu
         user={user}
         menuTone={mobileMenuWhite ? "white" : "blue"}
-        hideMenu={codigoFocused}
+        hideMenu={codigoFocused || archivosContact > 0.55}
         menuOpen={mobileMenuOpen}
         onMenuOpenChange={setMobileMenuOpen}
       />
