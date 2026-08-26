@@ -33,6 +33,40 @@ function pad(valor: number) {
   return valor.toString().padStart(2, "0");
 }
 
+/** Una sola unidad: días, o horas, o minutos, o segundos. */
+function primaryUnit(t: Tiempo): {
+  value: number;
+  suffix: string;
+  singular: string;
+  plural: string;
+} {
+  if (t.dias >= 1) {
+    return { value: t.dias, suffix: "d", singular: "DÍA", plural: "DÍAS" };
+  }
+  if (t.horas >= 1) {
+    return {
+      value: t.horas,
+      suffix: "h",
+      singular: "HORA",
+      plural: "HORAS",
+    };
+  }
+  if (t.minutos >= 1) {
+    return {
+      value: t.minutos,
+      suffix: "m",
+      singular: "MINUTO",
+      plural: "MINUTOS",
+    };
+  }
+  return {
+    value: t.segundos,
+    suffix: "s",
+    singular: "SEGUNDO",
+    plural: "SEGUNDOS",
+  };
+}
+
 function easeOutCubic(t: number) {
   return 1 - (1 - t) ** 3;
 }
@@ -41,15 +75,18 @@ type RetoTimeBarProps = {
   fechaFin?: string | null;
   active?: boolean;
   size?: "default" | "hero" | "xl";
-  align?: "center" | "start";
+  align?: "center" | "start" | "end";
+  /** compact = "05d" · phrase = "QUEDAN 5 DÍAS" */
+  format?: "compact" | "phrase";
 };
 
-/** Contador restante: días, horas, minutos y segundos. */
+/** Contador restante: solo la unidad mayor (días / horas / min / seg). */
 export function RetoTimeBar({
   fechaFin,
   active = true,
   size = "default",
   align = "center",
+  format = "compact",
 }: RetoTimeBarProps) {
   const [targetSec, setTargetSec] = useState(0);
   const [display, setDisplay] = useState<Tiempo>(ZERO);
@@ -79,8 +116,15 @@ export function RetoTimeBar({
       return;
     }
 
-    const from = 0;
     const to = Math.max(0, targetSecRef.current);
+
+    // Frase hero: sin conteo mágico; el slide lo hace la capa.
+    if (format === "phrase") {
+      setDisplay(splitSeconds(to));
+      return;
+    }
+
+    const from = 0;
     const begun = performance.now();
 
     const step = (now: number) => {
@@ -102,7 +146,7 @@ export function RetoTimeBar({
         rafRef.current = null;
       }
     };
-  }, [active]);
+  }, [active, format]);
 
   useEffect(() => {
     if (!active || rafRef.current != null) return;
@@ -116,28 +160,32 @@ export function RetoTimeBar({
         ? "text-[clamp(22px,4.2vw,30px)] font-normal leading-none tracking-wide"
         : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
 
+  const unit = primaryUnit(display);
+  const phrase =
+    unit.value === 1
+      ? `QUEDA ${unit.value} ${unit.singular}`
+      : `QUEDAN ${unit.value} ${unit.plural}`;
+  const compactLabel =
+    unit.suffix === "d" ? String(unit.value) : pad(unit.value);
+
   return (
     <p
       className={`flex items-baseline gap-[0.35em] text-white tabular-nums [word-spacing:normal] ${
-        align === "start" ? "justify-start text-left" : "justify-center text-center"
+        align === "start"
+          ? "justify-start text-left"
+          : align === "end"
+            ? "justify-end text-right"
+            : "justify-center text-center"
       } ${textClass}`}
     >
-      <span>
-        {pad(display.dias)}
-        <span className="text-[0.72em]">d</span>
-      </span>
-      <span>
-        {pad(display.horas)}
-        <span className="text-[0.72em]">h</span>
-      </span>
-      <span>
-        {pad(display.minutos)}
-        <span className="text-[0.72em]">m</span>
-      </span>
-      <span>
-        {pad(display.segundos)}
-        <span className="text-[0.72em]">s</span>
-      </span>
+      {format === "phrase" ? (
+        <span>{phrase}</span>
+      ) : (
+        <span>
+          {compactLabel}
+          <span className="text-[0.72em]">{unit.suffix}</span>
+        </span>
+      )}
     </p>
   );
 }

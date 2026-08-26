@@ -11,7 +11,7 @@ type AuthMobileTopNavProps = {
   onOppositeClick?: () => void;
 };
 
-/** Móvil auth: [HOME] arriba izquierda, enlace opuesto arriba derecha. */
+/** Móvil auth: [UNJAM] arriba izquierda, enlace opuesto arriba derecha. */
 export function AuthMobileTopNav({
   oppositeLabel,
   oppositeHref,
@@ -35,7 +35,7 @@ export function AuthMobileTopNav({
   return (
     <header className="flex shrink-0 items-center justify-between px-[var(--header-inset-x)] pt-[var(--header-inset-top)] pb-3 md:hidden">
       <Link href="/" className={navLinkClass}>
-        [HOME]
+        [UNJAM]
       </Link>
       {opposite}
     </header>

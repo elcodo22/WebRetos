@@ -156,14 +156,14 @@ export function HeaderNav({
           className={`${navLinkClass} block w-full text-center`}
           onClick={(event) => goHome(event, pathname)}
         >
-          [HOME]
+          [UNJAM]
         </Link>
         {navLinks}
       </nav>
     );
   }
 
-  /* Home y resto: [HOME] izq · resto dcha (sin solaparse con el marco). */
+  /* UNJAM y resto: [UNJAM] izq · resto dcha (sin solaparse con el marco). */
   return (
     <nav
       className={`${navGroupClass} w-full justify-between`}
@@ -175,7 +175,7 @@ export function HeaderNav({
           className={navLinkClass}
           onClick={(event) => goHome(event, pathname)}
         >
-          [HOME]
+          [UNJAM]
         </Link>
       </div>
       <div className={`${navGroupClass} justify-end`}>{navLinks}</div>

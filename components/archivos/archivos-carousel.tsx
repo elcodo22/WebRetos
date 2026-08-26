@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RetoArchivo } from "@/lib/supabase/retos";
+import { formatRetoNumero } from "@/lib/format-reto-numero";
 import { useCrtPower } from "@/components/layout/crt-power-transition";
 import { FolderIcon } from "@/components/archivos/folder-icon";
 
@@ -22,9 +23,6 @@ const NEAR_REST_EPS = 0.55;
 
 /** Umbral (en carpetas) para hacer el snap final y detener la animación. */
 const SNAP_EPS = 0.0025;
-
-/** Duración (ms) del fade del nº #XX en cada dirección. */
-const NUMBER_FADE_MS = 90;
 
 export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
   /* La lista llega en orden ascendente por fecha; invertimos para mostrar
@@ -200,14 +198,14 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* Desktop: título izquierda / fecha derecha */}
-      <div className="pointer-events-none absolute inset-0 z-10 hidden items-center md:flex">
+      {/* Título izquierda / RETO # derecha */}
+      <div className="pointer-events-none absolute inset-0 z-10 flex items-start pt-[max(1rem,calc(var(--safe-top)+0.75rem))] md:items-center md:pt-0">
         <div className="site-grid w-full items-center">
-          <div className="col-start-2 col-span-2 self-center truncate text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide">
+          <div className="col-span-2 col-start-1 truncate text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-2">
             {current?.titulo}
           </div>
-          <div className="col-start-8 col-span-2 self-center whitespace-nowrap text-right text-[clamp(18px,3.8vw,25px)] font-normal leading-none tracking-wide">
-            {current?.fechaLabel}
+          <div className="col-span-2 col-start-3 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-8">
+            {current ? `RETO #${formatRetoNumero(current.numero)}` : null}
           </div>
         </div>
       </div>
@@ -235,7 +233,6 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
             const isPeek = Math.abs(offset) === 1;
             const restOpacity = isFocus ? 1 : isPeek ? 0.28 : 0;
             const opacity = isSettled ? restOpacity : 1;
-            const metaOpacity = isFocus && isSettled ? 1 : 0;
 
             return (
               <div
@@ -264,33 +261,6 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                       <FolderIcon />
                     </div>
                   )}
-
-                  {/* Desktop: # justo bajo la carpeta */}
-                  <div
-                    className="pointer-events-none absolute inset-x-0 top-full mt-4 hidden text-center text-[25px] leading-none tracking-wide md:block"
-                    style={{
-                      opacity: metaOpacity,
-                      transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,
-                    }}
-                  >
-                    #{item.numero}
-                  </div>
-
-                  {/* Móvil: # y título bajo la carpeta */}
-                  <div
-                    className="pointer-events-none absolute left-1/2 top-full z-[1] mt-1 flex w-[min(86vw,22rem)] -translate-x-1/2 flex-col items-center gap-1 text-center leading-tight tracking-wide md:hidden"
-                    style={{
-                      opacity: metaOpacity,
-                      transition: `opacity ${NUMBER_FADE_MS}ms ease-out`,
-                    }}
-                  >
-                    <span className="text-[clamp(18px,4vw,25px)] font-normal leading-none">
-                      #{item.numero}
-                    </span>
-                    <span className="text-[clamp(16px,4.2vw,22px)] font-normal">
-                      {item.titulo}
-                    </span>
-                  </div>
                 </div>
               </div>
             );

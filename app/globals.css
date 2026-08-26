@@ -25,7 +25,7 @@
   --font-sans: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
 }
 
-/* Botones UI ([HOME], [SIGUIENTE], etc.): mismo tamaño que el header. */
+/* Botones UI ([UNJAM], [SIGUIENTE], etc.): mismo tamaño que el header. */
 .ui-btn-text {
   font-size: var(--ui-btn-text);
   font-weight: 400;

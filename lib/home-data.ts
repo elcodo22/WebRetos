@@ -15,7 +15,7 @@ export type RetoActivoHome = {
 };
 
 function formatearNumeroReto(totalAnteriores: number) {
-  return (totalAnteriores + 1).toString().padStart(3, "0");
+  return (totalAnteriores + 1).toString().padStart(2, "0");
 }
 
 /**

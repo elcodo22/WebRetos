@@ -9,6 +9,7 @@ import {
 } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
+import { formatRetoNumero } from "@/lib/format-reto-numero";
 
 export type HeroStep = 0 | 1 | 2 | 3;
 
@@ -31,13 +32,85 @@ type RetoHeroProps = {
   descripcion: string;
   fechaFin?: string | null;
   step?: HeroStep;
-  /** 0 = solo título, 1 = descripción centrada (sigue el scroll). */
+  /** 0 = descripción, 1 = descripción centrada (sigue el scroll). */
   introProgress?: number;
+  /** 0 = QUEDAN abajo, 1 = centrado. */
+  tiempoProgress?: number;
   panel?: 0 | 1;
 };
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const STEP_MS = 480;
+/** Altura aprox. de la fila # + título (para fijarla al centro). */
+const TITLE_BAR_H = 32;
+const TITLE_BAR_BOTTOM_PAD = 40;
+/** En móvil: debajo del safe-top / menú. */
+const TITLE_BAR_TOP_PAD_MOBILE = 56;
+
+function titleBarTop(
+  portH: number,
+  introProgress: number,
+  step: HeroStep,
+  mobile: boolean,
+  tiempoProgress = 1,
+): number {
+  if (mobile) return TITLE_BAR_TOP_PAD_MOBILE;
+  if (portH <= 0) return TITLE_BAR_BOTTOM_PAD;
+  const trailer = Math.max(1, portH * 0.75);
+  // Centro solo con QUEDAN/código a pantalla completa; si bajan, el título baja con ellos.
+  const pinCenter =
+    step >= 3 || (step >= 2 && tiempoProgress >= 0.999);
+  const scrollTop = pinCenter ? trailer : introProgress * trailer;
+  const naturalTop = portH - TITLE_BAR_BOTTOM_PAD - TITLE_BAR_H - scrollTop;
+  const pinnedTop = (portH - TITLE_BAR_H) / 2;
+  return Math.max(naturalTop, pinnedTop);
+}
+
+function TitleBar({
+  numero,
+  titulo,
+  top,
+  visible,
+  dark,
+  mobile,
+}: {
+  numero: string;
+  titulo: string;
+  top: number;
+  visible: boolean;
+  dark: boolean;
+  mobile: boolean;
+}) {
+  return (
+    <div
+      className={`pointer-events-none absolute inset-x-0 z-30 transition-opacity duration-300 ${
+        visible ? "opacity-100" : "opacity-0"
+      } ${dark ? "text-[var(--background)]" : "text-white"}`}
+      style={
+        mobile
+          ? {
+              top: "max(1rem, calc(var(--safe-top, 0px) + 0.75rem))",
+            }
+          : {
+              top,
+              height: TITLE_BAR_H,
+            }
+      }
+      aria-hidden={!visible}
+    >
+      <div className="site-grid w-full items-center">
+        <div className="col-span-2 col-start-1 truncate text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-2">
+          <span className="pointer-events-auto">
+            <ClickableText text={titulo} enabled={visible} />
+          </span>
+        </div>
+        <div className="col-span-2 col-start-3 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-8">
+          RETO #{formatRetoNumero(numero)}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function renderDescripcion(texto: string): ReactNode[] {
   const parts = texto.split(/(\*\*[^*]+\*\*)/g);
@@ -70,23 +143,6 @@ function dispatchHeroStep(step: HeroStep) {
   );
 }
 
-function TituloBlock({
-  numero,
-  titulo,
-}: {
-  numero: string;
-  titulo: string;
-}) {
-  return (
-    <h1 className="flex flex-wrap items-baseline justify-center gap-x-[0.35em] gap-y-1 text-center text-[clamp(26px,4.5vw,38px)] font-medium uppercase leading-tight tracking-normal">
-      <span className="font-normal">#{numero}</span>
-      <span>
-        <ClickableText text={titulo} enabled />
-      </span>
-    </h1>
-  );
-}
-
 export function RetoHero({
   numero,
   titulo,
@@ -94,13 +150,16 @@ export function RetoHero({
   fechaFin,
   step: stepProp,
   introProgress: introProgressProp = 0,
+  tiempoProgress: tiempoProgressProp = 0,
   panel = 0,
 }: RetoHeroProps) {
   const [step, setStep] = useState<HeroStep>(stepProp ?? 0);
   const [introProgress, setIntroProgress] = useState(introProgressProp);
+  const [tiempoProgress, setTiempoProgress] = useState(tiempoProgressProp);
   const [codigo, setCodigo] = useState("");
   const [codigoFocused, setCodigoFocused] = useState(false);
   const [portH, setPortH] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,6 +169,18 @@ export function RetoHero({
   useEffect(() => {
     setIntroProgress(introProgressProp);
   }, [introProgressProp]);
+
+  useEffect(() => {
+    setTiempoProgress(tiempoProgressProp);
+  }, [tiempoProgressProp]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -201,38 +272,38 @@ export function RetoHero({
     return () => window.removeEventListener("keydown", onKey);
   }, [step, setHeroStep]);
 
-  const showIntro = step <= 1;
-  const showTiempo = step === 2;
+  const tiempoP = Math.min(1, Math.max(0, tiempoProgress));
+  // Descripción visible en intro/vacío, y asomándose mientras QUEDAN baja.
+  const showIntro = step <= 1 || (step === 2 && tiempoP < 0.999);
+  const introOpacity =
+    step === 2 ? Math.min(1, Math.max(0, (1 - tiempoP) * 1.15)) : showIntro ? 1 : 0;
+  const showTiempo = tiempoP > 0.002 && step < 3;
   const showCodigo = step === 3;
   const codigoMode = showCodigo && codigoFocused && panel === 0;
-  // Solo transparentar al scrollear; desaparece al centrarse la descripción
-  const p = step >= 1 ? 1 : Math.min(1, Math.max(0, introProgress));
-  // Se transparenta despacio (sin irse tan pronto)
-  const TITLE_FADE_START = 0.05;
-  const TITLE_FADE_END = 0.4;
-  const fadeT =
-    p <= TITLE_FADE_START
-      ? 0
-      : Math.min(
-          1,
-          (p - TITLE_FADE_START) / (TITLE_FADE_END - TITLE_FADE_START),
-        );
-  const titleOpacity = step === 0 ? 1 - Math.pow(fadeT, 2.8) : 0;
+  const p = Math.min(1, Math.max(0, introProgress));
+  const barTop = titleBarTop(portH, p, step, isMobile, tiempoP);
+  const showTitleBar = panel === 0 && step <= 3;
 
   const layerClass = (visible: boolean) =>
     `home-hero-layer absolute inset-0 flex flex-col items-center justify-center px-[var(--grid-margin)] text-center ${
       visible
-        ? "z-[2] pointer-events-auto translate-y-0 scale-100 opacity-100"
-        : "z-0 pointer-events-none translate-y-3 scale-[0.985] opacity-0"
+        ? "z-[2] pointer-events-auto translate-y-0 opacity-100"
+        : "z-0 pointer-events-none translate-y-0 opacity-0"
     }`;
 
   const layerStyle = {
     transitionTimingFunction: EASE,
     transitionDuration: `${STEP_MS}ms`,
-    transitionProperty: "opacity, transform",
+    transitionProperty: "opacity",
   } as const;
 
   const sectionH = portH > 0 ? portH : undefined;
+  // Sube desde abajo → centro con el scroll; con código solo se funde.
+  // En step 2 (tiempo) siempre anclado al centro si el progreso está completo.
+  const tiempoOffsetY =
+    step >= 3 ? 0 : step === 2 && tiempoP >= 0.999 ? 0 : (1 - tiempoP) * 52;
+  const tiempoOpacity =
+    step >= 3 ? 0 : Math.min(1, Math.max(0, tiempoP * 1.4));
 
   return (
     <div
@@ -242,54 +313,49 @@ export function RetoHero({
       data-codigo-focus={codigoMode ? "" : undefined}
     >
       <div className="absolute inset-0 [word-spacing:0.45em]">
-        {/* Scroll: título fijo (se transparenta) + descripción que sube */}
+        {/* # + título: suben con el scroll y se fijan en el centro */}
+        <TitleBar
+          numero={numero}
+          titulo={titulo}
+          top={barTop}
+          visible={showTitleBar}
+          dark={codigoMode}
+          mobile={isMobile}
+        />
+
+        {/* Scroll: descripción → azul vacío (se asoma al bajar QUEDAN) */}
         <div
           className={`absolute inset-0 ${
-            showIntro
-              ? "z-[2] pointer-events-auto opacity-100"
-              : "z-0 pointer-events-none opacity-0"
-          }`}
+            showIntro ? "z-[1]" : "z-0"
+          } ${step <= 1 && showIntro ? "pointer-events-auto" : "pointer-events-none"}`}
           style={{
+            opacity: introOpacity,
             transitionTimingFunction: EASE,
-            transitionDuration: `${STEP_MS}ms`,
+            transitionDuration: step === 2 ? "0ms" : `${STEP_MS}ms`,
             transitionProperty: "opacity",
           }}
           aria-hidden={!showIntro}
         >
-          {/* Título fijo en el centro: no sube, solo se transparenta */}
-          <div
-            className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-center px-[var(--grid-margin)]"
-            style={{ opacity: titleOpacity }}
-            aria-hidden={titleOpacity < 0.05}
-          >
-            <div className="w-full max-w-4xl">
-              <TituloBlock numero={numero} titulo={titulo} />
-            </div>
-          </div>
-
           <div
             ref={scrollRef}
             data-hero-intro-scroll=""
             className="absolute inset-0 z-0 overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {/* 1) Hasta aquí la descripción queda centrada y el título ya es 0 */}
-            <div
-              className="w-full shrink-0"
-              style={{ height: sectionH ?? "100%" }}
-              aria-hidden
-            />
-
-            {/* 2) Descripción */}
             <section
-              className="flex w-full shrink-0 items-center justify-center px-[var(--grid-margin)]"
+              className="relative flex w-full shrink-0 flex-col"
               style={{ height: sectionH ?? "100%" }}
             >
-              <p className="w-full max-w-[min(48rem,90%)] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:max-w-[52rem]">
-                {renderDescripcion(descripcion)}
-              </p>
+              <div
+                className={`flex min-h-0 flex-1 items-center justify-center px-[var(--grid-margin)] ${
+                  isMobile ? "pb-8 pt-20" : "pb-16"
+                }`}
+              >
+                <p className="w-full max-w-[min(48rem,90%)] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:max-w-[52rem]">
+                  {renderDescripcion(descripcion)}
+                </p>
+              </div>
             </section>
 
-            {/* 3) Sale → azul vacío (un pelín más corto: el tiempo un poco antes) */}
             <div
               className="w-full shrink-0"
               style={{ height: sectionH ? Math.round(sectionH * 0.75) : "75%" }}
@@ -299,20 +365,37 @@ export function RetoHero({
         </div>
 
         <div
-          className={layerClass(showTiempo)}
-          style={layerStyle}
+          className={`home-hero-layer absolute inset-0 flex flex-col items-center justify-center px-[var(--grid-margin)] text-center ${
+            showTiempo || step >= 3
+              ? "z-[2] pointer-events-none"
+              : "z-0 pointer-events-none"
+          }`}
+          style={{
+            opacity: tiempoOpacity,
+            transform: `translate3d(0, ${tiempoOffsetY}%, 0)`,
+            transitionTimingFunction: EASE,
+            transitionDuration: `${STEP_MS}ms`,
+            transitionProperty: "opacity",
+            willChange: "transform, opacity",
+          }}
           aria-hidden={!showTiempo}
         >
-          <div className="[word-spacing:normal]">
+          <div className="w-full [word-spacing:normal]">
             {fechaFin ? (
               <RetoTimeBar
                 fechaFin={fechaFin}
-                active={showTiempo}
+                active={tiempoP > 0.05 || step >= 2}
                 size="hero"
                 align="center"
+                format="phrase"
               />
             ) : (
-              <RetoTimeBar active={showTiempo} size="hero" align="center" />
+              <RetoTimeBar
+                active={tiempoP > 0.05 || step >= 2}
+                size="hero"
+                align="center"
+                format="phrase"
+              />
             )}
           </div>
         </div>

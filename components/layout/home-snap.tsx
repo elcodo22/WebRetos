@@ -42,10 +42,17 @@ const ARCHIVOS_REVEAL_SCROLL_PX = 380;
 const ARCHIVOS_WHEEL_CAP_PX = 44;
 /** Interpolación del panel blanco hacia el target (0–1 por frame). */
 const ARCHIVOS_LERP = 0.28;
+/** Scroll (px) para subir QUEDAN desde abajo al centro. */
+const TIEMPO_SCROLL_PX = 320;
+const TIEMPO_WHEEL_CAP_PX = 48;
+/** En el intro, a partir de aquí QUEDAN ya empieza a subir. */
+const TIEMPO_EARLY_START = 0.3;
 /** Acumulación de rueda para saltar vacío ↔ tiempo ↔ código. */
 const STEP_WHEEL_THRESHOLD = 64;
 /** Pausa mínima entre cambios de capa (alineada con la animación). */
 const STEP_SETTLE_MS = 240;
+/** Tras código→tiempo, ignorar el resto del mismo flick. */
+const TIEMPO_PIN_GAP_MS = 140;
 /** Tiempo con la pantalla de código ya completa antes de poder subir al tiempo. */
 const CODIGO_PLANTED_MS = 520;
 /** Si no hay rueda, se olvida la acumulación de paso. */
@@ -79,6 +86,7 @@ export function HomeSnap({
   const [panel, setPanel] = useState(0);
   const [heroStep, setHeroStepState] = useState<HeroStep>(0);
   const [introProgress, setIntroProgressState] = useState(0);
+  const [tiempoProgress, setTiempoProgressState] = useState(0);
   const [archivosReveal, setArchivosRevealState] = useState(0);
   const [codigoFocused, setCodigoFocused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -88,6 +96,7 @@ export function HomeSnap({
   const runningEntranceRef = useRef(false);
   const heroStepRef = useRef<HeroStep>(0);
   const introProgressRef = useRef(0);
+  const tiempoProgressRef = useRef(0);
   const archivosRevealRef = useRef(0);
   const codigoFocusedRef = useRef(false);
   const inputReadyRef = useRef(false);
@@ -100,6 +109,12 @@ export function HomeSnap({
   const lastStepChangeAtRef = useRef(0);
   /** Desde cuándo el código está a pantalla completa (sin blanca encima). */
   const codigoPlantedAtRef = useRef(0);
+  /**
+   * Tras código → tiempo, QUEDAN queda centrado: el mismo flick no lo baja.
+   * Se libera al acabar el gesto de rueda / al iniciar uno nuevo hacia abajo.
+   */
+  const pinTiempoCenteredRef = useRef(false);
+  const lastHomeWheelAtRef = useRef(0);
 
   const clearTransitionTimers = useCallback(() => {
     for (const id of transitionTimersRef.current) {
@@ -146,6 +161,8 @@ export function HomeSnap({
     setHeroStepState(0);
     introProgressRef.current = 0;
     setIntroProgressState(0);
+    tiempoProgressRef.current = 0;
+    setTiempoProgressState(0);
     archivosRevealRef.current = 0;
     archivosRevealTargetRef.current = 0;
     archivosRevealDisplayRef.current = 0;
@@ -237,6 +254,13 @@ export function HomeSnap({
       introProgressRef.current = 0;
       setIntroProgressState(0);
     }
+    if (next >= 2) {
+      tiempoProgressRef.current = 1;
+      setTiempoProgressState(1);
+    } else {
+      tiempoProgressRef.current = 0;
+      setTiempoProgressState(0);
+    }
     if (next === 3 && archivosRevealTargetRef.current <= 0.001) {
       codigoPlantedAtRef.current = performance.now();
     } else if (next !== 3) {
@@ -252,16 +276,77 @@ export function HomeSnap({
     );
   }, []);
 
-  /** Progreso del intro. Al completar → pantalla azul vacía (step 1). */
-  const setIntroProgress = useCallback((next: number) => {
+  /** Solo mueve el scroll de la descripción (sin tocar QUEDAN). */
+  const applyIntroProgressOnly = useCallback((next: number) => {
     const p = Math.min(1, Math.max(0, next));
     introProgressRef.current = p;
     setIntroProgressState(p);
+    const el = rootRef.current?.querySelector(
+      HERO_INTRO_SCROLL_SELECTOR,
+    ) as HTMLElement | null;
+    if (!el) return;
+    const rawMax = el.scrollHeight - el.clientHeight;
+    if (rawMax >= 80) el.scrollTop = p * rawMax;
+  }, []);
 
-    if (p >= 1) {
-      if (heroStepRef.current === 0) {
+  /**
+   * step 1 → 0 para seguir el intro: conservar la posición actual.
+   * (Antes se forzaba intro=1 y la descripción saltaba arriba.)
+   */
+  const reenterIntroFromStep1 = useCallback(() => {
+    heroStepRef.current = 0;
+    setHeroStepState(0);
+    if (tiempoProgressRef.current !== 0) {
+      tiempoProgressRef.current = 0;
+      setTiempoProgressState(0);
+    }
+    applyIntroProgressOnly(introProgressRef.current);
+    window.dispatchEvent(
+      new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 0 } }),
+    );
+    window.dispatchEvent(
+      new CustomEvent(RETO_DETALLE_EVENT, {
+        detail: { open: false, step: 0 },
+      }),
+    );
+  }, [applyIntroProgressOnly]);
+
+  /** Inversa de syncTiempoFromIntro: tp 1→intro 1, tp 0→intro early (sin salto a 0). */
+  const introFromTiempo = useCallback((tp: number) => {
+    const t = Math.min(1, Math.max(0, tp));
+    return TIEMPO_EARLY_START + t * (1 - TIEMPO_EARLY_START);
+  }, []);
+
+  /** 0 = abajo (oculto), 1 = centrado. Al llegar a 1 → step tiempo. */
+  const scrollTiempoBy = useCallback(
+    (deltaPx: number) => {
+      const prev = tiempoProgressRef.current;
+      const next = Math.min(1, Math.max(0, prev + deltaPx / TIEMPO_SCROLL_PX));
+      tiempoProgressRef.current = next;
+      setTiempoProgressState(next);
+
+      // QUEDAN ↔ descripción/título: mismo recorrido que al subir (sin saltar a intro 0).
+      if (heroStepRef.current === 1 || heroStepRef.current === 2) {
+        applyIntroProgressOnly(introFromTiempo(next));
+      }
+
+      if (next >= 1 && heroStepRef.current < 2) {
+        heroStepRef.current = 2;
+        setHeroStepState(2);
+        applyIntroProgressOnly(1);
+        window.dispatchEvent(
+          new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 2 } }),
+        );
+        window.dispatchEvent(
+          new CustomEvent(RETO_DETALLE_EVENT, {
+            detail: { open: true, step: 2 },
+          }),
+        );
+        lastStepChangeAtRef.current = performance.now();
+      } else if (next <= 0 && heroStepRef.current === 2) {
         heroStepRef.current = 1;
         setHeroStepState(1);
+        applyIntroProgressOnly(TIEMPO_EARLY_START);
         window.dispatchEvent(
           new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 1 } }),
         );
@@ -270,23 +355,98 @@ export function HomeSnap({
             detail: { open: true, step: 1 },
           }),
         );
+        lastStepChangeAtRef.current = performance.now();
+      }
+
+      return next;
+    },
+    [applyIntroProgressOnly, introFromTiempo],
+  );
+
+  /** Mientras sale la descripción, QUEDAN ya va subiendo. */
+  const syncTiempoFromIntro = useCallback((introP: number) => {
+    if (heroStepRef.current >= 2) return;
+    if (introP <= TIEMPO_EARLY_START) {
+      if (tiempoProgressRef.current !== 0) {
+        tiempoProgressRef.current = 0;
+        setTiempoProgressState(0);
       }
       return;
     }
-
-    if (heroStepRef.current === 1) {
-      heroStepRef.current = 0;
-      setHeroStepState(0);
+    const tp = Math.min(
+      1,
+      (introP - TIEMPO_EARLY_START) / (1 - TIEMPO_EARLY_START),
+    );
+    tiempoProgressRef.current = tp;
+    setTiempoProgressState(tp);
+    if (tp >= 1 && heroStepRef.current < 2) {
+      heroStepRef.current = 2;
+      setHeroStepState(2);
       window.dispatchEvent(
-        new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 0 } }),
+        new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 2 } }),
       );
       window.dispatchEvent(
         new CustomEvent(RETO_DETALLE_EVENT, {
-          detail: { open: false, step: 0 },
+          detail: { open: true, step: 2 },
         }),
       );
+      lastStepChangeAtRef.current = performance.now();
     }
   }, []);
+
+  /** Progreso del intro. Al completar → pantalla azul vacía (step 1). */
+  const setIntroProgress = useCallback(
+    (next: number) => {
+      const p = Math.min(1, Math.max(0, next));
+      const prev = introProgressRef.current;
+      introProgressRef.current = p;
+      setIntroProgressState(p);
+
+      if (p >= prev - 0.0001) {
+        // Avance: QUEDAN sube con la salida de la descripción.
+        syncTiempoFromIntro(p);
+      } else if (heroStepRef.current < 2 && tiempoProgressRef.current !== 0) {
+        // Retroceso: no volver a subir QUEDAN (evita 2.ª aparición).
+        tiempoProgressRef.current = 0;
+        setTiempoProgressState(0);
+      }
+
+      if (p >= 1) {
+        if (heroStepRef.current === 0) {
+          // Si QUEDAN ya llegó al centro con el intro, quedamos en tiempo.
+          if (tiempoProgressRef.current >= 1) return;
+          heroStepRef.current = 1;
+          setHeroStepState(1);
+          window.dispatchEvent(
+            new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 1 } }),
+          );
+          window.dispatchEvent(
+            new CustomEvent(RETO_DETALLE_EVENT, {
+              detail: { open: true, step: 1 },
+            }),
+          );
+        }
+        return;
+      }
+
+      if (
+        (heroStepRef.current === 1 || heroStepRef.current === 2) &&
+        tiempoProgressRef.current <= 0
+      ) {
+        heroStepRef.current = 0;
+        setHeroStepState(0);
+        window.dispatchEvent(
+          new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 0 } }),
+        );
+        window.dispatchEvent(
+          new CustomEvent(RETO_DETALLE_EVENT, {
+            detail: { open: false, step: 0 },
+          }),
+        );
+      }
+    },
+    [syncTiempoFromIntro],
+  );
 
   /** Scroll del intro con topes: un impulso fuerte no lo manda arriba de golpe. */
   const scrollIntroBy = useCallback(
@@ -513,17 +673,26 @@ export function HomeSnap({
       return;
     }
     if (step === 1) {
-      setHeroStep(2);
-      lastStepChangeAtRef.current = performance.now();
+      scrollTiempoBy(TIEMPO_SCROLL_PX);
       return;
     }
     if (step === 2) {
+      pinTiempoCenteredRef.current = false;
       setHeroStep(3);
       lastStepChangeAtRef.current = performance.now();
       return;
     }
     scrollArchivosRevealBy(ARCHIVOS_WHEEL_CAP_PX);
-  }, [setHeroStep, scrollArchivosRevealBy]);
+  }, [setHeroStep, scrollArchivosRevealBy, scrollTiempoBy]);
+
+  /** Código → tiempo centrado de golpe (sin scrub del flick). */
+  const returnToTiempoFromCodigo = useCallback(() => {
+    pinTiempoCenteredRef.current = true;
+    tiempoProgressRef.current = 1;
+    setTiempoProgressState(1);
+    setHeroStep(2);
+    lastStepChangeAtRef.current = performance.now();
+  }, [setHeroStep]);
 
   const retreatHeroOnHome = useCallback(() => {
     if (archivosRevealTargetRef.current > 0 && panelRef.current === 0) {
@@ -532,42 +701,37 @@ export function HomeSnap({
     }
     const step = heroStepRef.current;
     if (step >= 3) {
-      const plantedAt = codigoPlantedAtRef.current;
       if (
-        !plantedAt ||
-        performance.now() - plantedAt < CODIGO_PLANTED_MS ||
+        archivosRevealTargetRef.current > 0.001 ||
         archivosRevealDisplayRef.current > 0.02
       ) {
+        scrollArchivosRevealBy(-ARCHIVOS_WHEEL_CAP_PX);
         return;
       }
-      setHeroStep(2);
-      lastStepChangeAtRef.current = performance.now();
+      returnToTiempoFromCodigo();
       return;
     }
-    if (step === 2) {
-      setHeroStep(1);
-      lastStepChangeAtRef.current = performance.now();
+    if (step === 2 || (step === 1 && tiempoProgressRef.current > 0)) {
+      if (step === 2 && pinTiempoCenteredRef.current) {
+        pinTiempoCenteredRef.current = false;
+        tiempoProgressRef.current = 1;
+        setTiempoProgressState(1);
+        return;
+      }
+      scrollTiempoBy(-TIEMPO_SCROLL_PX);
       return;
     }
     if (step === 1) {
-      heroStepRef.current = 0;
-      setHeroStepState(0);
-      introProgressRef.current = 1;
-      setIntroProgressState(1);
-      const el = rootRef.current?.querySelector(
-        HERO_INTRO_SCROLL_SELECTOR,
-      ) as HTMLElement | null;
-      if (el) el.scrollTop = el.scrollHeight;
-      window.dispatchEvent(
-        new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 0 } }),
-      );
-      window.dispatchEvent(
-        new CustomEvent(RETO_DETALLE_EVENT, {
-          detail: { open: false, step: 0 },
-        }),
-      );
+      reenterIntroFromStep1();
+      scrollIntroBy(-INTRO_WHEEL_CAP_PX);
     }
-  }, [setHeroStep, scrollArchivosRevealBy]);
+  }, [
+    returnToTiempoFromCodigo,
+    reenterIntroFromStep1,
+    scrollArchivosRevealBy,
+    scrollIntroBy,
+    scrollTiempoBy,
+  ]);
 
   /** Salir de archivos hacia el código con el mismo slide (reversa). */
   const beginArchivosExit = useCallback(() => {
@@ -627,6 +791,8 @@ export function HomeSnap({
     setHeroStepState(0);
     introProgressRef.current = 0;
     setIntroProgressState(0);
+    tiempoProgressRef.current = 0;
+    setTiempoProgressState(0);
 
     const el = rootRef.current?.querySelector(
       HERO_INTRO_SCROLL_SELECTOR,
@@ -752,11 +918,30 @@ export function HomeSnap({
 
       const now = performance.now();
       const raw = wheelDeltaPx(event);
+      const wheelGap =
+        lastHomeWheelAtRef.current === 0
+          ? Infinity
+          : now - lastHomeWheelAtRef.current;
+      // Solo soltar el ancla al empezar un gesto nuevo (no en huecos del mismo flick).
+      let pinJustReleased = false;
+      if (pinTiempoCenteredRef.current && wheelGap >= TIEMPO_PIN_GAP_MS) {
+        pinTiempoCenteredRef.current = false;
+        pinJustReleased = true;
+      }
+      lastHomeWheelAtRef.current = now;
 
       // Intro: scroll progresivo hasta azul vacío.
       if (panelRef.current === 0) {
         const step = heroStepRef.current;
         const introGap = lastIntroEventAt === 0 ? Infinity : now - lastIntroEventAt;
+
+        // Con QUEDAN a medias en step 1, subir primero lo baja (no reentrar intro).
+        if (step === 1 && delta < 0 && tiempoProgressRef.current > 0.002) {
+          const capped =
+            Math.sign(raw) * Math.min(Math.abs(raw), TIEMPO_WHEEL_CAP_PX);
+          scrollTiempoBy(capped);
+          return;
+        }
 
         if (step === 0 || (step === 1 && delta < 0)) {
           lastIntroEventAt = now;
@@ -765,14 +950,7 @@ export function HomeSnap({
           }
 
           if (step === 1 && delta < 0) {
-            heroStepRef.current = 0;
-            setHeroStepState(0);
-            introProgressRef.current = 1;
-            setIntroProgressState(1);
-            const el = rootRef.current?.querySelector(
-              HERO_INTRO_SCROLL_SELECTOR,
-            ) as HTMLElement | null;
-            if (el) el.scrollTop = el.scrollHeight;
+            reenterIntroFromStep1();
           }
 
           if (!introGestureActive) {
@@ -782,25 +960,57 @@ export function HomeSnap({
 
           const capped =
             Math.sign(raw) * Math.min(Math.abs(raw), INTRO_WHEEL_CAP_PX);
-          const before = introProgressRef.current;
-          const after = scrollIntroBy(capped, {
+          scrollIntroBy(capped, {
             gestureStart: introGestureStart,
             gestureCap: INTRO_GESTURE_CAP,
           });
-          // Al salir del intro, el resto del impulso cuenta hacia el tiempo.
-          if (before < 1 && after >= 1 && delta > 0) {
-            introGestureActive = false;
-            stepAcc = Math.abs(raw) * 0.65;
-            stepAccAt = now;
-            if (
-              stepAcc >= STEP_WHEEL_THRESHOLD &&
-              now - lastStepChangeAtRef.current >= STEP_SETTLE_MS
-            ) {
-              stepAcc = 0;
-              lastStepChangeAtRef.current = now;
-              setHeroStep(2);
-            }
+          return;
+        }
+
+        // QUEDAN: subir desde abajo / bajar solo si estamos en pantalla de tiempo.
+        if (
+          (step === 1 && delta > 0) ||
+          (step === 2 &&
+            delta > 0 &&
+            tiempoProgressRef.current < 0.999)
+        ) {
+          const capped =
+            Math.sign(raw) * Math.min(Math.abs(raw), TIEMPO_WHEEL_CAP_PX);
+          scrollTiempoBy(capped);
+          return;
+        }
+
+        if (step === 2 && delta < 0) {
+          // Mismo flick / primer tick del gesto nuevo: quedarse centrado.
+          if (pinTiempoCenteredRef.current || pinJustReleased) {
+            tiempoProgressRef.current = 1;
+            setTiempoProgressState(1);
+            return;
           }
+          if (now - lastStepChangeAtRef.current < STEP_SETTLE_MS) {
+            return;
+          }
+          const capped =
+            Math.sign(raw) * Math.min(Math.abs(raw), TIEMPO_WHEEL_CAP_PX);
+          scrollTiempoBy(capped);
+          return;
+        }
+
+        // Tiempo centrado + scroll abajo → introducir código.
+        if (step === 2 && delta > 0 && tiempoProgressRef.current >= 0.999) {
+          pinTiempoCenteredRef.current = false;
+          setHeroStep(3);
+          lastStepChangeAtRef.current = now;
+          return;
+        }
+
+        // Código → tiempo centrado de golpe (da igual lo fuerte del scroll).
+        if (
+          step === 3 &&
+          delta < 0 &&
+          archivosRevealTargetRef.current <= 0.001
+        ) {
+          returnToTiempoFromCodigo();
           return;
         }
 
@@ -852,9 +1062,10 @@ export function HomeSnap({
             stepAcc = 0;
             lastStepChangeAtRef.current = now;
             if (step === 1) {
-              setHeroStep(2);
+              scrollTiempoBy(TIEMPO_WHEEL_CAP_PX * 1.5);
             } else if (step === 2) {
               // Tiempo → código: consumir el resto del flick (sin blanca).
+              pinTiempoCenteredRef.current = false;
               setHeroStep(3);
               stepAcc = 0;
             } else {
@@ -871,48 +1082,34 @@ export function HomeSnap({
           }
 
           if (stepAcc <= -STEP_WHEEL_THRESHOLD && delta < 0) {
-            // Código → tiempo solo si la pantalla de código ya está completa.
+            // Código → tiempo centrado (sin esperar planted; planted solo abre blanca).
             if (step === 3) {
-              const plantedAt = codigoPlantedAtRef.current;
-              const codigoListo =
-                plantedAt > 0 &&
-                now - plantedAt >= CODIGO_PLANTED_MS &&
-                archivosRevealTargetRef.current <= 0.001 &&
-                archivosRevealDisplayRef.current <= 0.02;
-              if (!codigoListo) {
+              if (archivosRevealTargetRef.current > 0.001) {
                 stepAcc = 0;
                 return;
               }
               stepAcc = 0;
-              lastStepChangeAtRef.current = now;
-              setHeroStep(2);
+              returnToTiempoFromCodigo();
               return;
             }
 
             stepAcc = 0;
             lastStepChangeAtRef.current = now;
-            if (step === 2) setHeroStep(1);
-            else {
-              // step 1 → reentrar intro
-              heroStepRef.current = 0;
-              setHeroStepState(0);
-              introProgressRef.current = 1;
-              setIntroProgressState(1);
-              const el = rootRef.current?.querySelector(
-                HERO_INTRO_SCROLL_SELECTOR,
-              ) as HTMLElement | null;
-              if (el) el.scrollTop = el.scrollHeight;
-              window.dispatchEvent(
-                new CustomEvent(RETO_HERO_STEP_EVENT, {
-                  detail: { step: 0 },
-                }),
-              );
-              window.dispatchEvent(
-                new CustomEvent(RETO_DETALLE_EVENT, {
-                  detail: { open: false, step: 0 },
-                }),
-              );
+            if (step === 2) {
+              if (pinTiempoCenteredRef.current) {
+                tiempoProgressRef.current = 1;
+                setTiempoProgressState(1);
+                return;
+              }
+              scrollTiempoBy(-TIEMPO_WHEEL_CAP_PX * 1.5);
+            } else {
+              // step 1 → reentrar intro sin saltar la descripción arriba
+              reenterIntroFromStep1();
               introGestureActive = false;
+              scrollIntroBy(-INTRO_WHEEL_CAP_PX * 1.2, {
+                gestureStart: introProgressRef.current,
+                gestureCap: INTRO_GESTURE_CAP,
+              });
             }
             return;
           }
@@ -933,7 +1130,10 @@ export function HomeSnap({
     dispatchArchivoWheel,
     scrollIntroBy,
     scrollArchivosRevealBy,
+    scrollTiempoBy,
     setHeroStep,
+    returnToTiempoFromCodigo,
+    reenterIntroFromStep1,
   ]);
 
   useEffect(() => {
@@ -1022,14 +1222,10 @@ export function HomeSnap({
       if (step > 1) return;
 
       if (step === 1 && dy < 0) {
-        heroStepRef.current = 0;
-        setHeroStepState(0);
-        introProgressRef.current = 1;
-        setIntroProgressState(1);
+        reenterIntroFromStep1();
         const scroller = introEl();
         if (scroller) {
-          scroller.scrollTop = scroller.scrollHeight;
-          touchScrollBase = scroller.scrollHeight;
+          touchScrollBase = scroller.scrollTop;
         }
       }
 
@@ -1118,6 +1314,7 @@ export function HomeSnap({
     dispatchArchivoWheel,
     setIntroProgress,
     setArchivosReveal,
+    reenterIntroFromStep1,
   ]);
 
   const participarActive =
@@ -1136,11 +1333,13 @@ export function HomeSnap({
     step?: HeroStep;
     panel?: 0 | 1;
     introProgress?: number;
+    tiempoProgress?: number;
   }>(hero)
     ? cloneElement(hero, {
         step: heroStep,
         panel: panel as 0 | 1,
         introProgress,
+        tiempoProgress,
       })
     : hero;
 
