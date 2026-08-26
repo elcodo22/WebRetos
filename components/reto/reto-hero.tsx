@@ -44,8 +44,8 @@ const STEP_MS = 480;
 /** Altura aprox. de la fila # + título (para fijarla al centro). */
 const TITLE_BAR_H = 32;
 const TITLE_BAR_BOTTOM_PAD = 40;
-/** En móvil: debajo del safe-top / menú. */
-const TITLE_BAR_TOP_PAD_MOBILE = 56;
+/** En móvil: título abajo, encima del safe-bottom. */
+const TITLE_BAR_BOTTOM_PAD_MOBILE = 56;
 
 function titleBarTop(
   portH: number,
@@ -54,7 +54,10 @@ function titleBarTop(
   mobile: boolean,
   tiempoProgress = 1,
 ): number {
-  if (mobile) return TITLE_BAR_TOP_PAD_MOBILE;
+  if (mobile) {
+    // No se usa con `bottom` fijo; se mantiene por tipado del call site.
+    return TITLE_BAR_BOTTOM_PAD_MOBILE;
+  }
   if (portH <= 0) return TITLE_BAR_BOTTOM_PAD;
   const trailer = Math.max(1, portH * 0.75);
   // Centro solo con QUEDAN/código a pantalla completa; si bajan, el título baja con ellos.
@@ -89,7 +92,8 @@ function TitleBar({
       style={
         mobile
           ? {
-              top: "max(1rem, calc(var(--safe-top, 0px) + 0.75rem))",
+              bottom:
+                "max(1rem, calc(var(--safe-bottom, 0px) + 0.85rem))",
             }
           : {
               top,
@@ -105,7 +109,7 @@ function TitleBar({
           </span>
         </div>
         <div className="col-span-2 col-start-3 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-8">
-          RETO #{formatRetoNumero(numero)}
+          #{formatRetoNumero(numero)}
         </div>
       </div>
     </div>
@@ -347,7 +351,7 @@ export function RetoHero({
             >
               <div
                 className={`flex min-h-0 flex-1 items-center justify-center px-[var(--grid-margin)] ${
-                  isMobile ? "pb-8 pt-20" : "pb-16"
+                  isMobile ? "pb-20 pt-14" : "pb-16"
                 }`}
               >
                 <p className="w-full max-w-[min(48rem,90%)] text-center text-[clamp(18px,3.6vw,24px)] font-normal normal-case leading-snug tracking-normal [word-spacing:normal] md:max-w-[52rem]">

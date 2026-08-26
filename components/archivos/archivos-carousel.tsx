@@ -295,13 +295,13 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
         }}
         aria-hidden={exit > 0.75}
       >
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-start pt-[max(1rem,calc(var(--safe-top)+0.75rem))] md:items-center md:pt-0">
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-end pb-[max(1rem,calc(var(--safe-bottom)+0.85rem))] md:items-end md:pb-10">
           <div className="site-grid w-full items-center">
             <div className="col-span-2 col-start-1 truncate text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-2">
               {current?.titulo}
             </div>
             <div className="col-span-2 col-start-3 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-8">
-              {current ? `RETO #${formatRetoNumero(current.numero)}` : null}
+              {current ? `#${formatRetoNumero(current.numero)}` : null}
             </div>
           </div>
         </div>

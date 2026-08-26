@@ -161,10 +161,8 @@ export function RetoTimeBar({
         : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
 
   const unit = primaryUnit(display);
-  const phrase =
-    unit.value === 1
-      ? `QUEDA ${unit.value} ${unit.singular}`
-      : `QUEDAN ${unit.value} ${unit.plural}`;
+  const unitLabel = unit.value === 1 ? unit.singular : unit.plural;
+  const quedanWord = unit.value === 1 ? "QUEDA" : "QUEDAN";
   const compactLabel =
     unit.suffix === "d" ? String(unit.value) : pad(unit.value);
 
@@ -179,11 +177,28 @@ export function RetoTimeBar({
       } ${textClass}`}
     >
       {format === "phrase" ? (
-        <span>{phrase}</span>
+        <>
+          <span>{quedanWord}</span>
+          <span className="relative inline-flex items-baseline justify-center px-[0.35em] py-[0.15em]">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-22%_-14%] bg-[url('/icons/circle-hand.png')] bg-contain bg-center bg-no-repeat mix-blend-screen"
+            />
+            <span className="relative whitespace-nowrap">
+              {unit.value} {unitLabel}
+            </span>
+          </span>
+        </>
       ) : (
-        <span>
-          {compactLabel}
-          <span className="text-[0.72em]">{unit.suffix}</span>
+        <span className="relative inline-flex items-baseline justify-center px-[0.4em] py-[0.2em]">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-[-26%_-18%] bg-[url('/icons/circle-hand.png')] bg-contain bg-center bg-no-repeat mix-blend-screen"
+          />
+          <span className="relative">
+            {compactLabel}
+            <span className="text-[0.72em]">{unit.suffix}</span>
+          </span>
         </span>
       )}
     </p>

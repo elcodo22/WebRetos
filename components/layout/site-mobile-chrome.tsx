@@ -1,14 +1,17 @@
-"use client";
+﻿"use client";
 
 import {
   useEffect,
   useState,
   type ReactNode,
+  type MouseEvent,
 } from "react";
 import type { User } from "@supabase/supabase-js";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
+import { HOME_RESET_EVENT } from "@/components/layout/home-events";
 import {
   SiteHeader,
   type SiteHeaderVariant,
@@ -59,7 +62,13 @@ const toneStyles: Record<
   },
 };
 
-/** Botón [MENÚ] + overlay a pantalla completa (solo móvil). */
+function goHome(event: MouseEvent<HTMLAnchorElement>, pathname: string) {
+  if (pathname !== "/") return;
+  event.preventDefault();
+  window.dispatchEvent(new Event(HOME_RESET_EVENT));
+}
+
+/** Barra superior móvil: [UNJAM] izq · [MENÚ] dcha + overlay. */
 export function SiteMobileMenu({
   user,
   variant = "default",
@@ -96,21 +105,32 @@ export function SiteMobileMenu({
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen, setMenuOpen]);
 
-  const showMenuButton =
+  const showTopBar =
     !hideMenu && !menuOpen && !searchOpen && !diccionarioOpen;
 
   return (
     <>
-      {showMenuButton ? (
-        <button
-          type="button"
-          className={`fixed inset-x-0 bottom-0 flex justify-center px-[var(--grid-margin)] pb-[max(1.25rem,calc(var(--safe-bottom)+0.5rem))] ui-btn-text font-normal tracking-wide md:hidden ${styles.button}`}
+      {showTopBar ? (
+        <div
+          className={`pointer-events-none fixed inset-x-0 top-0 flex items-center justify-between px-[var(--grid-margin)] pt-[max(0.75rem,calc(var(--safe-top)+0.35rem))] md:hidden ${styles.button}`}
           style={{ zIndex }}
-          onClick={() => setMenuOpen(true)}
-          aria-label="Abrir menú"
         >
-          [MENÚ]
-        </button>
+          <Link
+            href="/"
+            className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
+            onClick={(event) => goHome(event, pathname)}
+          >
+            [UNJAM]
+          </Link>
+          <button
+            type="button"
+            className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Abrir menú"
+          >
+            [MENÚ]
+          </button>
+        </div>
       ) : null}
 
       {menuOpen ? (
