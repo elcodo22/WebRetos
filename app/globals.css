@@ -73,6 +73,10 @@ body.crt-body {
   font-family: var(--font-pp-neue-bit), "PP Neue Bit", monospace;
   cursor: url("/larrow.cur"), auto;
   background: #000;
+  /* Mini brillo CRT en todo el texto */
+  text-shadow:
+    0 0 0.08em color-mix(in srgb, currentColor 55%, transparent),
+    0 0 0.35em color-mix(in srgb, currentColor 28%, transparent);
 }
 
 html:has(.crt-shell--black),
@@ -83,6 +87,19 @@ html:has(.crt-shell--black) body.crt-body {
 html[data-chrome="white"],
 html[data-chrome="white"] body.crt-body {
   background: #000;
+}
+
+html[data-chrome="white"] body.crt-body,
+html[data-chrome="white"] body.crt-body * {
+  text-shadow: none;
+}
+
+/* Texto sobre blanco (código, overlays, etc.): sin brillo. */
+[data-codigo-focus],
+[data-codigo-focus] *,
+.bg-white,
+.bg-white * {
+  text-shadow: none;
 }
 
 html[data-chrome="white"] .crt-shell:not(.crt-shell--black) .crt-screen,
@@ -655,6 +672,220 @@ html.cursor-eye-active [data-password-field] * {
     transform: scale(1, 1);
     filter: brightness(1) contrast(1);
     opacity: 1;
+  }
+}
+
+/* ——— Boot: encendido de tele al cargar ——— */
+.boot-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+  pointer-events: none;
+}
+
+.boot-splash-beam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  background: #fff;
+  transform: translate(-50%, -50%) scaleX(0);
+  opacity: 0;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.85);
+}
+
+.boot-splash-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background);
+  opacity: 0;
+  transform: scaleY(0.004);
+  transform-origin: 50% 50%;
+}
+
+.boot-splash-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: opacity 220ms ease;
+}
+
+.boot-splash-logo {
+  width: clamp(56px, 12vw, 88px);
+  height: auto;
+  opacity: 0;
+  transform: scale(0.86);
+  image-rendering: pixelated;
+}
+
+.boot-splash-percent {
+  position: absolute;
+  right: max(1rem, calc(var(--crt-bezel-x) + 0.75rem));
+  bottom: max(1rem, calc(var(--crt-bezel-y) + 0.75rem));
+  margin: 0;
+  font-size: clamp(14px, 2.6vw, 18px);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: #fff;
+  opacity: 0;
+}
+
+.boot-splash--pending {
+  background: #000;
+}
+
+.boot-splash--pending .boot-splash-screen,
+.boot-splash--pending .boot-splash-logo,
+.boot-splash--pending .boot-splash-percent {
+  opacity: 0;
+}
+
+.boot-splash--power .boot-splash-beam {
+  animation: boot-beam 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.boot-splash--power .boot-splash-screen {
+  animation: boot-screen-expand 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.boot-splash--logo {
+  background: var(--background);
+}
+
+.boot-splash--logo .boot-splash-screen {
+  opacity: 1;
+  transform: none;
+}
+
+.boot-splash--logo .boot-splash-logo {
+  animation: boot-logo-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.boot-splash--logo .boot-splash-percent,
+.boot-splash--power .boot-splash-percent {
+  animation: boot-percent-in 360ms cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards;
+}
+
+.boot-splash--power .boot-splash-logo {
+  animation: boot-logo-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 180ms forwards;
+}
+
+.boot-splash--reveal {
+  background: transparent;
+  animation: boot-splash-out 480ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.boot-splash--reveal .boot-splash-screen {
+  opacity: 1;
+  transform: none;
+}
+
+.boot-splash--reveal .boot-splash-logo,
+.boot-splash--reveal .boot-splash-percent {
+  opacity: 1;
+  animation: boot-logo-out 480ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.boot-content-reveal {
+  animation: boot-content-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes boot-beam {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(0.22);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(1);
+  }
+}
+
+@keyframes boot-screen-expand {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.004);
+  }
+  35% {
+    opacity: 1;
+    transform: scaleY(0.004);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes boot-logo-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes boot-percent-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes boot-logo-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes boot-splash-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes boot-content-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-splash {
+    display: none;
   }
 }
 

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { CrtShell } from "@/components/layout/crt-shell";
 import { CrtPowerProvider } from "@/components/layout/crt-power-transition";
+import { BootSplash } from "@/components/layout/boot-splash";
 import { SearchOverlayProvider } from "@/components/archivos/search-overlay-provider";
 import { DiccionarioProvider } from "@/components/diccionario/diccionario-provider";
 import "./globals.css";
@@ -50,9 +51,11 @@ export default function RootLayout({
       <body className={`${ppNeueBit.className} crt-body antialiased`}>
         <CrtShell>
           <CrtPowerProvider>
-            <SearchOverlayProvider>
-              <DiccionarioProvider>{children}</DiccionarioProvider>
-            </SearchOverlayProvider>
+            <BootSplash>
+              <SearchOverlayProvider>
+                <DiccionarioProvider>{children}</DiccionarioProvider>
+              </SearchOverlayProvider>
+            </BootSplash>
           </CrtPowerProvider>
         </CrtShell>
       </body>

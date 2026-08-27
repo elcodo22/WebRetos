@@ -30,7 +30,7 @@ const NEAR_REST_EPS = 0.55;
 const SNAP_EPS = 0.0025;
 
 const IG_URL = "https://www.instagram.com/unjaaam/";
-const CONTACT_EMAIL = "unjam@info.es";
+const CONTACT_EMAIL = "info@unjam.es";
 const CONTACT_HANDLE = "@unjaaam";
 
 function emitContactProgress(progress: number) {
@@ -297,7 +297,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
       >
         <div className="pointer-events-none absolute inset-0 z-10 flex items-end pb-[max(1rem,calc(var(--safe-bottom)+0.85rem))] md:items-center md:pb-0">
           <div className="site-grid w-full items-center">
-            <div className="col-span-2 col-start-1 truncate text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-2">
+            <div className="col-span-2 col-start-1 truncate text-[clamp(13px,2.8vw,18px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-2">
               {current?.titulo}
             </div>
             <div className="col-span-2 col-start-3 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-8">
@@ -363,7 +363,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
         </div>
       </div>
 
-      {/* Contacto: aparece mientras lo demás sale */}
+      {/* Contacto / info: flyer Unjam */}
       <div
         className="absolute inset-0 z-20 flex items-center justify-center px-[var(--grid-margin)]"
         style={{
@@ -374,21 +374,27 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
         }}
         aria-hidden={contactOpacity < 0.15}
       >
-        <div className="flex flex-col items-center gap-6 text-center text-[var(--background)]">
+        <div className="relative w-full max-w-[min(92vw,26rem)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/branding/desatasca-unjam.jpg"
+            alt="Desatasca con Unjam — cabeza, creatividad, todo tipo de servicios"
+            className="block h-auto w-full select-none"
+            draggable={false}
+          />
+          {/* Zonas clicables sobre email / IG del flyer */}
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="text-[clamp(16px,3.4vw,22px)] font-normal tracking-wide transition-opacity hover:opacity-70"
-          >
-            {CONTACT_EMAIL}
-          </a>
+            className="absolute bottom-[14%] left-[8%] h-[9%] w-[48%] cursor-pointer"
+            aria-label={`Escribir a ${CONTACT_EMAIL}`}
+          />
           <a
             href={IG_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[clamp(16px,3.4vw,22px)] font-normal leading-none tracking-wide transition-opacity hover:opacity-70"
-          >
-            {CONTACT_HANDLE}
-          </a>
+            className="absolute bottom-[7%] left-[8%] h-[7%] w-[36%] cursor-pointer"
+            aria-label={`Instagram ${CONTACT_HANDLE}`}
+          />
         </div>
       </div>
     </div>

@@ -48,6 +48,7 @@ function TitleBar({
   visible,
   dark,
   descripcionOpacity,
+  descripcionOffsetVh,
 }: {
   numero: string;
   titulo: string;
@@ -55,6 +56,8 @@ function TitleBar({
   visible: boolean;
   dark: boolean;
   descripcionOpacity: number;
+  /** vh desde el centro: 0 = centro, negativo = sube y sale por arriba. */
+  descripcionOffsetVh: number;
 }) {
   return (
     <div
@@ -63,20 +66,23 @@ function TitleBar({
       } ${dark ? "text-[var(--background)]" : "text-white"}`}
       aria-hidden={!visible}
     >
-      {/* Descripción anclada al centro real de la pantalla. */}
+      {/* Descripción: sube hasta el borde superior y sale de la pantalla. */}
       <p
-        className="absolute left-1/2 top-1/2 w-[min(72%,28rem)] -translate-x-1/2 -translate-y-1/2 text-center text-[clamp(12px,2.1vw,15px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal]"
-        style={{ opacity: descripcionOpacity }}
+        className="absolute left-1/2 top-1/2 w-[min(72%,28rem)] text-center text-[clamp(13px,2.3vw,17px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] will-change-transform"
+        style={{
+          opacity: descripcionOpacity,
+          transform: `translate3d(-50%, calc(-50% + ${descripcionOffsetVh}vh), 0)`,
+        }}
       >
         {descripcion}
       </p>
 
       <div className="site-grid relative w-full items-center">
-        <div className="col-span-4 col-start-1 flex min-w-0 items-center justify-between gap-4 text-[clamp(13px,2.6vw,18px)] font-normal uppercase leading-none tracking-wide md:col-span-8 md:col-start-2">
-          <span className="relative z-10 min-w-0 max-w-[34%] truncate pointer-events-auto">
+        <div className="col-span-4 col-start-1 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide md:col-span-8 md:col-start-2">
+          <span className="relative z-10 min-w-0 max-w-[34%] truncate text-[clamp(13px,2.8vw,18px)] pointer-events-auto">
             <ClickableText text={titulo} enabled={visible} />
           </span>
-          <span className="relative z-10 shrink-0 whitespace-nowrap">
+          <span className="relative z-10 shrink-0 whitespace-nowrap text-[clamp(16px,3.8vw,25px)]">
             #{formatRetoNumero(numero)}
           </span>
         </div>
@@ -216,15 +222,21 @@ export function RetoHero({
   }, [step, setHeroStep]);
 
   const tiempoP = Math.min(1, Math.max(0, tiempoProgress));
-  // Descripción solo en step 0 (y al bajar QUEDAN en step 2). Nunca en azul vacío.
+  // Descripción visible mientras sube/baja con el tiempo; título/#num quedan fijos.
   const showIntro = step <= 1 || (step === 2 && tiempoP < 0.999);
+  // Sale por arriba de la pantalla (vh reales, no % del texto).
   const descripcionOpacity =
-    step === 0
-      ? Math.min(1, Math.max(0, 1 - tiempoP * 1.85))
-      : step === 2
-        ? Math.min(1, Math.max(0, (1 - tiempoP) * 1.25))
+    step === 0 || step === 2
+      ? Math.min(1, Math.max(0, 1 - Math.max(0, tiempoP - 0.88) / 0.12))
+      : 0;
+  // Centro → fuera por arriba (~70vh: pasa el borde superior completo).
+  const descripcionOffsetVh =
+    step === 0 || (step === 2 && tiempoP < 0.999)
+      ? -tiempoP * 70
+      : step >= 1
+        ? -70
         : 0;
-  const introOpacity = descripcionOpacity;
+  const introOpacity = showIntro ? 1 : 0;
   const showTiempo = tiempoP > 0.002 && step < 3;
   const showCodigo = step === 3;
   const codigoMode = showCodigo && codigoFocused && panel === 0;
@@ -244,13 +256,11 @@ export function RetoHero({
   } as const;
 
   const sectionH = portH > 0 ? portH : undefined;
-  // Sube desde abajo → centro; no gana opacidad hasta que la descripción ya se ha ido.
+  // Tiempo sube desde abajo → centro a la vez que la descripción sale por arriba.
   const tiempoOffsetY =
-    step >= 3 ? 0 : step === 2 && tiempoP >= 0.999 ? 0 : (1 - tiempoP) * 52;
+    step >= 3 ? 0 : step === 2 && tiempoP >= 0.999 ? 0 : (1 - tiempoP) * 58;
   const tiempoOpacity =
-    step >= 3
-      ? 0
-      : Math.min(1, Math.max(0, (tiempoP - 0.12) / 0.88));
+    step >= 3 ? 0 : Math.min(1, Math.max(0, tiempoP * 1.15));
 
   return (
     <div
@@ -268,6 +278,7 @@ export function RetoHero({
           visible={showTitleBar}
           dark={codigoMode}
           descripcionOpacity={descripcionOpacity}
+          descripcionOffsetVh={descripcionOffsetVh}
         />
 
         {/* Scroll: azul vacío (se asoma al bajar QUEDAN) */}
