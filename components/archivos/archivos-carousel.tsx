@@ -30,7 +30,7 @@ const NEAR_REST_EPS = 0.55;
 const SNAP_EPS = 0.0025;
 
 const IG_URL = "https://www.instagram.com/unjaaam/";
-const CONTACT_EMAIL = "info@unjam.es";
+const CONTACT_EMAIL = "unjam@info.es";
 const CONTACT_HANDLE = "@unjaaam";
 
 function emitContactProgress(progress: number) {
@@ -363,7 +363,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
         </div>
       </div>
 
-      {/* Contacto / info: flyer Unjam */}
+      {/* Contacto: aparece mientras lo demás sale */}
       <div
         className="absolute inset-0 z-20 flex items-center justify-center px-[var(--grid-margin)]"
         style={{
@@ -374,27 +374,21 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
         }}
         aria-hidden={contactOpacity < 0.15}
       >
-        <div className="relative w-full max-w-[min(92vw,26rem)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/branding/desatasca-unjam.jpg"
-            alt="Desatasca con Unjam — cabeza, creatividad, todo tipo de servicios"
-            className="block h-auto w-full select-none"
-            draggable={false}
-          />
-          {/* Zonas clicables sobre email / IG del flyer */}
+        <div className="flex flex-col items-center gap-6 text-center text-[var(--background)]">
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="absolute bottom-[14%] left-[8%] h-[9%] w-[48%] cursor-pointer"
-            aria-label={`Escribir a ${CONTACT_EMAIL}`}
-          />
+            className="text-[clamp(16px,3.4vw,22px)] font-normal tracking-wide transition-opacity hover:opacity-70"
+          >
+            {CONTACT_EMAIL}
+          </a>
           <a
             href={IG_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute bottom-[7%] left-[8%] h-[7%] w-[36%] cursor-pointer"
-            aria-label={`Instagram ${CONTACT_HANDLE}`}
-          />
+            className="text-[clamp(16px,3.4vw,22px)] font-normal leading-none tracking-wide transition-opacity hover:opacity-70"
+          >
+            {CONTACT_HANDLE}
+          </a>
         </div>
       </div>
     </div>

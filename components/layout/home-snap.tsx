@@ -21,6 +21,7 @@ import {
   type HeroStep,
 } from "@/components/reto/reto-hero";
 import { setChromeTheme } from "@/components/layout/crt-shell";
+import { HomeIntroVideo } from "@/components/layout/home-intro-video";
 import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
 import { HOME_RESET_EVENT } from "@/components/layout/home-events";
 import type { User } from "@supabase/supabase-js";
@@ -59,6 +60,11 @@ const CODIGO_PLANTED_MS = 520;
 /** Si no hay rueda, se olvida la acumulación de paso. */
 const STEP_ACC_IDLE_MS = 220;
 const INPUT_GRACE_MS = 450;
+/** Scroll (px) para subir el vídeo intro de forma progresiva. */
+const VIDEO_SCROLL_PX = 420;
+const VIDEO_WHEEL_CAP_PX = 56;
+/** Tras cerrar el vídeo, ignorar el resto del mismo flick (no mover descripción). */
+const VIDEO_PIN_GAP_MS = 200;
 const STORAGE_KEY = "animate-to-archivos";
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
 const HERO_REQUEST_EVENT = "carousel-request-hero";
@@ -90,6 +96,7 @@ export function HomeSnap({
   const [tiempoProgress, setTiempoProgressState] = useState(0);
   const [archivosReveal, setArchivosRevealState] = useState(0);
   const [archivosContact, setArchivosContact] = useState(0);
+  const [videoReveal, setVideoRevealState] = useState(0);
   const [codigoFocused, setCodigoFocused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const panelRef = useRef(0);
@@ -98,6 +105,7 @@ export function HomeSnap({
   const runningEntranceRef = useRef(false);
   const heroStepRef = useRef<HeroStep>(0);
   const introProgressRef = useRef(0);
+  const videoRevealRef = useRef(0);
   const tiempoProgressRef = useRef(0);
   const archivosRevealRef = useRef(0);
   const codigoFocusedRef = useRef(false);
@@ -125,6 +133,8 @@ export function HomeSnap({
    * Tras cerrar archivos, el código debe asentarse: el mismo flick no sube a tiempo.
    */
   const pinCodigoAfterArchivosRef = useRef(false);
+  /** Tras cerrar el vídeo, el mismo flick no mueve la descripción. */
+  const pinHomeAfterVideoRef = useRef(false);
   const lastHomeWheelAtRef = useRef(0);
 
   const clearTransitionTimers = useCallback(() => {
@@ -531,6 +541,44 @@ export function HomeSnap({
     [setIntroProgress],
   );
 
+  const setVideoReveal = useCallback((next: number) => {
+    const p = Math.min(1, Math.max(0, next));
+    const prev = videoRevealRef.current;
+    videoRevealRef.current = p;
+    setVideoRevealState(p);
+
+    // Al terminar de subir el vídeo: home en título, sin descripción movida.
+    if (prev < 0.999 && p >= 0.999) {
+      heroStepRef.current = 0;
+      setHeroStepState(0);
+      introProgressRef.current = 0;
+      setIntroProgressState(0);
+      tiempoProgressRef.current = 0;
+      setTiempoProgressState(0);
+      const el = rootRef.current?.querySelector(
+        HERO_INTRO_SCROLL_SELECTOR,
+      ) as HTMLElement | null;
+      if (el) el.scrollTop = 0;
+      pinHomeAfterVideoRef.current = true;
+    }
+    if (p < 0.999) {
+      pinHomeAfterVideoRef.current = false;
+    }
+  }, []);
+
+  /** Sube/baja el vídeo según el scroll (0 = cubre, 1 = fuera). */
+  const scrollVideoBy = useCallback(
+    (deltaPx: number) => {
+      const nextP = Math.min(
+        1,
+        Math.max(0, videoRevealRef.current + deltaPx / VIDEO_SCROLL_PX),
+      );
+      setVideoReveal(nextP);
+      return nextP;
+    },
+    [setVideoReveal],
+  );
+
   const wheelDeltaPx = (event: WheelEvent) => {
     if (event.deltaMode === 1) return event.deltaY * 16;
     if (event.deltaMode === 2) {
@@ -543,6 +591,8 @@ export function HomeSnap({
     panelRef.current = next;
     setPanel(next);
     if (next === 1) {
+      videoRevealRef.current = 1;
+      setVideoRevealState(1);
       archivosRevealRef.current = 1;
       archivosRevealTargetRef.current = 1;
       archivosRevealDisplayRef.current = 1;
@@ -884,6 +934,9 @@ export function HomeSnap({
     setIntroProgressState(0);
     tiempoProgressRef.current = 0;
     setTiempoProgressState(0);
+    videoRevealRef.current = 0;
+    setVideoRevealState(0);
+    pinHomeAfterVideoRef.current = false;
 
     const el = rootRef.current?.querySelector(
       HERO_INTRO_SCROLL_SELECTOR,
@@ -1016,6 +1069,7 @@ export function HomeSnap({
       // Solo soltar anclas al empezar un gesto nuevo (no en huecos del mismo flick).
       let pinJustReleased = false;
       let advanceJustUnlocked = false;
+      let videoPinJustReleased = false;
       if (wheelGap >= TIEMPO_PIN_GAP_MS) {
         if (pinTiempoCenteredRef.current) {
           pinTiempoCenteredRef.current = false;
@@ -1026,10 +1080,45 @@ export function HomeSnap({
           advanceJustUnlocked = true;
         }
       }
+      if (wheelGap >= VIDEO_PIN_GAP_MS) {
+        if (pinHomeAfterVideoRef.current) {
+          pinHomeAfterVideoRef.current = false;
+          videoPinJustReleased = true;
+        }
+      }
       lastHomeWheelAtRef.current = now;
 
       // Intro: scroll progresivo hasta azul vacío.
       if (panelRef.current === 0) {
+        const atHomeStart =
+          heroStepRef.current === 0 &&
+          introProgressRef.current <= 0.002 &&
+          tiempoProgressRef.current <= 0.002 &&
+          archivosRevealTargetRef.current <= 0.001;
+
+        // Vídeo: sube/baja con el scroll (sin saltar de golpe).
+        if (videoRevealRef.current < 0.999 || (atHomeStart && delta < 0)) {
+          const capped =
+            Math.sign(raw) * Math.min(Math.abs(raw), VIDEO_WHEEL_CAP_PX);
+          scrollVideoBy(capped);
+          return;
+        }
+
+        // Mismo flick que cerró el vídeo: no mover la descripción.
+        if (
+          atHomeStart &&
+          delta > 0 &&
+          (pinHomeAfterVideoRef.current || videoPinJustReleased)
+        ) {
+          introProgressRef.current = 0;
+          setIntroProgressState(0);
+          const el = rootRef.current?.querySelector(
+            HERO_INTRO_SCROLL_SELECTOR,
+          ) as HTMLElement | null;
+          if (el) el.scrollTop = 0;
+          return;
+        }
+
         const step = heroStepRef.current;
         const introGap = lastIntroEventAt === 0 ? Infinity : now - lastIntroEventAt;
 
@@ -1245,6 +1334,7 @@ export function HomeSnap({
   }, [
     dispatchArchivoWheel,
     scrollIntroBy,
+    scrollVideoBy,
     scrollArchivosRevealBy,
     scrollTiempoBy,
     setHeroStep,
@@ -1264,8 +1354,11 @@ export function HomeSnap({
     let lastY = 0;
     let touchScrollBase = 0;
     let touchArchivosBase = 0;
+    let touchVideoBase = 0;
     let scrubbingIntro = false;
     let scrubbingArchivos = false;
+    let scrubbingVideo = false;
+    let videoClosedThisTouch = false;
 
     const fromField = (target: EventTarget | null) =>
       target instanceof Element &&
@@ -1291,9 +1384,24 @@ export function HomeSnap({
       const el = introEl();
       touchScrollBase = el?.scrollTop ?? 0;
       touchArchivosBase = archivosRevealTargetRef.current;
+      touchVideoBase = videoRevealRef.current;
+      videoClosedThisTouch = false;
       const step = heroStepRef.current;
+      const atHomeStart =
+        step === 0 &&
+        introProgressRef.current <= 0.002 &&
+        tiempoProgressRef.current <= 0.002 &&
+        archivosRevealTargetRef.current <= 0.001;
+      scrubbingVideo =
+        panelRef.current === 0 &&
+        (videoRevealRef.current < 0.999 || atHomeStart);
       scrubbingIntro =
-        panelRef.current === 0 && (step === 0 || step === 1);
+        panelRef.current === 0 &&
+        !scrubbingVideo &&
+        (step === 0 || step === 1);
+      if (scrubbingVideo && videoRevealRef.current >= 0.999) {
+        scrubbingIntro = step === 0 || step === 1;
+      }
       const revealOpen = archivosRevealTargetRef.current > 0.001;
       const codigoPlanted =
         step === 3 &&
@@ -1302,6 +1410,7 @@ export function HomeSnap({
       scrubbingArchivos =
         panelRef.current === 0 &&
         !codigoFocusedRef.current &&
+        !scrubbingVideo &&
         (revealOpen || codigoPlanted);
     };
 
@@ -1317,6 +1426,33 @@ export function HomeSnap({
       }
 
       if (lockedRef.current || panelRef.current !== 0) return;
+
+      if (scrubbingVideo) {
+        // Vídeo ya fuera + scroll abajo: solo intro si este gesto no cerró el vídeo.
+        if (touchVideoBase >= 0.999 && dy > 0 && !videoClosedThisTouch) {
+          scrubbingVideo = false;
+          scrubbingIntro = true;
+        } else {
+          const nextP = Math.min(
+            1,
+            Math.max(0, touchVideoBase + dy / VIDEO_SCROLL_PX),
+          );
+          if (touchVideoBase < 0.999 && nextP >= 0.999) {
+            videoClosedThisTouch = true;
+          }
+          setVideoReveal(nextP);
+          return;
+        }
+      }
+
+      // Si este gesto cerró el vídeo, no arrastrar la descripción.
+      if (videoClosedThisTouch) {
+        introProgressRef.current = 0;
+        setIntroProgressState(0);
+        const el = introEl();
+        if (el) el.scrollTop = 0;
+        return;
+      }
 
       if (scrubbingArchivos) {
         // No abrir blanca hasta que el código esté asentado.
@@ -1388,6 +1524,15 @@ export function HomeSnap({
       if (scrubbingArchivos) {
         scrubbingArchivos = false;
         scrubbingIntro = false;
+        scrubbingVideo = false;
+        videoClosedThisTouch = false;
+        return;
+      }
+
+      if (scrubbingVideo || videoClosedThisTouch) {
+        scrubbingVideo = false;
+        scrubbingIntro = false;
+        videoClosedThisTouch = false;
         return;
       }
 
@@ -1431,12 +1576,14 @@ export function HomeSnap({
     retreatHeroOnHome,
     dispatchArchivoWheel,
     setIntroProgress,
+    setVideoReveal,
     setArchivosReveal,
     reenterIntroFromStep1,
   ]);
 
   const participarActive =
     panel === 0 &&
+    videoReveal >= 0.999 &&
     archivosReveal < 0.15 &&
     !searchOpen &&
     !diccionarioOpen &&
@@ -1539,7 +1686,20 @@ export function HomeSnap({
           }`}
           aria-hidden={archivosInteractive}
         >
-          <div className="h-full w-full">{heroWithStep}</div>
+          <div className="relative h-full w-full">
+            <div
+              className="h-full w-full"
+              style={{
+                opacity: videoReveal >= 0.999 ? 1 : 0,
+                transition: "opacity 220ms ease-out",
+                pointerEvents: videoReveal >= 0.999 ? "auto" : "none",
+              }}
+              aria-hidden={videoReveal < 0.999}
+            >
+              {heroWithStep}
+            </div>
+            <HomeIntroVideo progress={videoReveal} />
+          </div>
         </section>
 
         <section

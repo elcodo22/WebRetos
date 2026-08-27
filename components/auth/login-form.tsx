@@ -237,7 +237,7 @@ export function LoginForm() {
           </div>
         )}
 
-        <div className="flex items-end justify-between px-[18px] pb-[max(1rem,var(--safe-bottom))] font-normal md:pb-10">
+        <div className="flex items-end justify-between px-[clamp(28px,6vw,56px)] pb-[max(1.25rem,calc(var(--safe-bottom)+0.35rem))] font-normal md:pb-10">
           {mode === "forgot" ? (
             <button
               type="button"

@@ -52,7 +52,9 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isVisible = phase !== "closed";
-  const isOpen = phase === "open";
+  /** true mientras el panel de búsqueda está montado (abierto o cerrando). */
+  const isOpen = isVisible;
+  const panelActive = phase === "open";
 
   const ensureData = useCallback(() => {
     if (fetchedRef.current) return;
@@ -95,13 +97,13 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
   }, [phase]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!panelActive) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, close]);
+  }, [panelActive, close]);
 
   return (
     <SearchOverlayContext.Provider value={{ isOpen, open, close }}>
@@ -122,7 +124,7 @@ export function SearchOverlayProvider({ children }: { children: ReactNode }) {
             aria-modal="true"
             aria-label="Búsqueda"
             className={
-              isOpen
+              panelActive
                 ? "search-panel search-panel--in"
                 : "search-panel search-panel--out"
             }

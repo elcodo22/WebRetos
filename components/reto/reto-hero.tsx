@@ -387,7 +387,7 @@ export function RetoHero({
       </div>
 
       <div
-        className={`absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 px-[var(--grid-margin)] pb-[max(1.5rem,calc(var(--safe-bottom)+0.75rem))] md:pb-10 ${
+        className={`absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 px-[clamp(28px,6vw,56px)] pb-[max(1.5rem,calc(var(--safe-bottom)+0.75rem))] md:pb-10 ${
           codigoMode
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0"

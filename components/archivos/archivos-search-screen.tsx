@@ -84,45 +84,46 @@ export function ArchivosSearchScreen({ retos, usuarios, onClose }: Props) {
 
   return (
     <div className="search-panel-content relative flex h-full min-h-0 flex-col">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-4 px-[18px] pt-3 md:pt-6">
-        <label className="pointer-events-auto min-w-0 flex-1">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-[clamp(28px,6vw,56px)] pt-3 md:pt-6">
+        <div aria-hidden className="min-w-0" />
+        <label className="pointer-events-auto min-w-0 justify-self-center">
           <span className="sr-only">Buscar</span>
           <input
             ref={inputRef}
             type="search"
             value={busqueda}
             onChange={(event) => setBusqueda(event.target.value)}
-            placeholder="Buscar"
+            placeholder="BUSCAR"
             autoComplete="off"
             spellCheck={false}
-            className="w-full appearance-none border-0 bg-transparent text-[clamp(16px,3.2vw,20px)] font-normal leading-none tracking-wide text-white outline-none placeholder:text-white/[0.72] [&::-webkit-search-cancel-button]:hidden"
+            className="w-full min-w-[8ch] appearance-none border-0 bg-transparent text-center text-[clamp(18px,3.6vw,22px)] font-normal uppercase leading-none tracking-wide text-white outline-none placeholder:text-white/[0.72] [&::-webkit-search-cancel-button]:hidden"
           />
         </label>
         <button
           type="button"
           onClick={onClose}
           aria-label="Cerrar búsqueda"
-          className="pointer-events-auto shrink-0 ui-btn-text font-normal leading-none tracking-wide text-white transition-opacity hover:opacity-80"
+          className="pointer-events-auto justify-self-end shrink-0 ui-btn-text font-normal leading-none tracking-wide text-white transition-opacity hover:opacity-80"
         >
           [CERRAR]
         </button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-[18px] pb-16 pt-16 md:pt-20">
+      <div className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-[clamp(28px,6vw,56px)] pb-16 pt-16 md:pt-20">
         {busqueda.trim() ? (
-          <ul className="flex flex-col gap-5 md:gap-6">
+          <ul className="flex flex-col items-center gap-4 text-center md:gap-5">
             {resultados.length === 0 ? (
-              <li className="text-[clamp(16px,3.2vw,20px)] tracking-wide text-white/[0.72]">
+              <li className="text-[clamp(15px,2.9vw,18px)] tracking-wide text-white/[0.72]">
                 Sin resultados
               </li>
             ) : (
               resultados.map((item) =>
                 item.kind === "reto" ? (
-                  <li key={`reto-${item.id}`}>
+                  <li key={`reto-${item.id}`} className="max-w-full">
                     <button
                       type="button"
                       onClick={() => openReto(item.id)}
-                      className="flex max-w-full items-baseline gap-x-4 text-left text-[clamp(16px,3.2vw,22px)] font-normal tracking-wide text-white transition-opacity hover:opacity-80"
+                      className="flex max-w-full items-baseline justify-center gap-x-3 text-center text-[clamp(15px,2.9vw,18px)] font-normal tracking-wide text-white transition-opacity hover:opacity-80"
                     >
                       <span className="shrink-0 tabular-nums">
                         #{item.numero}
@@ -133,11 +134,11 @@ export function ArchivosSearchScreen({ retos, usuarios, onClose }: Props) {
                     </button>
                   </li>
                 ) : (
-                  <li key={`user-${item.username}`}>
+                  <li key={`user-${item.username}`} className="max-w-full">
                     <button
                       type="button"
                       onClick={() => openUsuario(item.username)}
-                      className="text-left text-[clamp(16px,3.2vw,22px)] font-normal tracking-wide text-white transition-opacity hover:opacity-80"
+                      className="text-center text-[clamp(15px,2.9vw,18px)] font-normal tracking-wide text-white transition-opacity hover:opacity-80"
                     >
                       {formatUsername(item.username)}
                     </button>

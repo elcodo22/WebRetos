@@ -581,7 +581,7 @@ html.cursor-eye-active [data-password-field] * {
 .search-panel {
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: 80;
   display: flex;
   flex-direction: column;
   min-height: 0;

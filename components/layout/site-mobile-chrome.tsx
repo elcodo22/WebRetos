@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   useEffect,
@@ -195,11 +195,14 @@ export function SiteMobileChrome({
   children,
 }: SiteMobileChromeProps) {
   const pathname = usePathname();
+  const { isOpen: searchOpen } = useSearchOverlay();
+  const { isOpen: diccionarioOpen } = useDiccionario();
   const menuTone = menuToneProp ?? menuToneForPath(pathname);
   const [menuOpenInternal, setMenuOpenInternal] = useState(false);
   const menuOpen = menuOpenProp ?? menuOpenInternal;
 
-  const desktopHeader = showDesktopHeader ? (
+  const desktopHeader =
+    showDesktopHeader && !searchOpen && !diccionarioOpen ? (
     <SiteHeader
       user={user}
       variant={variant}

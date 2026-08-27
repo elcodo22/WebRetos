@@ -591,7 +591,7 @@ export function RegistroForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-4 px-[18px] pb-[max(1rem,var(--safe-bottom))] md:pb-10">
+      <div className="flex flex-col gap-4 px-[clamp(28px,6vw,56px)] pb-[max(1.25rem,calc(var(--safe-bottom)+0.35rem))] md:pb-10">
         <p
           className="min-h-[24px] text-center text-[15px] tracking-wide text-white"
           role={bottomMessage ? "alert" : undefined}
