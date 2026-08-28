@@ -226,22 +226,15 @@ export function RetoHero({
 
   const tiempoP = Math.min(1, Math.max(0, tiempoProgress));
   const introP = Math.min(1, Math.max(0, introProgressProp));
-  // En step 0 la descripción sigue el scroll del intro de inmediato.
-  const descMotion = step === 0 ? introP : tiempoP;
-  // Descripción visible mientras sube/baja con el tiempo; título/#num quedan fijos.
+  // step 0/1 sigue el intro; step 2 sigue el tiempo (misma progresión).
+  const descMotion = step === 0 || step === 1 ? introP : tiempoP;
   const showIntro = step <= 1 || (step === 2 && tiempoP < 0.999);
-  // Sale por arriba de la pantalla (vh reales, no % del texto).
   const descripcionOpacity =
-    step === 0 || step === 2
+    step <= 2
       ? Math.min(1, Math.max(0, 1 - Math.max(0, descMotion - 0.88) / 0.12))
       : 0;
-  // Centro → fuera por arriba (~70vh: pasa el borde superior completo).
-  const descripcionOffsetVh =
-    step === 0 || (step === 2 && tiempoP < 0.999)
-      ? -descMotion * 70
-      : step >= 1
-        ? -70
-        : 0;
+  // Centro → fuera por arriba (~70vh).
+  const descripcionOffsetVh = step <= 2 ? -descMotion * 70 : -70;
   const introOpacity = showIntro ? 1 : 0;
   const showTiempo = tiempoP > 0.002 && step < 3;
   const showCodigo = step === 3;

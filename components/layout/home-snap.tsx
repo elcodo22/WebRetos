@@ -1358,6 +1358,8 @@ export function HomeSnap({
     let startY = 0;
     let prevY = 0;
     let totalDy = 0;
+    let pendingDy = 0;
+    let rafId = 0;
     let reenteredIntro = false;
     let openedCodigoThisTouch = false;
     let closedVideoThisTouch = false;
@@ -1381,55 +1383,20 @@ export function HomeSnap({
       return "none";
     };
 
-    const onStart = (event: TouchEvent) => {
-      if (!inputReadyRef.current) return;
-      if (mobileMenuOpenRef.current) return;
-      if (searchOpenRef.current || diccionarioOpenRef.current) return;
-      if (fromField(event.target)) {
-        tracking = false;
-        return;
-      }
-      const touch = event.touches[0];
-      if (!touch) return;
+    // Boost por gesto táctil: un dedo recorre más progreso que su distancia bruta.
+    const TOUCH_MULT = 1.55;
 
-      tracking = true;
-      mode = pickTouchMode();
-      startX = touch.clientX;
-      startY = touch.clientY;
-      prevY = startY;
-      totalDy = 0;
-      reenteredIntro = false;
-      openedCodigoThisTouch = false;
-      closedVideoThisTouch = false;
-    };
-
-    const onMove = (event: TouchEvent) => {
-      if (!tracking) return;
-      const touch = event.touches[0];
-      if (!touch) return;
-
-      const y = touch.clientY;
-      // Delta por frame (movimiento desde el último touchmove); positivo = arriba.
-      const frameDy = prevY - y;
-      prevY = y;
-      totalDy = startY - y;
-      const dx = touch.clientX - startX;
-
-      if (Math.abs(totalDy) > Math.abs(dx) && Math.abs(totalDy) > 4) {
-        event.preventDefault();
-      }
-
+    const applyDelta = (rawDy: number) => {
       if (lockedRef.current) return;
       if (panelRef.current !== 0) return;
-      if (frameDy === 0) return;
+      if (!rawDy) return;
+
+      const frameDy = rawDy * TOUCH_MULT;
 
       if (mode === "video") {
         const next = Math.min(
           1,
-          Math.max(
-            0,
-            videoRevealRef.current + frameDy / VIDEO_SCROLL_PX_TOUCH,
-          ),
+          Math.max(0, videoRevealRef.current + rawDy / VIDEO_SCROLL_PX_TOUCH),
         );
         setVideoReveal(next);
         if (next >= 0.999) {
@@ -1440,19 +1407,15 @@ export function HomeSnap({
       }
 
       if (mode === "intro") {
-        // Justo tras cerrar el vídeo en este mismo gesto: no arrastrar la
-        // descripción hacia adelante (evita overshoot al soltar el flick).
         if (closedVideoThisTouch && frameDy > 0) return;
 
         const step = heroStepRef.current;
 
-        // Paso 1 (azul vacío) + hacia abajo: retorna al intro.
         if (step === 1 && frameDy < 0 && !reenteredIntro) {
           reenteredIntro = true;
           reenterIntroFromStep1();
         }
 
-        // Paso 1 + hacia arriba: pasar a tiempo directamente.
         if (step === 1 && frameDy >= 0) {
           mode = "tiempo";
         } else {
@@ -1464,7 +1427,6 @@ export function HomeSnap({
 
       if (mode === "tiempo") {
         const step = heroStepRef.current;
-        // Volver a intro cuando estamos abajo del todo y arrastramos hacia abajo.
         if (step <= 1 && frameDy < 0 && tiempoProgressRef.current <= 0.002) {
           mode = "intro";
           scrollIntroBy(frameDy);
@@ -1504,13 +1466,73 @@ export function HomeSnap({
 
       if (mode === "archivos") {
         scrollArchivosRevealBy(frameDy);
+      }
+    };
+
+    const flush = () => {
+      rafId = 0;
+      const dy = pendingDy;
+      pendingDy = 0;
+      applyDelta(dy);
+    };
+
+    const scheduleFlush = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(flush);
+    };
+
+    const onStart = (event: TouchEvent) => {
+      if (!inputReadyRef.current) return;
+      if (mobileMenuOpenRef.current) return;
+      if (searchOpenRef.current || diccionarioOpenRef.current) return;
+      if (fromField(event.target)) {
+        tracking = false;
         return;
       }
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      tracking = true;
+      mode = pickTouchMode();
+      startX = touch.clientX;
+      startY = touch.clientY;
+      prevY = startY;
+      totalDy = 0;
+      pendingDy = 0;
+      reenteredIntro = false;
+      openedCodigoThisTouch = false;
+      closedVideoThisTouch = false;
+    };
+
+    const onMove = (event: TouchEvent) => {
+      if (!tracking) return;
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      const y = touch.clientY;
+      const frameDy = prevY - y;
+      prevY = y;
+      totalDy = startY - y;
+      const dx = touch.clientX - startX;
+
+      if (Math.abs(totalDy) > Math.abs(dx) && Math.abs(totalDy) > 4) {
+        event.preventDefault();
+      }
+
+      if (!frameDy) return;
+      pendingDy += frameDy;
+      scheduleFlush();
     };
 
     const onEnd = () => {
       if (!tracking) return;
       tracking = false;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+        if (pendingDy) applyDelta(pendingDy);
+        pendingDy = 0;
+      }
       if (lockedRef.current) return;
 
       const delta = totalDy;
@@ -1526,6 +1548,7 @@ export function HomeSnap({
     root.addEventListener("touchend", onEnd, { passive: true });
     root.addEventListener("touchcancel", onEnd, { passive: true });
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       root.removeEventListener("touchstart", onStart);
       root.removeEventListener("touchmove", onMove);
       root.removeEventListener("touchend", onEnd);
