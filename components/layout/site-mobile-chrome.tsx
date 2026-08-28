@@ -112,24 +112,31 @@ export function SiteMobileMenu({
     <>
       {showTopBar ? (
         <div
-          className={`pointer-events-none fixed inset-x-0 top-0 flex items-center justify-between px-[var(--grid-margin)] pt-[max(1.35rem,calc(var(--safe-top)+0.85rem))] md:hidden ${styles.button}`}
+          className={`pointer-events-none fixed inset-x-0 top-0 px-[var(--grid-margin)] pt-[max(1.35rem,calc(var(--safe-top)+0.85rem))] md:hidden ${styles.button}`}
           style={{ zIndex }}
         >
-          <Link
-            href="/"
-            className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
-            onClick={(event) => goHome(event, pathname)}
-          >
-            [UNJAM]
-          </Link>
-          <button
-            type="button"
-            className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Abrir menú"
-          >
-            [MENÚ]
-          </button>
+          <div className="relative flex items-center justify-between">
+            <Link
+              href="/"
+              className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
+              onClick={(event) => goHome(event, pathname)}
+            >
+              [UNJAM]
+            </Link>
+            {center ? (
+              <div className="pointer-events-none absolute inset-x-12 top-1/2 max-w-[calc(100%-6.5rem)] -translate-y-1/2 truncate text-center text-[clamp(10px,2.6vw,13px)] font-normal leading-none tracking-wide [word-spacing:normal]">
+                {center}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Abrir menú"
+            >
+              [MENÚ]
+            </button>
+          </div>
         </div>
       ) : null}
 

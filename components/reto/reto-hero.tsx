@@ -7,7 +7,6 @@ import {
   useState,
 } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
-import { RetoTimeBar } from "@/components/reto/reto-time-bar";
 import { formatRetoNumero } from "@/lib/format-reto-numero";
 
 export type HeroStep = 0 | 1 | 2 | 3;
@@ -29,7 +28,6 @@ type RetoHeroProps = {
   numero: string;
   titulo: string;
   descripcion: string;
-  fechaFin?: string | null;
   step?: HeroStep;
   /** 0 = descripción, 1 = descripción centrada (sigue el scroll). */
   introProgress?: number;
@@ -45,7 +43,6 @@ function TitleBar({
   numero,
   titulo,
   descripcion,
-  fechaFin,
   visible,
   dark,
   descripcionOpacity,
@@ -54,7 +51,6 @@ function TitleBar({
   numero: string;
   titulo: string;
   descripcion: string;
-  fechaFin?: string | null;
   visible: boolean;
   dark: boolean;
   descripcionOpacity: number;
@@ -68,23 +64,13 @@ function TitleBar({
       } ${dark ? "text-[var(--background)]" : "text-white"}`}
       aria-hidden={!visible}
     >
-      {/* Tiempo encima + descripción justo debajo, ambos centrados. */}
       <div
-        className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-[var(--grid-margin)] md:gap-6"
+        className="absolute inset-0 flex items-center justify-center px-[var(--grid-margin)]"
         style={{
           opacity: descripcionOpacity,
           transform: `translateY(${descripcionOffsetVh}vh)`,
         }}
       >
-        <div className="w-full [word-spacing:normal]">
-          <RetoTimeBar
-            fechaFin={fechaFin ?? null}
-            active={visible}
-            size="hero"
-            align="center"
-            format="phrase"
-          />
-        </div>
         <p className="w-full max-w-[28rem] text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] md:max-w-[min(72%,28rem)]">
           {descripcion}
         </p>
@@ -124,7 +110,6 @@ export function RetoHero({
   numero,
   titulo,
   descripcion,
-  fechaFin,
   step: stepProp,
   introProgress: introProgressProp = 0,
   tiempoProgress: tiempoProgressProp = 0,
@@ -279,7 +264,6 @@ export function RetoHero({
           numero={numero}
           titulo={titulo}
           descripcion={descripcion}
-          fechaFin={fechaFin}
           visible={showTitleBar}
           dark={codigoMode}
           descripcionOpacity={descripcionOpacity}

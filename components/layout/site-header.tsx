@@ -53,6 +53,14 @@ export function SiteHeader({
           : "gap-2 px-[var(--header-inset-x)] pb-3 pt-[var(--header-inset-top)] md:pb-4"
       }`}
     >
+      {hasCenter ? (
+        <div className="z-10 flex w-full justify-center text-center font-normal leading-none tracking-wide">
+          <div className="pointer-events-auto max-w-full truncate ui-btn-text [word-spacing:normal]">
+            {center}
+          </div>
+        </div>
+      ) : null}
+
       <div className={isStack ? "flex w-full justify-center" : "z-10 w-full"}>
         <HeaderNav
           user={user}
@@ -62,14 +70,6 @@ export function SiteHeader({
           layout={navLayout}
         />
       </div>
-
-      {hasCenter ? (
-        <div className="z-10 flex w-full justify-center text-center font-normal leading-none tracking-wide">
-          <div className="pointer-events-auto truncate ui-btn-text">
-            {center}
-          </div>
-        </div>
-      ) : null}
     </header>
   );
 }

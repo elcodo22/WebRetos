@@ -74,7 +74,7 @@ function easeOutCubic(t: number) {
 type RetoTimeBarProps = {
   fechaFin?: string | null;
   active?: boolean;
-  size?: "default" | "hero" | "xl";
+  size?: "default" | "hero" | "xl" | "header";
   align?: "center" | "start" | "end";
   /** compact = "05d" · phrase = "4 DÍAS 12 HORAS 12 MINUTOS 23 SEGUNDOS" */
   format?: "compact" | "phrase";
@@ -162,7 +162,9 @@ export function RetoTimeBar({
       ? "text-[clamp(40px,9vw,72px)] font-normal leading-none tracking-wide"
       : size === "hero"
         ? "text-[clamp(16px,3vw,22px)] font-normal leading-none tracking-wide"
-        : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
+        : size === "header"
+          ? "text-[clamp(10px,2.6vw,13px)] font-normal leading-none tracking-wide md:text-[clamp(12px,2vw,16px)]"
+          : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
 
   const unit = primaryUnit(display);
   const compactLabel =
@@ -177,7 +179,7 @@ export function RetoTimeBar({
 
   return (
     <p
-      className={`flex flex-wrap items-baseline gap-x-[0.45em] gap-y-1 text-white tabular-nums [word-spacing:normal] ${
+      className={`flex flex-wrap items-baseline gap-x-[0.45em] gap-y-1 tabular-nums text-inherit [word-spacing:normal] ${
         align === "start"
           ? "justify-start text-left"
           : align === "end"

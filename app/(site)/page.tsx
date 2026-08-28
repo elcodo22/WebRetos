@@ -25,7 +25,6 @@ export default async function Home() {
       numero={retoActivo.numero}
       titulo={retoActivo.titulo}
       descripcion={descripcionLarga}
-      fechaFin={retoActivo.fecha_fin}
     />
   ) : (
     <div className="relative flex h-full w-full items-center justify-center">
@@ -42,6 +41,7 @@ export default async function Home() {
     <div className="h-full min-h-0">
       <HomeSnap
         user={user}
+        fechaFin={retoActivo?.fecha_fin ?? null}
         header={<SiteHeader user={user} />}
         hero={hero}
         archivos={<ArchivosCarousel retos={retosArchivo} />}

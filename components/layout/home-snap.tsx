@@ -24,6 +24,7 @@ import { setChromeTheme } from "@/components/layout/crt-shell";
 import { HomeIntroVideo } from "@/components/layout/home-intro-video";
 import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
 import { HOME_RESET_EVENT } from "@/components/layout/home-events";
+import { RetoTimeBar } from "@/components/reto/reto-time-bar";
 import type { User } from "@supabase/supabase-js";
 
 const PANEL_TRANSITION_MS = 300;
@@ -75,6 +76,7 @@ type HomeSnapProps = {
   header: ReactNode;
   hero: ReactNode;
   archivos: ReactNode;
+  fechaFin?: string | null;
 };
 
 export function HomeSnap({
@@ -82,6 +84,7 @@ export function HomeSnap({
   header,
   hero,
   archivos,
+  fechaFin = null,
 }: HomeSnapProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -1728,6 +1731,26 @@ export function HomeSnap({
   const reveal = panel === 1 ? 1 : archivosReveal;
   const archivosInteractive = reveal >= 0.97 || panel === 1;
 
+  const showHeaderTime =
+    Boolean(fechaFin) &&
+    panel === 0 &&
+    videoReveal >= 0.999 &&
+    archivosReveal < 0.15;
+
+  const headerTime = showHeaderTime ? (
+    <RetoTimeBar
+      fechaFin={fechaFin}
+      active
+      size="header"
+      align="center"
+      format="phrase"
+    />
+  ) : null;
+
+  const renderedHeader = isValidElement<{ center?: ReactNode }>(header)
+    ? cloneElement(header, { center: headerTime })
+    : header;
+
   const heroWithStep = isValidElement<{
     step?: HeroStep;
     panel?: 0 | 1;
@@ -1790,12 +1813,13 @@ export function HomeSnap({
               : "pointer-events-auto bg-transparent md:[&_header]:pt-[var(--header-inset-top)]"
           }
         >
-          {header}
+          {renderedHeader}
         </div>
       </div>
 
       <SiteMobileMenu
         user={user}
+        center={headerTime}
         menuTone={mobileMenuWhite ? "white" : "blue"}
         hideMenu={codigoFocused || archivosContact > 0.55}
         menuOpen={mobileMenuOpen}
