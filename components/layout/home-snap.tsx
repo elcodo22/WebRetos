@@ -139,6 +139,8 @@ export function HomeSnap({
   const lastHomeWheelAtRef = useRef(0);
   const videoAnimatingRef = useRef(false);
   const videoAnimateRafRef = useRef(0);
+  const introAnimatingRef = useRef(false);
+  const introAnimateRafRef = useRef(0);
 
   const clearTransitionTimers = useCallback(() => {
     for (const id of transitionTimersRef.current) {
@@ -618,6 +620,66 @@ export function HomeSnap({
       videoAnimateRafRef.current = 0;
     }
     videoAnimatingRef.current = false;
+  }, []);
+
+  /**
+   * Anima la descripción y el tiempo hasta dejar QUEDAN centrado (step 2)
+   * con una sola llamada. Aprovecha syncTiempoFromIntro para acompañar
+   * QUEDAN mientras la descripción sube.
+   */
+  const animateIntroToTiempo = useCallback(
+    (durationMs = 620) => {
+      if (introAnimatingRef.current) return;
+      if (
+        introProgressRef.current >= 0.999 &&
+        tiempoProgressRef.current >= 0.999
+      ) {
+        return;
+      }
+      introAnimatingRef.current = true;
+      const from = introProgressRef.current;
+      const start = performance.now();
+      const step = () => {
+        const t = Math.min(1, (performance.now() - start) / durationMs);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const value = from + (1 - from) * eased;
+        setIntroProgress(value);
+        if (t < 1) {
+          introAnimateRafRef.current = requestAnimationFrame(step);
+          return;
+        }
+        // Aseguramos step 2 con QUEDAN centrado.
+        if (tiempoProgressRef.current < 1) {
+          tiempoProgressRef.current = 1;
+          setTiempoProgressState(1);
+        }
+        if (heroStepRef.current < 2) {
+          heroStepRef.current = 2;
+          setHeroStepState(2);
+          window.dispatchEvent(
+            new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 2 } }),
+          );
+          window.dispatchEvent(
+            new CustomEvent(RETO_DETALLE_EVENT, {
+              detail: { open: true, step: 2 },
+            }),
+          );
+        }
+        blockAdvanceFromTiempoRef.current = true;
+        introAnimatingRef.current = false;
+        introAnimateRafRef.current = 0;
+      };
+      introAnimateRafRef.current = requestAnimationFrame(step);
+    },
+    [setIntroProgress],
+  );
+
+  const cancelIntroAnimation = useCallback(() => {
+    if (introAnimateRafRef.current) {
+      cancelAnimationFrame(introAnimateRafRef.current);
+      introAnimateRafRef.current = 0;
+    }
+    introAnimatingRef.current = false;
   }, []);
 
   const wheelDeltaPx = (event: WheelEvent) => {
@@ -1182,6 +1244,13 @@ export function HomeSnap({
           return;
         }
 
+        // Step 0 + scroll hacia adelante: un solo scroll anima al tiempo centrado.
+        if (step === 0 && delta > 0) {
+          if (!introAnimatingRef.current) animateIntroToTiempo();
+          blockAdvanceFromTiempoRef.current = true;
+          return;
+        }
+
         if (step === 0 || (step === 1 && delta < 0)) {
           lastIntroEventAt = now;
           if (introGap >= WHEEL_GESTURE_GAP_MS) {
@@ -1388,6 +1457,7 @@ export function HomeSnap({
     scrollIntroBy,
     scrollVideoBy,
     animateVideoOut,
+    animateIntroToTiempo,
     scrollArchivosRevealBy,
     scrollTiempoBy,
     setHeroStep,
@@ -1414,6 +1484,7 @@ export function HomeSnap({
     let reenteredIntro = false;
     let openedCodigoThisTouch = false;
     let closedVideoThisTouch = false;
+    let returnedToTiempoThisTouch = false;
 
     const fromField = (target: EventTarget | null) =>
       target instanceof Element &&
@@ -1482,18 +1553,23 @@ export function HomeSnap({
           return;
         }
 
+        // Step 0/1 + swipe hacia arriba: anima directo a QUEDAN centrado.
+        if (step <= 1 && frameDy > 0) {
+          animateIntroToTiempo();
+          mode = "tiempo";
+          openedCodigoThisTouch = true;
+          returnedToTiempoThisTouch = true;
+          return;
+        }
+
         if (step === 1 && frameDy < 0 && !reenteredIntro) {
           reenteredIntro = true;
           reenterIntroFromStep1();
         }
 
-        if (step === 1 && frameDy >= 0) {
-          mode = "tiempo";
-        } else {
-          const nextP = scrollIntroBy(frameDy);
-          if (nextP >= 0.999 && frameDy > 0) mode = "tiempo";
-          return;
-        }
+        const nextP = scrollIntroBy(frameDy);
+        if (nextP >= 0.999 && frameDy > 0) mode = "tiempo";
+        return;
       }
 
       if (mode === "tiempo") {
@@ -1573,6 +1649,7 @@ export function HomeSnap({
       reenteredIntro = false;
       openedCodigoThisTouch = false;
       closedVideoThisTouch = false;
+      returnedToTiempoThisTouch = false;
     };
 
     const onMove = (event: TouchEvent) => {
@@ -1632,6 +1709,7 @@ export function HomeSnap({
     dispatchArchivoWheel,
     setVideoReveal,
     animateVideoOut,
+    animateIntroToTiempo,
     scrollIntroBy,
     scrollTiempoBy,
     scrollArchivosRevealBy,
@@ -1641,6 +1719,7 @@ export function HomeSnap({
   ]);
 
   useEffect(() => cancelVideoAnimation, [cancelVideoAnimation]);
+  useEffect(() => cancelIntroAnimation, [cancelIntroAnimation]);
 
   const participarActive =
     panel === 0 &&
