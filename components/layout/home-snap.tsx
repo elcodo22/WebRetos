@@ -22,6 +22,7 @@ import {
 } from "@/components/reto/reto-hero";
 import { setChromeTheme } from "@/components/layout/crt-shell";
 import { HomeIntroVideo } from "@/components/layout/home-intro-video";
+import { SiteHeader } from "@/components/layout/site-header";
 import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
 import { HOME_RESET_EVENT } from "@/components/layout/home-events";
 import { RetoTimeBar } from "@/components/reto/reto-time-bar";
@@ -73,7 +74,6 @@ const HERO_REQUEST_EVENT = "carousel-request-hero";
 
 type HomeSnapProps = {
   user: User | null;
-  header: ReactNode;
   hero: ReactNode;
   archivos: ReactNode;
   fechaFin?: string | null;
@@ -81,7 +81,6 @@ type HomeSnapProps = {
 
 export function HomeSnap({
   user,
-  header,
   hero,
   archivos,
   fechaFin = null,
@@ -1732,10 +1731,7 @@ export function HomeSnap({
   const archivosInteractive = reveal >= 0.97 || panel === 1;
 
   const showHeaderTime =
-    Boolean(fechaFin) &&
-    panel === 0 &&
-    videoReveal >= 0.999 &&
-    archivosReveal < 0.15;
+    Boolean(fechaFin) && panel === 0 && archivosReveal < 0.15;
 
   const headerTime = showHeaderTime ? (
     <RetoTimeBar
@@ -1746,10 +1742,6 @@ export function HomeSnap({
       format="phrase"
     />
   ) : null;
-
-  const renderedHeader = isValidElement<{ center?: ReactNode }>(header)
-    ? cloneElement(header, { center: headerTime })
-    : header;
 
   const heroWithStep = isValidElement<{
     step?: HeroStep;
@@ -1813,7 +1805,7 @@ export function HomeSnap({
               : "pointer-events-auto bg-transparent md:[&_header]:pt-[var(--header-inset-top)]"
           }
         >
-          {renderedHeader}
+          <SiteHeader user={user} center={headerTime} />
         </div>
       </div>
 

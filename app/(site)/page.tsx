@@ -1,6 +1,5 @@
 import { ArchivosCarousel } from "@/components/archivos/archivos-carousel";
 import { HomeSnap } from "@/components/layout/home-snap";
-import { SiteHeader } from "@/components/layout/site-header";
 import { RetoHero } from "@/components/reto/reto-hero";
 import { getCurrentUser, getRetoActivoHome } from "@/lib/home-data";
 import { loadRetosArchivo } from "@/lib/retos-archivo-data";
@@ -42,7 +41,6 @@ export default async function Home() {
       <HomeSnap
         user={user}
         fechaFin={retoActivo?.fecha_fin ?? null}
-        header={<SiteHeader user={user} />}
         hero={hero}
         archivos={<ArchivosCarousel retos={retosArchivo} />}
       />

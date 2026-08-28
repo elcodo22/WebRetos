@@ -53,23 +53,49 @@ export function SiteHeader({
           : "gap-2 px-[var(--header-inset-x)] pb-3 pt-[var(--header-inset-top)] md:pb-4"
       }`}
     >
-      {hasCenter ? (
-        <div className="z-10 flex w-full justify-center text-center font-normal leading-none tracking-wide">
-          <div className="pointer-events-auto max-w-full truncate ui-btn-text [word-spacing:normal]">
-            {center}
+      {isStack ? (
+        hasCenter ? (
+          <div className="z-10 flex w-full justify-center text-center font-normal leading-none tracking-wide">
+            <div className="pointer-events-auto max-w-full text-center [word-spacing:normal]">
+              {center}
+            </div>
+          </div>
+        ) : null
+      ) : (
+        <div className="relative w-full">
+          {hasCenter ? (
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center px-[clamp(7rem,18vw,12rem)]"
+              aria-hidden={false}
+            >
+              <div className="pointer-events-auto max-w-[min(100%,40rem)] text-center [word-spacing:normal]">
+                {center}
+              </div>
+            </div>
+          ) : null}
+          <div className="relative z-10 w-full">
+            <HeaderNav
+              user={user}
+              variant={variant}
+              profileUsername={profileUsername}
+              onLoginClick={onLoginClick}
+              layout={navLayout}
+            />
           </div>
         </div>
-      ) : null}
+      )}
 
-      <div className={isStack ? "flex w-full justify-center" : "z-10 w-full"}>
-        <HeaderNav
-          user={user}
-          variant={variant}
-          profileUsername={profileUsername}
-          onLoginClick={onLoginClick}
-          layout={navLayout}
-        />
-      </div>
+      {isStack ? (
+        <div className="flex w-full justify-center">
+          <HeaderNav
+            user={user}
+            variant={variant}
+            profileUsername={profileUsername}
+            onLoginClick={onLoginClick}
+            layout={navLayout}
+          />
+        </div>
+      ) : null}
     </header>
   );
 }
