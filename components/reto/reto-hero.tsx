@@ -45,6 +45,7 @@ function TitleBar({
   numero,
   titulo,
   descripcion,
+  fechaFin,
   visible,
   dark,
   descripcionOpacity,
@@ -53,6 +54,7 @@ function TitleBar({
   numero: string;
   titulo: string;
   descripcion: string;
+  fechaFin?: string | null;
   visible: boolean;
   dark: boolean;
   descripcionOpacity: number;
@@ -66,14 +68,23 @@ function TitleBar({
       } ${dark ? "text-[var(--background)]" : "text-white"}`}
       aria-hidden={!visible}
     >
-      {/* Descripción: centrada en viewport; sube con el scroll. */}
+      {/* Tiempo encima + descripción justo debajo, ambos centrados. */}
       <div
-        className="absolute inset-0 flex items-center justify-center px-[var(--grid-margin)]"
+        className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-[var(--grid-margin)] md:gap-6"
         style={{
           opacity: descripcionOpacity,
           transform: `translateY(${descripcionOffsetVh}vh)`,
         }}
       >
+        <div className="w-full [word-spacing:normal]">
+          <RetoTimeBar
+            fechaFin={fechaFin ?? null}
+            active={visible}
+            size="hero"
+            align="center"
+            format="phrase"
+          />
+        </div>
         <p className="w-full max-w-[28rem] text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] md:max-w-[min(72%,28rem)]">
           {descripcion}
         </p>
@@ -236,7 +247,6 @@ export function RetoHero({
   // Centro → fuera por arriba (~70vh).
   const descripcionOffsetVh = step <= 2 ? -descMotion * 70 : -70;
   const introOpacity = showIntro ? 1 : 0;
-  const showTiempo = tiempoP > 0.002 && step < 3;
   const showCodigo = step === 3;
   const codigoMode = showCodigo && codigoFocused && panel === 0;
   const showTitleBar = panel === 0 && step <= 3;
@@ -255,11 +265,6 @@ export function RetoHero({
   } as const;
 
   const sectionH = portH > 0 ? portH : undefined;
-  // Tiempo sube desde abajo → centro a la vez que la descripción sale por arriba.
-  const tiempoOffsetY =
-    step >= 3 ? 0 : step === 2 && tiempoP >= 0.999 ? 0 : (1 - tiempoP) * 58;
-  const tiempoOpacity =
-    step >= 3 ? 0 : Math.min(1, Math.max(0, tiempoP * 1.15));
 
   return (
     <div
@@ -274,6 +279,7 @@ export function RetoHero({
           numero={numero}
           titulo={titulo}
           descripcion={descripcion}
+          fechaFin={fechaFin}
           visible={showTitleBar}
           dark={codigoMode}
           descripcionOpacity={descripcionOpacity}
@@ -308,42 +314,6 @@ export function RetoHero({
               style={{ height: sectionH ? Math.round(sectionH * 0.75) : "75%" }}
               aria-hidden
             />
-          </div>
-        </div>
-
-        <div
-          className={`home-hero-layer absolute inset-0 flex flex-col items-center justify-center px-[var(--grid-margin)] text-center ${
-            showTiempo || step >= 3
-              ? "z-[2] pointer-events-none"
-              : "z-0 pointer-events-none"
-          }`}
-          style={{
-            opacity: tiempoOpacity,
-            transform: `translate3d(0, ${tiempoOffsetY}%, 0)`,
-            transitionTimingFunction: EASE,
-            transitionDuration: `${STEP_MS}ms`,
-            transitionProperty: "opacity",
-            willChange: "transform, opacity",
-          }}
-          aria-hidden={!showTiempo}
-        >
-          <div className="w-full [word-spacing:normal]">
-            {fechaFin ? (
-              <RetoTimeBar
-                fechaFin={fechaFin}
-                active={tiempoP > 0.05 || step >= 2}
-                size="hero"
-                align="center"
-                format="phrase"
-              />
-            ) : (
-              <RetoTimeBar
-                active={tiempoP > 0.05 || step >= 2}
-                size="hero"
-                align="center"
-                format="phrase"
-              />
-            )}
           </div>
         </div>
 

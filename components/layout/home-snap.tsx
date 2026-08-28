@@ -623,19 +623,14 @@ export function HomeSnap({
   }, []);
 
   /**
-   * Anima la descripción y el tiempo hasta dejar QUEDAN centrado (step 2)
-   * con una sola llamada. Aprovecha syncTiempoFromIntro para acompañar
-   * QUEDAN mientras la descripción sube.
+   * Anima la descripción saliendo por arriba y salta directamente a código.
+   * El tiempo ya no necesita paso intermedio: va siempre encima de la
+   * descripción, así que un scroll = intro → código.
    */
   const animateIntroToTiempo = useCallback(
-    (durationMs = 620) => {
+    (durationMs = 520) => {
       if (introAnimatingRef.current) return;
-      if (
-        introProgressRef.current >= 0.999 &&
-        tiempoProgressRef.current >= 0.999
-      ) {
-        return;
-      }
+      if (heroStepRef.current >= 3) return;
       introAnimatingRef.current = true;
       const from = introProgressRef.current;
       const start = performance.now();
@@ -648,24 +643,23 @@ export function HomeSnap({
           introAnimateRafRef.current = requestAnimationFrame(step);
           return;
         }
-        // Aseguramos step 2 con QUEDAN centrado.
         if (tiempoProgressRef.current < 1) {
           tiempoProgressRef.current = 1;
           setTiempoProgressState(1);
         }
-        if (heroStepRef.current < 2) {
-          heroStepRef.current = 2;
-          setHeroStepState(2);
+        if (heroStepRef.current < 3) {
+          heroStepRef.current = 3;
+          setHeroStepState(3);
+          codigoPlantedAtRef.current = performance.now();
           window.dispatchEvent(
-            new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 2 } }),
+            new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 3 } }),
           );
           window.dispatchEvent(
             new CustomEvent(RETO_DETALLE_EVENT, {
-              detail: { open: true, step: 2 },
+              detail: { open: true, step: 3 },
             }),
           );
         }
-        blockAdvanceFromTiempoRef.current = true;
         introAnimatingRef.current = false;
         introAnimateRafRef.current = 0;
       };
