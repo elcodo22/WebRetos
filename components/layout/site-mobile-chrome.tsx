@@ -124,7 +124,7 @@ export function SiteMobileMenu({
               [UNJAM]
             </Link>
             {center ? (
-              <div className="pointer-events-none absolute inset-x-12 top-1/2 max-w-[calc(100%-6.5rem)] -translate-y-1/2 truncate text-center text-[clamp(10px,2.6vw,13px)] font-normal leading-none tracking-wide [word-spacing:normal]">
+              <div className="pointer-events-none absolute inset-x-12 top-1/2 max-w-[calc(100%-6.5rem)] -translate-y-1/2 text-center [word-spacing:normal]">
                 {center}
               </div>
             ) : null}

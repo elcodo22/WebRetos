@@ -74,10 +74,10 @@ function easeOutCubic(t: number) {
 type RetoTimeBarProps = {
   fechaFin?: string | null;
   active?: boolean;
-  size?: "default" | "hero" | "xl" | "header";
+  size?: "default" | "hero" | "xl" | "header" | "nav";
   align?: "center" | "start" | "end";
-  /** compact = "05d" · phrase = "4 DÍAS 12 HORAS 12 MINUTOS 23 SEGUNDOS" */
-  format?: "compact" | "phrase";
+  /** compact = "05d" · phrase = frase larga · units = "12D 13H 14M 54S" */
+  format?: "compact" | "phrase" | "units";
 };
 
 function labelFor(value: number, singular: string, plural: string) {
@@ -122,8 +122,8 @@ export function RetoTimeBar({
 
     const to = Math.max(0, targetSecRef.current);
 
-    // Frase hero: sin conteo mágico; el slide lo hace la capa.
-    if (format === "phrase") {
+    // Frase / units: sin conteo mágico; el slide lo hace la capa.
+    if (format === "phrase" || format === "units") {
       setDisplay(splitSeconds(to));
       return;
     }
@@ -162,13 +162,17 @@ export function RetoTimeBar({
       ? "text-[clamp(40px,9vw,72px)] font-normal leading-none tracking-wide"
       : size === "hero"
         ? "text-[clamp(16px,3vw,22px)] font-normal leading-none tracking-wide"
-        : size === "header"
-          ? "text-[clamp(10px,2.6vw,13px)] font-normal leading-none tracking-wide md:text-[clamp(12px,2vw,16px)]"
-          : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
+        : size === "nav"
+          ? "ui-btn-text font-normal leading-none tracking-wide"
+          : size === "header"
+            ? "text-[clamp(10px,2.6vw,13px)] font-normal leading-none tracking-wide md:text-[clamp(12px,2vw,16px)]"
+            : "text-[clamp(20px,4.6vw,28px)] font-normal leading-none tracking-wide md:text-[clamp(16px,3vw,20px)]";
 
   const unit = primaryUnit(display);
   const compactLabel =
     unit.suffix === "d" ? String(unit.value) : pad(unit.value);
+
+  const unitsLabel = `${display.dias}D ${pad(display.horas)}H ${pad(display.minutos)}M ${pad(display.segundos)}S`;
 
   const phraseParts = [
     { key: "d", text: `${display.dias} ${labelFor(display.dias, "DÍA", "DÍAS")}` },
@@ -193,6 +197,8 @@ export function RetoTimeBar({
             {part.text}
           </span>
         ))
+      ) : format === "units" ? (
+        <span className="whitespace-nowrap">{unitsLabel}</span>
       ) : (
         <span>
           {compactLabel}

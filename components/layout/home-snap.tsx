@@ -1737,9 +1737,9 @@ export function HomeSnap({
     <RetoTimeBar
       fechaFin={fechaFin}
       active
-      size="header"
+      size="nav"
       align="center"
-      format="phrase"
+      format="units"
     />
   ) : null;
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ArchivosSearch } from "@/components/archivos/archivos-search";
 import { HOME_RESET_EVENT } from "@/components/layout/home-events";
@@ -126,12 +127,14 @@ export function HeaderNav({
   profileUsername,
   onLoginClick,
   layout = "row",
+  center,
 }: {
   user: User | null;
   variant: SiteHeaderVariant;
   profileUsername: string | null;
   onLoginClick?: () => void;
   layout?: "row" | "stack";
+  center?: ReactNode;
 }) {
   const pathname = usePathname();
 
@@ -163,13 +166,13 @@ export function HeaderNav({
     );
   }
 
-  /* UNJAM y resto: [UNJAM] izq · resto dcha (sin solaparse con el marco). */
+  /* UNJAM · tiempo · links en la misma fila, alineados al centro vertical. */
   return (
     <nav
-      className={`${navGroupClass} w-full justify-between`}
+      className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2"
       aria-label="Navegación principal"
     >
-      <div className="shrink-0">
+      <div className="justify-self-start">
         <Link
           href="/"
           className={navLinkClass}
@@ -178,7 +181,16 @@ export function HeaderNav({
           [UNJAM]
         </Link>
       </div>
-      <div className={`${navGroupClass} justify-end`}>{navLinks}</div>
+      {center ? (
+        <div className="justify-self-center text-center [word-spacing:normal]">
+          {center}
+        </div>
+      ) : (
+        <div aria-hidden className="justify-self-center" />
+      )}
+      <div className={`${navGroupClass} justify-self-end justify-end`}>
+        {navLinks}
+      </div>
     </nav>
   );
 }
