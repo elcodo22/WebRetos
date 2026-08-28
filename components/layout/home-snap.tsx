@@ -62,6 +62,7 @@ const STEP_ACC_IDLE_MS = 220;
 const INPUT_GRACE_MS = 450;
 /** Scroll (px) para subir el vídeo intro de forma progresiva. */
 const VIDEO_SCROLL_PX = 420;
+const VIDEO_SCROLL_PX_TOUCH = 300;
 const VIDEO_WHEEL_CAP_PX = 56;
 /** Tras cerrar el vídeo, ignorar el resto del mismo flick (no mover descripción). */
 const VIDEO_PIN_GAP_MS = 200;
@@ -1349,17 +1350,19 @@ export function HomeSnap({
     const root = rootRef.current;
     if (!root) return;
 
+    type TouchMode = "none" | "video" | "intro" | "tiempo" | "archivos" | "codigo";
+
     let tracking = false;
+    let mode: TouchMode = "none";
     let startX = 0;
     let startY = 0;
     let lastY = 0;
-    let touchScrollBase = 0;
-    let touchArchivosBase = 0;
-    let touchVideoBase = 0;
-    let scrubbingIntro = false;
-    let scrubbingArchivos = false;
-    let scrubbingVideo = false;
-    let videoClosedThisTouch = false;
+    let baseVideo = 0;
+    let baseIntro = 0;
+    let baseTiempo = 0;
+    let baseArchivos = 0;
+    let reenteredIntro = false;
+    let openedCodigoThisTouch = false;
 
     const fromField = (target: EventTarget | null) =>
       target instanceof Element &&
@@ -1367,6 +1370,70 @@ export function HomeSnap({
 
     const introEl = () =>
       root.querySelector(HERO_INTRO_SCROLL_SELECTOR) as HTMLElement | null;
+
+    const introScrollPx = () => {
+      const scroller = introEl();
+      const rawMax = scroller
+        ? scroller.scrollHeight - scroller.clientHeight
+        : 0;
+      if (rawMax >= 80) return rawMax;
+      return Math.max(440, window.innerHeight * 1.75);
+    };
+
+    const pickTouchMode = (): TouchMode => {
+      if (panelRef.current !== 0) return "none";
+      const step = heroStepRef.current;
+      const videoDone = videoRevealRef.current >= 0.999;
+
+      if (!videoDone) return "video";
+
+      if (step === 0 || step === 1) return "intro";
+      if (step === 2) return "tiempo";
+      if (step === 3 && !codigoFocusedRef.current) {
+        if (archivosRevealTargetRef.current > 0.001) return "archivos";
+        return "codigo";
+      }
+      return "none";
+    };
+
+    const applyIntroTouch = (dy: number, base: number) => {
+      const step = heroStepRef.current;
+      if (step === 1 && dy >= 0) return base;
+      if (step > 1) return base;
+
+      if (step === 1 && dy < 0 && !reenteredIntro) {
+        reenteredIntro = true;
+        reenterIntroFromStep1();
+        base = introProgressRef.current;
+        const scroller = introEl();
+        if (scroller) {
+          scroller.scrollTop =
+            base * Math.max(1, scroller.scrollHeight - scroller.clientHeight);
+        }
+      }
+
+      const scrollPx = introScrollPx();
+      let nextP = Math.min(1, Math.max(0, base + dy / scrollPx));
+      const scroller = introEl();
+      if (scroller) {
+        const rawMax = scroller.scrollHeight - scroller.clientHeight;
+        if (rawMax >= 80) {
+          scroller.scrollTop = nextP * rawMax;
+        }
+      }
+      setIntroProgress(nextP);
+
+      if (nextP >= 0.999 && dy > 0) {
+        const overflow = dy - (1 - base) * scrollPx;
+        if (overflow > 0) {
+          mode = "tiempo";
+          baseTiempo = tiempoProgressRef.current;
+          scrollTiempoBy(overflow);
+        }
+      }
+
+      return nextP;
+    };
 
     const onStart = (event: TouchEvent) => {
       if (!inputReadyRef.current) return;
@@ -1378,190 +1445,130 @@ export function HomeSnap({
       }
       const touch = event.touches[0];
       if (!touch) return;
+
       tracking = true;
+      mode = pickTouchMode();
       startX = touch.clientX;
       startY = touch.clientY;
       lastY = startY;
-      const el = introEl();
-      touchScrollBase = el?.scrollTop ?? 0;
-      touchArchivosBase = archivosRevealTargetRef.current;
-      touchVideoBase = videoRevealRef.current;
-      videoClosedThisTouch = false;
-      const step = heroStepRef.current;
-      const atHomeStart =
-        step === 0 &&
-        introProgressRef.current <= 0.002 &&
-        tiempoProgressRef.current <= 0.002 &&
-        archivosRevealTargetRef.current <= 0.001;
-      scrubbingVideo =
-        panelRef.current === 0 &&
-        (videoRevealRef.current < 0.999 || atHomeStart);
-      scrubbingIntro =
-        panelRef.current === 0 &&
-        !scrubbingVideo &&
-        (step === 0 || step === 1);
-      if (scrubbingVideo && videoRevealRef.current >= 0.999) {
-        scrubbingIntro = step === 0 || step === 1;
-      }
-      const revealOpen = archivosRevealTargetRef.current > 0.001;
-      const codigoPlanted =
-        step === 3 &&
-        codigoPlantedAtRef.current > 0 &&
-        performance.now() - codigoPlantedAtRef.current >= CODIGO_PLANTED_MS;
-      scrubbingArchivos =
-        panelRef.current === 0 &&
-        !codigoFocusedRef.current &&
-        !scrubbingVideo &&
-        (revealOpen || codigoPlanted);
+      reenteredIntro = false;
+      openedCodigoThisTouch = false;
+      baseVideo = videoRevealRef.current;
+      baseIntro = introProgressRef.current;
+      baseTiempo = tiempoProgressRef.current;
+      baseArchivos = archivosRevealTargetRef.current;
     };
 
     const onMove = (event: TouchEvent) => {
       if (!tracking) return;
       const touch = event.touches[0];
       if (!touch) return;
+
       lastY = touch.clientY;
       const dy = startY - lastY;
       const dx = touch.clientX - startX;
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) {
+
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 4) {
         event.preventDefault();
       }
 
-      if (lockedRef.current || panelRef.current !== 0) return;
+      if (lockedRef.current) return;
+      if (panelRef.current !== 0) return;
 
-      if (scrubbingVideo) {
-        // Vídeo ya fuera + scroll abajo: solo intro si este gesto no cerró el vídeo.
-        if (touchVideoBase >= 0.999 && dy > 0 && !videoClosedThisTouch) {
-          scrubbingVideo = false;
-          scrubbingIntro = true;
+      if (mode === "video") {
+        const closeDy = (1 - baseVideo) * VIDEO_SCROLL_PX_TOUCH;
+        if (dy >= closeDy && baseVideo < 0.999) {
+          setVideoReveal(1);
+          mode = "intro";
+          baseIntro = 0;
+          const overflow = dy - closeDy;
+          if (overflow > 0) applyIntroTouch(overflow, baseIntro);
+          return;
+        }
+
+        if (dy < 0 && baseVideo >= 0.999) {
+          mode = "intro";
+          baseIntro = introProgressRef.current;
         } else {
-          const nextP = Math.min(
-            1,
-            Math.max(0, touchVideoBase + dy / VIDEO_SCROLL_PX),
+          setVideoReveal(
+            Math.min(1, Math.max(0, baseVideo + dy / VIDEO_SCROLL_PX_TOUCH)),
           );
-          if (touchVideoBase < 0.999 && nextP >= 0.999) {
-            videoClosedThisTouch = true;
-          }
-          setVideoReveal(nextP);
           return;
         }
       }
 
-      // Si este gesto cerró el vídeo, no arrastrar la descripción.
-      if (videoClosedThisTouch) {
-        introProgressRef.current = 0;
-        setIntroProgressState(0);
-        const el = introEl();
-        if (el) el.scrollTop = 0;
+      if (mode === "intro") {
+        applyIntroTouch(dy, baseIntro);
         return;
       }
 
-      if (scrubbingArchivos) {
-        // No abrir blanca hasta que el código esté asentado.
+      if (mode === "tiempo") {
+        const step = heroStepRef.current;
+        if (step === 1 && dy < 0 && tiempoProgressRef.current <= 0.002) {
+          mode = "intro";
+          baseIntro = introProgressRef.current;
+          applyIntroTouch(dy, baseIntro);
+          return;
+        }
         if (
-          touchArchivosBase <= 0.001 &&
+          step === 2 &&
+          tiempoProgressRef.current >= 0.999 &&
+          dy > 0 &&
+          !openedCodigoThisTouch &&
+          !blockAdvanceFromTiempoRef.current
+        ) {
+          openedCodigoThisTouch = true;
+          goToCodigoFromTiempo();
+          return;
+        }
+        scrollTiempoBy(dy);
+        return;
+      }
+
+      if (mode === "codigo") {
+        if (dy < 0) {
+          if (returnToTiempoFromCodigo()) {
+            mode = "tiempo";
+            baseTiempo = tiempoProgressRef.current;
+          }
+          return;
+        }
+        if (
+          dy > 0 &&
+          codigoPlantedAtRef.current > 0 &&
+          performance.now() - codigoPlantedAtRef.current >= CODIGO_PLANTED_MS
+        ) {
+          mode = "archivos";
+          setArchivosReveal(dy / ARCHIVOS_REVEAL_SCROLL_PX);
+        }
+        return;
+      }
+
+      if (mode === "archivos") {
+        if (
+          baseArchivos <= 0.001 &&
           dy > 0 &&
           (codigoPlantedAtRef.current <= 0 ||
             performance.now() - codigoPlantedAtRef.current < CODIGO_PLANTED_MS)
         ) {
           return;
         }
-        const nextP = touchArchivosBase + dy / ARCHIVOS_REVEAL_SCROLL_PX;
-        setArchivosReveal(nextP);
-        return;
+        setArchivosReveal(baseArchivos + dy / ARCHIVOS_REVEAL_SCROLL_PX);
       }
-
-      if (!scrubbingIntro) return;
-
-      const step = heroStepRef.current;
-      if (step === 1 && dy >= 0) return;
-      if (step > 1) return;
-
-      if (step === 1 && dy < 0) {
-        reenterIntroFromStep1();
-        const scroller = introEl();
-        if (scroller) {
-          touchScrollBase = scroller.scrollTop;
-        }
-      }
-
-      const scroller = introEl();
-      const touchBoost = introProgressRef.current < 0.2 ? 1.28 : 1;
-      const boostedDy = dy * touchBoost;
-      if (scroller) {
-        const rawMax = scroller.scrollHeight - scroller.clientHeight;
-        if (rawMax >= 80) {
-          const baseP = touchScrollBase / rawMax;
-          let nextP = baseP + boostedDy / rawMax;
-          if (dy > 0) {
-            nextP = Math.min(nextP, baseP + INTRO_TOUCH_GESTURE_CAP);
-          } else {
-            nextP = Math.max(nextP, baseP - INTRO_TOUCH_GESTURE_CAP);
-          }
-          nextP = Math.min(1, Math.max(0, nextP));
-          scroller.scrollTop = nextP * rawMax;
-          setIntroProgress(nextP);
-          return;
-        }
-      }
-
-      const approx = Math.max(440, window.innerHeight * 1.75);
-      let nextP =
-        (touchScrollBase || 0) / Math.max(1, approx) + boostedDy / approx;
-
-      const baseP = introProgressRef.current;
-      if (dy > 0) {
-        nextP = Math.min(nextP, baseP + INTRO_TOUCH_GESTURE_CAP);
-      } else {
-        nextP = Math.max(nextP, baseP - INTRO_TOUCH_GESTURE_CAP);
-      }
-      setIntroProgress(nextP);
     };
 
     const onEnd = () => {
       if (!tracking) return;
       tracking = false;
+
       if (lockedRef.current) return;
 
       const delta = startY - lastY;
+      mode = "none";
 
-      if (scrubbingArchivos) {
-        scrubbingArchivos = false;
-        scrubbingIntro = false;
-        scrubbingVideo = false;
-        videoClosedThisTouch = false;
-        return;
-      }
-
-      if (scrubbingVideo || videoClosedThisTouch) {
-        scrubbingVideo = false;
-        scrubbingIntro = false;
-        videoClosedThisTouch = false;
-        return;
-      }
-
-      if (scrubbingIntro) {
-        const step = heroStepRef.current;
-        scrubbingIntro = false;
-        if (step === 0) return;
-        if (step === 1 && delta < TOUCH_THRESHOLD) return;
-      } else {
-        scrubbingIntro = false;
-      }
-
-      if (Math.abs(delta) < TOUCH_THRESHOLD) return;
-
-      if (panelRef.current === 1) {
+      if (panelRef.current === 1 && Math.abs(delta) >= TOUCH_THRESHOLD) {
         dispatchArchivoWheel(delta);
-        return;
       }
-
-      // Touch: un swipe = un paso (vacío / tiempo / código).
-      const now = performance.now();
-      if (now - lastStepChangeAtRef.current < STEP_SETTLE_MS) return;
-      lastStepChangeAtRef.current = now;
-
-      if (delta > 0) advanceHeroOnHome();
-      else retreatHeroOnHome();
     };
 
     root.addEventListener("touchstart", onStart, { passive: true });
@@ -1575,13 +1582,14 @@ export function HomeSnap({
       root.removeEventListener("touchcancel", onEnd);
     };
   }, [
-    advanceHeroOnHome,
-    retreatHeroOnHome,
     dispatchArchivoWheel,
     setIntroProgress,
     setVideoReveal,
     setArchivosReveal,
     reenterIntroFromStep1,
+    scrollTiempoBy,
+    goToCodigoFromTiempo,
+    returnToTiempoFromCodigo,
   ]);
 
   const participarActive =

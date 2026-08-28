@@ -112,7 +112,7 @@ export function SiteMobileMenu({
     <>
       {showTopBar ? (
         <div
-          className={`pointer-events-none fixed inset-x-0 top-0 flex items-center justify-between px-[var(--grid-margin)] pt-[max(0.75rem,calc(var(--safe-top)+0.35rem))] md:hidden ${styles.button}`}
+          className={`pointer-events-none fixed inset-x-0 top-0 flex items-center justify-between px-[var(--grid-margin)] pt-[max(1.35rem,calc(var(--safe-top)+0.85rem))] md:hidden ${styles.button}`}
           style={{ zIndex }}
         >
           <Link

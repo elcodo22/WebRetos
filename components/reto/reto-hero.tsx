@@ -61,23 +61,26 @@ function TitleBar({
 }) {
   return (
     <div
-      className={`pointer-events-none absolute inset-x-0 top-1/2 z-30 -translate-y-1/2 transition-opacity duration-300 ${
+      className={`pointer-events-none absolute inset-0 z-30 transition-opacity duration-300 ${
         visible ? "opacity-100" : "opacity-0"
       } ${dark ? "text-[var(--background)]" : "text-white"}`}
       aria-hidden={!visible}
     >
-      {/* Descripción: sube hasta el borde superior y sale de la pantalla. */}
-      <p
-        className="absolute left-1/2 top-1/2 w-[min(72%,28rem)] text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] will-change-transform"
+      {/* Descripción: centrada en viewport; sube con el scroll. */}
+      <div
+        className="absolute inset-0 flex items-center justify-center px-[var(--grid-margin)]"
         style={{
           opacity: descripcionOpacity,
-          transform: `translate3d(-50%, calc(-50% + ${descripcionOffsetVh}vh), 0)`,
+          transform: `translateY(${descripcionOffsetVh}vh)`,
         }}
       >
-        {descripcion}
-      </p>
+        <p className="w-full max-w-[28rem] text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] md:max-w-[min(72%,28rem)]">
+          {descripcion}
+        </p>
+      </div>
 
-      <div className="site-grid relative w-full items-center">
+      {/* Título + #num: abajo en móvil, centrado en desktop. */}
+      <div className="site-grid absolute inset-x-0 bottom-[max(1.25rem,var(--safe-bottom))] w-full items-center md:bottom-auto md:top-1/2 md:-translate-y-1/2">
         <div className="col-span-4 col-start-1 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide md:col-span-8 md:col-start-2">
           <span className="relative z-10 min-w-0 max-w-[34%] truncate text-[clamp(13px,2.8vw,18px)] pointer-events-auto">
             <ClickableText text={titulo} enabled={visible} />

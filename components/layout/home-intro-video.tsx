@@ -85,7 +85,7 @@ export function HomeIntroVideo({ progress }: Props) {
     >
       <video
         ref={videoRef}
-        className="absolute inset-0 h-full w-full object-cover object-[center_78%]"
+        className="absolute left-1/2 top-1/2 h-[100vw] w-[100vh] max-w-none -translate-x-1/2 -translate-y-1/2 rotate-[270deg] object-cover object-center md:inset-0 md:h-full md:w-full md:max-w-full md:translate-x-0 md:translate-y-0 md:rotate-0 md:object-[center_78%]"
         src="/branding/home-intro-v10.mp4"
         autoPlay
         muted
