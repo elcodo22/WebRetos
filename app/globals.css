@@ -37,8 +37,9 @@
   letter-spacing: 0.025em;
 }
 
-/* Título + # del reto: home, archivos y pantalla reto (móvil y desktop). */
-.reto-titulo-text {
+/* Título + # del reto: home y archivos. */
+.reto-heading-text,
+.reto-heading-titulo {
   font-size: clamp(15px, 3.4vw, 22px);
   font-weight: 400;
   line-height: 1;
@@ -46,21 +47,13 @@
   text-transform: uppercase;
 }
 
-.reto-numero-text {
-  font-size: clamp(18px, 4.2vw, 28px);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-}
-
 @media (min-width: 768px) {
-  .reto-titulo-text {
-    font-size: clamp(13px, 2.8vw, 18px);
+  .reto-heading-text {
+    font-size: clamp(16px, 3.8vw, 25px);
   }
 
-  .reto-numero-text {
-    font-size: clamp(16px, 3.8vw, 25px);
+  .reto-heading-titulo {
+    font-size: clamp(13px, 2.8vw, 18px);
   }
 }
 

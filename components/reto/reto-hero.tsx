@@ -13,6 +13,7 @@ export type HeroStep = 0 | 1 | 2 | 3;
 
 export const RETO_HERO_STEP_EVENT = "reto-hero-step";
 export const RETO_CODIGO_FOCUS_EVENT = "reto-codigo-focus";
+export const RETO_CODIGO_DISMISS_EVENT = "reto-codigo-dismiss";
 /** @deprecated Usar RETO_HERO_STEP_EVENT con step >= 1 */
 export const RETO_DETALLE_EVENT = "reto-detalle";
 /** Contenedor de scroll del intro (título → descripción). */
@@ -64,8 +65,8 @@ function TitleBar({
 }) {
   const titleNumClass =
     "font-normal uppercase leading-none tracking-wide pointer-events-auto";
-  const tituloClass = `reto-titulo-text relative z-10 min-w-0 max-w-[11rem] truncate ${titleNumClass}`;
-  const numeroClass = `reto-numero-text relative z-10 shrink-0 whitespace-nowrap ${titleNumClass}`;
+  const tituloClass = `reto-heading-titulo relative z-10 min-w-0 max-w-[11rem] truncate ${titleNumClass}`;
+  const numeroClass = `reto-heading-text relative z-10 shrink-0 whitespace-nowrap ${titleNumClass}`;
   const descripcionClass =
     "w-full text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal]";
 
@@ -118,10 +119,10 @@ function TitleBar({
 
       <div className="absolute inset-x-0 top-1/2 hidden w-full -translate-y-1/2 px-[var(--grid-margin)] md:grid md:grid-cols-10 md:gap-x-[var(--grid-gutter)]">
         <div className="col-span-8 col-start-2 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide">
-          <span className="reto-titulo-text relative z-10 min-w-0 max-w-[34%] truncate pointer-events-auto">
+          <span className="reto-heading-titulo relative z-10 min-w-0 max-w-[34%] truncate pointer-events-auto">
             <ClickableText text={titulo} enabled={visible} />
           </span>
-          <span className="reto-numero-text relative z-10 shrink-0 whitespace-nowrap">
+          <span className="reto-heading-text relative z-10 shrink-0 whitespace-nowrap">
             #{formatRetoNumero(numero)}
           </span>
         </div>
@@ -160,6 +161,33 @@ export function RetoHero({
   const [codigoFocused, setCodigoFocused] = useState(false);
   const [portH, setPortH] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const codigoInputRef = useRef<HTMLInputElement>(null);
+  const codigoFocusedRef = useRef(false);
+
+  const dismissCodigoEntry = useCallback(() => {
+    if (!codigoFocusedRef.current) return;
+    codigoFocusedRef.current = false;
+    codigoInputRef.current?.blur();
+    setCodigo("");
+    setCodigoFocused(false);
+    dispatchCodigoFocus(false);
+    window.dispatchEvent(new CustomEvent(RETO_CODIGO_DISMISS_EVENT));
+  }, []);
+
+  const tryDismissFromInteraction = useCallback(
+    (target: EventTarget | null) => {
+      if (!codigoFocusedRef.current) return;
+      const el = target as Element | null;
+      if (el?.closest("[data-codigo-field]")) return;
+      if (el?.closest("[data-codigo-actions]")) return;
+      dismissCodigoEntry();
+    },
+    [dismissCodigoEntry],
+  );
+
+  useEffect(() => {
+    codigoFocusedRef.current = codigoFocused;
+  }, [codigoFocused]);
 
   useEffect(() => {
     if (stepProp !== undefined) setStep(stepProp);
@@ -205,10 +233,35 @@ export function RetoHero({
 
   useEffect(() => {
     if (step !== 3 && codigoFocused) {
-      setCodigoFocused(false);
-      dispatchCodigoFocus(false);
+      dismissCodigoEntry();
     }
-  }, [step, codigoFocused]);
+  }, [step, codigoFocused, dismissCodigoEntry]);
+
+  useEffect(() => {
+    function onDismiss() {
+      dismissCodigoEntry();
+    }
+
+    window.addEventListener(RETO_CODIGO_DISMISS_EVENT, onDismiss);
+    return () => window.removeEventListener(RETO_CODIGO_DISMISS_EVENT, onDismiss);
+  }, [dismissCodigoEntry]);
+
+  useEffect(() => {
+    if (!codigoFocused || step !== 3) return;
+
+    const onTouchEnd = (event: TouchEvent) => {
+      tryDismissFromInteraction(event.target);
+    };
+
+    document.addEventListener("touchend", onTouchEnd, {
+      capture: true,
+      passive: true,
+    });
+
+    return () => {
+      document.removeEventListener("touchend", onTouchEnd, { capture: true });
+    };
+  }, [codigoFocused, step, tryDismissFromInteraction]);
 
   useEffect(() => {
     return () => dispatchCodigoFocus(false);
@@ -296,6 +349,10 @@ export function RetoHero({
         codigoMode ? "bg-white text-[var(--background)]" : ""
       }`}
       data-codigo-focus={codigoMode ? "" : undefined}
+      onPointerDownCapture={(event) => {
+        if (!codigoMode) return;
+        tryDismissFromInteraction(event.target);
+      }}
     >
       <div className="absolute inset-0 [word-spacing:0.45em]">
         {/* # + título: suben con el scroll y se fijan en el centro */}
@@ -355,17 +412,15 @@ export function RetoHero({
             className="flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal] md:max-w-[80%]"
           >
             <input
+              ref={codigoInputRef}
               type="text"
               name="codigo"
               value={codigo}
               onChange={(event) => setCodigo(event.target.value)}
               onFocus={() => {
+                codigoFocusedRef.current = true;
                 setCodigoFocused(true);
                 dispatchCodigoFocus(true);
-              }}
-              onBlur={() => {
-                setCodigoFocused(false);
-                dispatchCodigoFocus(false);
               }}
               placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
               aria-label="Introducir codigo de participación"
@@ -384,6 +439,7 @@ export function RetoHero({
       </div>
 
       <div
+        data-codigo-actions=""
         className={`absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-4 px-[clamp(28px,6vw,56px)] pb-[max(1.5rem,calc(var(--safe-bottom)+0.75rem))] md:pb-10 ${
           codigoMode
             ? "pointer-events-auto opacity-100"

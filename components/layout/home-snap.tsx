@@ -15,6 +15,7 @@ import { ARCHIVOS_CONTACT_EVENT } from "@/components/archivos/archivos-carousel"
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import {
   HERO_INTRO_SCROLL_SELECTOR,
+  RETO_CODIGO_DISMISS_EVENT,
   RETO_CODIGO_FOCUS_EVENT,
   RETO_DETALLE_EVENT,
   RETO_HERO_STEP_EVENT,
@@ -237,9 +238,16 @@ export function HomeSnap({
       setCodigoFocused(Boolean(focused));
     }
 
+    function onCodigoDismiss() {
+      setCodigoFocused(false);
+    }
+
     window.addEventListener(RETO_CODIGO_FOCUS_EVENT, onCodigoFocus);
-    return () =>
+    window.addEventListener(RETO_CODIGO_DISMISS_EVENT, onCodigoDismiss);
+    return () => {
       window.removeEventListener(RETO_CODIGO_FOCUS_EVENT, onCodigoFocus);
+      window.removeEventListener(RETO_CODIGO_DISMISS_EVENT, onCodigoDismiss);
+    };
   }, []);
 
   const homeWhiteMode =
@@ -283,13 +291,8 @@ export function HomeSnap({
   }, [clearTransitionTimers]);
 
   const releaseCodigoFocus = useCallback(() => {
-    if (document.activeElement instanceof HTMLInputElement) {
-      document.activeElement.blur();
-    }
     setCodigoFocused(false);
-    window.dispatchEvent(
-      new CustomEvent(RETO_CODIGO_FOCUS_EVENT, { detail: { focused: false } }),
-    );
+    window.dispatchEvent(new CustomEvent(RETO_CODIGO_DISMISS_EVENT));
   }, []);
 
   const setHeroStep = useCallback((next: HeroStep) => {
@@ -1608,6 +1611,19 @@ export function HomeSnap({
       if (searchOpenRef.current || diccionarioOpenRef.current) return;
       const touch = event.touches[0];
       if (!touch) return;
+
+      if (codigoFocusedRef.current) {
+        const target = event.target as Element | null;
+        if (
+          target &&
+          !target.closest("[data-codigo-field]") &&
+          !target.closest("[data-codigo-actions]")
+        ) {
+          setCodigoFocused(false);
+          window.dispatchEvent(new CustomEvent(RETO_CODIGO_DISMISS_EVENT));
+          return;
+        }
+      }
 
       tracking = true;
       startMode = pickTouchMode();
