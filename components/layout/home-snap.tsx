@@ -1411,6 +1411,22 @@ export function HomeSnap({
 
         const step = heroStepRef.current;
 
+        // Step 0 tope inferior + swipe hacia abajo: devuelve el vídeo.
+        if (
+          step === 0 &&
+          frameDy < 0 &&
+          introProgressRef.current <= 0.002 &&
+          videoRevealRef.current >= 0.999
+        ) {
+          mode = "video";
+          const next = Math.min(
+            1,
+            Math.max(0, videoRevealRef.current + rawDy / VIDEO_SCROLL_PX_TOUCH),
+          );
+          setVideoReveal(next);
+          return;
+        }
+
         if (step === 1 && frameDy < 0 && !reenteredIntro) {
           reenteredIntro = true;
           reenterIntroFromStep1();
@@ -1533,6 +1549,9 @@ export function HomeSnap({
         if (pendingDy) applyDelta(pendingDy);
         pendingDy = 0;
       }
+      // Al soltar libero el bloqueo de "mismo gesto no avanza al código".
+      blockAdvanceFromTiempoRef.current = false;
+
       if (lockedRef.current) return;
 
       const delta = totalDy;
