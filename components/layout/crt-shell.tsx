@@ -58,6 +58,11 @@ export function setChromeTheme(chrome: "blue" | "white" | "black") {
   applyStatusBarStyle(chrome);
 }
 
+/** Contenido útil de la tele: overlays internos deben ir aquí para heredar marco y filtros. */
+export function getCrtScreenElement(): HTMLElement | null {
+  return document.querySelector(".crt-screen");
+}
+
 export function CrtShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const blackScreen =

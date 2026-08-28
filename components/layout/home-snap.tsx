@@ -48,7 +48,7 @@ const ARCHIVOS_LERP = 0.28;
 const TIEMPO_SCROLL_PX = 320;
 const TIEMPO_WHEEL_CAP_PX = 48;
 /** En el intro, a partir de aquí QUEDAN ya empieza a subir. */
-const TIEMPO_EARLY_START = 0.3;
+const TIEMPO_EARLY_START = 0.12;
 /** Acumulación de rueda para saltar vacío ↔ tiempo ↔ código. */
 const STEP_WHEEL_THRESHOLD = 64;
 /** Pausa mínima entre cambios de capa (alineada con la animación). */
@@ -497,18 +497,19 @@ export function HomeSnap({
       const el = rootRef.current?.querySelector(
         HERO_INTRO_SCROLL_SELECTOR,
       ) as HTMLElement | null;
-      const approx = Math.max(440, window.innerHeight * 1.75);
+      const rawMax = el ? el.scrollHeight - el.clientHeight : 0;
+      const scrollPx =
+        rawMax >= 80 ? rawMax : Math.max(440, window.innerHeight * 1.75);
+      const startBoost = introProgressRef.current < 0.2 ? 1.28 : 1;
+      const boostedDelta = deltaPx * startBoost;
 
-      let nextP = introProgressRef.current + deltaPx / approx;
-      if (el) {
-        const rawMax = el.scrollHeight - el.clientHeight;
-        if (rawMax >= 80) {
-          const nextTop = Math.min(
-            rawMax,
-            Math.max(0, el.scrollTop + deltaPx),
-          );
-          nextP = nextTop / rawMax;
-        }
+      let nextP = introProgressRef.current + boostedDelta / scrollPx;
+      if (el && rawMax >= 80) {
+        const nextTop = Math.min(
+          rawMax,
+          Math.max(0, el.scrollTop + boostedDelta),
+        );
+        nextP = nextTop / rawMax;
       }
 
       if (
@@ -1483,16 +1484,14 @@ export function HomeSnap({
         }
       }
 
-      const approx = Math.max(440, window.innerHeight * 1.75);
-      let nextP =
-        (touchScrollBase || 0) / Math.max(1, approx) + dy / approx;
-
       const scroller = introEl();
+      const touchBoost = introProgressRef.current < 0.2 ? 1.28 : 1;
+      const boostedDy = dy * touchBoost;
       if (scroller) {
         const rawMax = scroller.scrollHeight - scroller.clientHeight;
         if (rawMax >= 80) {
           const baseP = touchScrollBase / rawMax;
-          nextP = baseP + dy / rawMax;
+          let nextP = baseP + boostedDy / rawMax;
           if (dy > 0) {
             nextP = Math.min(nextP, baseP + INTRO_TOUCH_GESTURE_CAP);
           } else {
@@ -1504,6 +1503,10 @@ export function HomeSnap({
           return;
         }
       }
+
+      const approx = Math.max(440, window.innerHeight * 1.75);
+      let nextP =
+        (touchScrollBase || 0) / Math.max(1, approx) + boostedDy / approx;
 
       const baseP = introProgressRef.current;
       if (dy > 0) {

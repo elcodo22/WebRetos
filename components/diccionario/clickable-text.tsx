@@ -19,11 +19,12 @@ type ClickableTextProps = {
 
 function hoverPayloadFromElement(el: HTMLElement, text: string) {
   const rect = el.getBoundingClientRect();
+  const screen = document.querySelector(".crt-screen")?.getBoundingClientRect();
   const style = window.getComputedStyle(el);
   return {
     text,
-    top: rect.top,
-    left: rect.left,
+    top: screen ? rect.top - screen.top : rect.top,
+    left: screen ? rect.left - screen.left : rect.left,
     width: rect.width,
     height: rect.height,
     fontSize: style.fontSize,

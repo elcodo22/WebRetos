@@ -68,7 +68,7 @@ function TitleBar({
     >
       {/* Descripción: sube hasta el borde superior y sale de la pantalla. */}
       <p
-        className="absolute left-1/2 top-1/2 w-[min(72%,28rem)] text-center text-[clamp(13px,2.3vw,17px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] will-change-transform"
+        className="absolute left-1/2 top-1/2 w-[min(72%,28rem)] text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] will-change-transform"
         style={{
           opacity: descripcionOpacity,
           transform: `translate3d(-50%, calc(-50% + ${descripcionOffsetVh}vh), 0)`,
@@ -222,17 +222,20 @@ export function RetoHero({
   }, [step, setHeroStep]);
 
   const tiempoP = Math.min(1, Math.max(0, tiempoProgress));
+  const introP = Math.min(1, Math.max(0, introProgressProp));
+  // En step 0 la descripción sigue el scroll del intro de inmediato.
+  const descMotion = step === 0 ? introP : tiempoP;
   // Descripción visible mientras sube/baja con el tiempo; título/#num quedan fijos.
   const showIntro = step <= 1 || (step === 2 && tiempoP < 0.999);
   // Sale por arriba de la pantalla (vh reales, no % del texto).
   const descripcionOpacity =
     step === 0 || step === 2
-      ? Math.min(1, Math.max(0, 1 - Math.max(0, tiempoP - 0.88) / 0.12))
+      ? Math.min(1, Math.max(0, 1 - Math.max(0, descMotion - 0.88) / 0.12))
       : 0;
   // Centro → fuera por arriba (~70vh: pasa el borde superior completo).
   const descripcionOffsetVh =
     step === 0 || (step === 2 && tiempoP < 0.999)
-      ? -tiempoP * 70
+      ? -descMotion * 70
       : step >= 1
         ? -70
         : 0;

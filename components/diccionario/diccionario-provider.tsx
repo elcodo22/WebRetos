@@ -10,6 +10,10 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import {
+  getCrtScreenElement,
+  setChromeTheme,
+} from "@/components/layout/crt-shell";
 import { categoryLabel, type DiccionarioResult } from "@/lib/diccionario";
 
 type HoverWordState = {
@@ -57,10 +61,12 @@ type State =
 export function DiccionarioProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>({ phase: "closed" });
   const [mounted, setMounted] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const [hoverWord, setHoverWordState] = useState<HoverWordState | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    setPortalTarget(getCrtScreenElement());
   }, []);
 
   const setHoverWord = useCallback((word: HoverWordState | null) => {
@@ -111,6 +117,20 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
 
   const isOpen = state.phase !== "closed";
   const showHoverPreview = Boolean(hoverWord) && !isOpen;
+  const crtActive = isOpen || showHoverPreview;
+
+  useEffect(() => {
+    if (!crtActive) return;
+    const prev = document.documentElement.dataset.chrome;
+    setChromeTheme("white");
+    return () => {
+      if (prev === "white" || prev === "black" || prev === "blue") {
+        setChromeTheme(prev);
+      } else {
+        setChromeTheme("blue");
+      }
+    };
+  }, [crtActive]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -159,16 +179,16 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
   }, [isOpen]);
 
   const overlay =
-    isOpen && mounted
+    isOpen && mounted && portalTarget
       ? createPortal(
           <div
             role="dialog"
             aria-modal="true"
             aria-label={`Definición de ${"word" in state ? state.word : ""}`}
-            className="fixed inset-0 z-[9998] flex flex-col bg-white text-black"
+            className="absolute inset-0 z-[90] flex flex-col bg-white text-black"
             onClick={close}
           >
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-end px-[18px] pt-3 md:pt-6">
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-end px-[clamp(28px,6vw,56px)] pt-3 md:pt-6">
               <button
                 type="button"
                 className="pointer-events-auto ui-btn-text font-normal tracking-wide text-black/70 hover:text-black"
@@ -225,16 +245,16 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
               </div>
             </div>
           </div>,
-          document.body,
+          portalTarget,
         )
       : null;
 
   const hoverOverlay =
-    showHoverPreview && hoverWord && mounted
+    showHoverPreview && hoverWord && mounted && portalTarget
       ? createPortal(
           <div
             aria-hidden
-            className="pointer-events-none fixed inset-0 z-[9990] bg-white"
+            className="pointer-events-none absolute inset-0 z-[90] bg-white"
           >
             <span
               className="diccionario-hover-word absolute whitespace-nowrap text-black"
@@ -258,7 +278,7 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
               {hoverWord.text}
             </span>
           </div>,
-          document.body,
+          portalTarget,
         )
       : null;
 

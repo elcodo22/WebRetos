@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-/** Segundos a saltar al inicio del clip. */
-const START_AT_S = 2;
+/** Tras dejar de scrollear, volver a mostrar el hint. */
+const HINT_IDLE_MS = 900;
 
 type Props = {
   /** 0 = vídeo a pantalla completa, 1 = fuera (home visible). */
@@ -16,46 +16,11 @@ type Props = {
  */
 export function HomeIntroVideo({ progress }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevProgressRef = useRef(progress);
   const p = Math.min(1, Math.max(0, progress));
   const gone = p >= 0.999;
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-
-    const seekToStart = () => {
-      if (el.currentTime < START_AT_S) {
-        el.currentTime = START_AT_S;
-      }
-    };
-
-    const onLoaded = () => {
-      seekToStart();
-    };
-
-    const onTimeUpdate = () => {
-      // Evita mostrar/reproducir los primeros segundos.
-      if (el.currentTime > 0 && el.currentTime < START_AT_S) {
-        el.currentTime = START_AT_S;
-      }
-    };
-
-    const onEnded = () => {
-      el.currentTime = START_AT_S;
-      void el.play().catch(() => {});
-    };
-
-    el.addEventListener("loadedmetadata", onLoaded);
-    el.addEventListener("timeupdate", onTimeUpdate);
-    el.addEventListener("ended", onEnded);
-    seekToStart();
-
-    return () => {
-      el.removeEventListener("loadedmetadata", onLoaded);
-      el.removeEventListener("timeupdate", onTimeUpdate);
-      el.removeEventListener("ended", onEnded);
-    };
-  }, []);
+  const [hintVisible, setHintVisible] = useState(true);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -64,9 +29,6 @@ export function HomeIntroVideo({ progress }: Props) {
       el.pause();
       return;
     }
-    if (el.currentTime < START_AT_S) {
-      el.currentTime = START_AT_S;
-    }
     const play = el.play();
     if (play && typeof play.catch === "function") {
       play.catch(() => {
@@ -74,6 +36,42 @@ export function HomeIntroVideo({ progress }: Props) {
       });
     }
   }, [gone]);
+
+  // Al scrollear se oculta; al parar (y seguir en el vídeo) vuelve.
+  useEffect(() => {
+    if (gone) {
+      setHintVisible(false);
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+        hintTimerRef.current = null;
+      }
+      prevProgressRef.current = progress;
+      return;
+    }
+
+    const prev = prevProgressRef.current;
+    prevProgressRef.current = progress;
+
+    // Primera pintura / sin cambio: mantener hint.
+    if (prev === progress) {
+      setHintVisible(true);
+      return;
+    }
+
+    setHintVisible(false);
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    hintTimerRef.current = setTimeout(() => {
+      hintTimerRef.current = null;
+      setHintVisible(true);
+    }, HINT_IDLE_MS);
+
+    return () => {
+      if (hintTimerRef.current) {
+        clearTimeout(hintTimerRef.current);
+        hintTimerRef.current = null;
+      }
+    };
+  }, [progress, gone]);
 
   return (
     <div
@@ -88,13 +86,21 @@ export function HomeIntroVideo({ progress }: Props) {
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover object-[center_78%]"
-        src="/branding/home-intro.mp4?v=6"
+        src="/branding/home-intro-v10.mp4"
         autoPlay
         muted
+        loop
         playsInline
         preload="auto"
         aria-label="Vídeo de introducción"
       />
+      <p
+        className={`pointer-events-none absolute inset-x-0 bottom-[max(1.5rem,calc(var(--safe-bottom)+0.75rem))] z-10 text-center ui-btn-text font-normal tracking-wide text-white transition-opacity duration-300 md:bottom-10 ${
+          hintVisible && !gone ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        SCROLL TO SEE
+      </p>
     </div>
   );
 }
