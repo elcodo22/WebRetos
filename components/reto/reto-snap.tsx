@@ -13,6 +13,7 @@ import type { User } from "@supabase/supabase-js";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
+import { useHeaderCenter } from "@/components/layout/header-time";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
@@ -52,6 +53,7 @@ type RetoSnapProps = {
 export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
   const { isOpen: searchOpen } = useSearchOverlay();
   const { isOpen: diccionarioOpen } = useDiccionario();
+  const mobileCenter = useHeaderCenter();
   const searchOpenRef = useRef(searchOpen);
   const diccionarioOpenRef = useRef(diccionarioOpen);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -199,6 +201,7 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
 
         <SiteMobileMenu
           user={user}
+          center={mobileCenter}
           menuTone="black"
           menuOpen={mobileMenuOpen}
           onMenuOpenChange={setMobileMenuOpen}

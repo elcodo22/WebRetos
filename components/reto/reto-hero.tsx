@@ -38,6 +38,9 @@ type RetoHeroProps = {
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const STEP_MS = 480;
+/** Móvil: título fijo y bloque debajo (descripción / código) con el mismo gap. */
+const MOBILE_TITLE_LIFT = "2.85rem";
+const MOBILE_BODY_BELOW_TITLE_TOP = "calc(50% - 0.65rem)";
 
 function TitleBar({
   numero,
@@ -47,6 +50,7 @@ function TitleBar({
   dark,
   descripcionOpacity,
   descripcionOffsetVh,
+  showCodigo = false,
 }: {
   numero: string;
   titulo: string;
@@ -56,7 +60,15 @@ function TitleBar({
   descripcionOpacity: number;
   /** vh desde el centro: 0 = centro, negativo = sube y sale por arriba. */
   descripcionOffsetVh: number;
+  showCodigo?: boolean;
 }) {
+  const titleNumClass =
+    "font-normal uppercase leading-none tracking-wide pointer-events-auto";
+  const tituloClass = `relative z-10 min-w-0 max-w-[11rem] truncate text-[clamp(13px,2.8vw,18px)] ${titleNumClass}`;
+  const numeroClass = `relative z-10 shrink-0 whitespace-nowrap text-[clamp(16px,3.8vw,25px)] ${titleNumClass}`;
+  const descripcionClass =
+    "w-full text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal]";
+
   return (
     <div
       className={`pointer-events-none absolute inset-0 z-30 transition-opacity duration-300 ${
@@ -64,21 +76,48 @@ function TitleBar({
       } ${dark ? "text-[var(--background)]" : "text-white"}`}
       aria-hidden={!visible}
     >
+      {/* Móvil: título + # fijos; descripción debajo (animada). */}
       <div
-        className="absolute inset-0 flex items-center justify-center px-[var(--grid-margin)]"
+        className="absolute inset-x-0 top-1/2 z-10 flex justify-center px-[calc(var(--grid-margin)+0.85rem)] md:hidden"
+        style={{ transform: `translateY(-${MOBILE_TITLE_LIFT})` }}
+      >
+        <div className="pointer-events-auto flex max-w-full items-center justify-center gap-x-3 gap-y-1 text-center">
+          <span className={tituloClass}>
+            <ClickableText text={titulo} enabled={visible} />
+          </span>
+          <span className={numeroClass}>#{formatRetoNumero(numero)}</span>
+        </div>
+      </div>
+      {showCodigo ? null : (
+        <div
+          className="absolute inset-x-0 flex justify-center px-[calc(var(--grid-margin)+0.85rem)] md:hidden"
+          style={{
+            top: MOBILE_BODY_BELOW_TITLE_TOP,
+            opacity: descripcionOpacity,
+            transform: `translateY(${descripcionOffsetVh}vh)`,
+          }}
+        >
+          <p className={`${descripcionClass} w-full max-w-[24rem]`}>
+            {descripcion}
+          </p>
+        </div>
+      )}
+
+      {/* Desktop: descripción al centro; título + # en fila a mitad de pantalla. */}
+      <div
+        className="absolute inset-0 hidden items-center justify-center px-[var(--grid-margin)] md:flex"
         style={{
           opacity: descripcionOpacity,
           transform: `translateY(${descripcionOffsetVh}vh)`,
         }}
       >
-        <p className="w-full max-w-[28rem] text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal] md:max-w-[min(72%,28rem)]">
+        <p className={`${descripcionClass} max-w-[min(72%,28rem)]`}>
           {descripcion}
         </p>
       </div>
 
-      {/* Título + #num: abajo en móvil, centrado en desktop. */}
-      <div className="site-grid absolute inset-x-0 bottom-[max(1.25rem,var(--safe-bottom))] w-full items-center md:bottom-auto md:top-1/2 md:-translate-y-1/2">
-        <div className="col-span-4 col-start-1 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide md:col-span-8 md:col-start-2">
+      <div className="absolute inset-x-0 top-1/2 hidden w-full -translate-y-1/2 px-[var(--grid-margin)] md:grid md:grid-cols-10 md:gap-x-[var(--grid-gutter)]">
+        <div className="col-span-8 col-start-2 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide">
           <span className="relative z-10 min-w-0 max-w-[34%] truncate text-[clamp(13px,2.8vw,18px)] pointer-events-auto">
             <ClickableText text={titulo} enabled={visible} />
           </span>
@@ -268,6 +307,7 @@ export function RetoHero({
           dark={codigoMode}
           descripcionOpacity={descripcionOpacity}
           descripcionOffsetVh={descripcionOffsetVh}
+          showCodigo={showCodigo}
         />
 
         {/* Scroll: azul vacío (se asoma al bajar QUEDAN) */}
@@ -302,7 +342,11 @@ export function RetoHero({
         </div>
 
         <div
-          className={layerClass(showCodigo)}
+          className={`${layerClass(showCodigo)} ${
+            showCodigo
+              ? "max-md:absolute max-md:inset-x-0 max-md:top-[calc(50%-0.65rem)] max-md:justify-start max-md:pt-0 max-md:translate-y-0"
+              : ""
+          }`}
           style={layerStyle}
           aria-hidden={!showCodigo}
         >

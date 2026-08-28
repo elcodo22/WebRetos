@@ -48,9 +48,10 @@ const TOUCH_SLOP_PX = 14;
 const LIFT_HOLD_MS = 420;
 
 export type PerfilFocusMeta = {
-  retoNumero: string;
-  retoTitulo: string;
+  retoNumero?: string;
+  retoTitulo?: string;
   retoId?: string;
+  guardados?: boolean;
 } | null;
 
 type CarouselItem =
@@ -155,8 +156,12 @@ export function PerfilCarousel({
   useEffect(() => {
     indexRef.current = index;
     const item = items[index];
-    if (!item || item.kind !== "obra") {
+    if (!item) {
       onFocusChange?.(null);
+      return;
+    }
+    if (item.kind === "caja") {
+      onFocusChange?.({ guardados: true });
       return;
     }
     onFocusChange?.({
@@ -575,14 +580,11 @@ export function PerfilCarousel({
                     type="button"
                     data-perfil-card
                     onClick={() => onCajaClick(i, isFocus)}
-                    className="relative flex aspect-[2/3] shrink-0 flex-col items-center justify-center gap-3 px-2 transition-[opacity,transform] duration-300 touch-manipulation"
+                    className="relative flex aspect-[2/3] shrink-0 flex-col items-center justify-center px-2 transition-[opacity,transform] duration-300 touch-manipulation"
                     style={cardStyle}
                     aria-label="Guardados"
                   >
                     <CartonBoxIcon scale={isFocus ? 1.05 : 0.9} />
-                    <p className="text-center text-[20px] font-normal leading-none tracking-wide text-white">
-                      Guardados
-                    </p>
                   </button>
                 );
               }

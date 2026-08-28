@@ -5,6 +5,8 @@ import { CrtPowerProvider } from "@/components/layout/crt-power-transition";
 import { BootSplash } from "@/components/layout/boot-splash";
 import { SearchOverlayProvider } from "@/components/archivos/search-overlay-provider";
 import { DiccionarioProvider } from "@/components/diccionario/diccionario-provider";
+import { RetoActivoProvider } from "@/components/layout/reto-activo-context";
+import { getRetoActivoFechaFin } from "@/lib/home-data";
 import "./globals.css";
 
 const ppNeueBit = localFont({
@@ -41,20 +43,24 @@ export const viewport: Viewport = {
   themeColor: "#006eff",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const fechaFin = await getRetoActivoFechaFin();
+
   return (
     <html lang="es" className={`${ppNeueBit.variable} h-full`}>
       <body className={`${ppNeueBit.className} crt-body antialiased`}>
         <CrtShell>
           <CrtPowerProvider>
             <BootSplash>
-              <SearchOverlayProvider>
-                <DiccionarioProvider>{children}</DiccionarioProvider>
-              </SearchOverlayProvider>
+              <RetoActivoProvider fechaFin={fechaFin}>
+                <SearchOverlayProvider>
+                  <DiccionarioProvider>{children}</DiccionarioProvider>
+                </SearchOverlayProvider>
+              </RetoActivoProvider>
             </BootSplash>
           </CrtPowerProvider>
         </CrtShell>

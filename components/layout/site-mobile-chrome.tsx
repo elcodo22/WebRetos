@@ -16,6 +16,7 @@ import {
   SiteHeader,
   type SiteHeaderVariant,
 } from "@/components/layout/site-header";
+import { useHeaderCenter } from "@/components/layout/header-time";
 
 export type SiteMenuTone = "blue" | "white" | "black";
 
@@ -82,6 +83,7 @@ export function SiteMobileMenu({
 }: SiteMobileMenuProps) {
   const pathname = usePathname();
   const menuTone = menuToneProp ?? menuToneForPath(pathname);
+  const resolvedCenter = useHeaderCenter(center);
   const [menuOpenInternal, setMenuOpenInternal] = useState(false);
   const menuOpen = menuOpenProp ?? menuOpenInternal;
   const setMenuOpen = onMenuOpenChange ?? setMenuOpenInternal;
@@ -123,9 +125,9 @@ export function SiteMobileMenu({
             >
               [UNJAM]
             </Link>
-            {center ? (
-              <div className="pointer-events-none absolute inset-x-12 top-1/2 max-w-[calc(100%-6.5rem)] -translate-y-1/2 text-center [word-spacing:normal]">
-                {center}
+            {resolvedCenter ? (
+              <div className="pointer-events-none absolute left-1/2 top-1/2 w-max max-w-[calc(100%-5.75rem)] -translate-x-1/2 -translate-y-1/2 text-center [word-spacing:normal]">
+                {resolvedCenter}
               </div>
             ) : null}
             <button
@@ -145,9 +147,19 @@ export function SiteMobileMenu({
           role="dialog"
           aria-modal="true"
           aria-label="Menú"
-          className={`fixed inset-0 flex flex-col items-center justify-center md:hidden ${styles.overlay}`}
+          className={`fixed inset-0 flex flex-col md:hidden ${styles.overlay}`}
           style={{ zIndex: zIndex + 3 }}
         >
+          <div className="absolute inset-x-0 top-0 z-10 flex justify-end px-[var(--grid-margin)] pt-[max(1.35rem,calc(var(--safe-top)+0.85rem))]">
+            <button
+              type="button"
+              className="ui-btn-text font-normal leading-none tracking-wide"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Cerrar menú"
+            >
+              [CERRAR]
+            </button>
+          </div>
           <div
             className="flex w-full flex-1 flex-col items-center justify-center px-[var(--grid-margin)]"
             onClick={(event) => {
@@ -159,19 +171,9 @@ export function SiteMobileMenu({
               user={user}
               variant={variant}
               onLoginClick={onLoginClick}
-              center={center}
               navLayout="stack"
+              showHomeLink={false}
             />
-          </div>
-          <div className="flex w-full shrink-0 justify-center px-[var(--grid-margin)] pb-[max(1.25rem,calc(var(--safe-bottom)+0.5rem))]">
-            <button
-              type="button"
-              className="ui-btn-text font-normal tracking-wide"
-              onClick={() => setMenuOpen(false)}
-              aria-label="Cerrar menú"
-            >
-              [CERRAR]
-            </button>
           </div>
         </div>
       ) : null}
@@ -205,6 +207,7 @@ export function SiteMobileChrome({
   const { isOpen: searchOpen } = useSearchOverlay();
   const { isOpen: diccionarioOpen } = useDiccionario();
   const menuTone = menuToneProp ?? menuToneForPath(pathname);
+  const resolvedCenter = useHeaderCenter(center);
   const [menuOpenInternal, setMenuOpenInternal] = useState(false);
   const menuOpen = menuOpenProp ?? menuOpenInternal;
 
@@ -214,7 +217,7 @@ export function SiteMobileChrome({
       user={user}
       variant={variant}
       onLoginClick={onLoginClick}
-      center={center}
+      center={resolvedCenter}
     />
   ) : null;
 
@@ -236,7 +239,7 @@ export function SiteMobileChrome({
         user={user}
         variant={variant}
         onLoginClick={onLoginClick}
-        center={center}
+        center={resolvedCenter}
         menuTone={menuTone}
         hideMenu={hideMenu}
         zIndex={zIndex}

@@ -27,6 +27,7 @@ export function SiteHeader({
   center,
   onLoginClick,
   navLayout = "row",
+  showHomeLink = true,
 }: {
   user: User | null;
   /** @deprecated El temporizador está en el hero del home. */
@@ -40,6 +41,8 @@ export function SiteHeader({
   onLoginClick?: () => void;
   /** Disposición del nav: fila (header) o columna (menú móvil). */
   navLayout?: "row" | "stack";
+  /** Muestra el enlace [UNJAM] (desactivar en el overlay del menú móvil). */
+  showHomeLink?: boolean;
 }) {
   const profileUsername = user ? usernameFromUser(user) : null;
   const isStack = navLayout === "stack";
@@ -64,6 +67,7 @@ export function SiteHeader({
         onLoginClick={onLoginClick}
         layout={navLayout}
         center={isStack ? undefined : center}
+        showHomeLink={showHomeLink}
       />
     </header>
   );

@@ -128,6 +128,7 @@ export function HeaderNav({
   onLoginClick,
   layout = "row",
   center,
+  showHomeLink = true,
 }: {
   user: User | null;
   variant: SiteHeaderVariant;
@@ -135,6 +136,7 @@ export function HeaderNav({
   onLoginClick?: () => void;
   layout?: "row" | "stack";
   center?: ReactNode;
+  showHomeLink?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -154,13 +156,15 @@ export function HeaderNav({
         className="flex w-full max-w-xs flex-col items-center gap-8 text-center"
         aria-label="Navegación principal"
       >
-        <Link
-          href="/"
-          className={`${navLinkClass} block w-full text-center`}
-          onClick={(event) => goHome(event, pathname)}
-        >
-          [UNJAM]
-        </Link>
+        {showHomeLink ? (
+          <Link
+            href="/"
+            className={`${navLinkClass} block w-full text-center`}
+            onClick={(event) => goHome(event, pathname)}
+          >
+            [UNJAM]
+          </Link>
+        ) : null}
         {navLinks}
       </nav>
     );

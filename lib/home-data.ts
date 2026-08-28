@@ -64,6 +64,12 @@ export const getRetoActivoHome = cache(async () => {
   }
 });
 
+/** Fecha fin del reto activo (para headers globales). */
+export const getRetoActivoFechaFin = cache(async () => {
+  const reto = await getRetoActivoHome();
+  return reto?.fecha_fin ?? null;
+});
+
 /** Sesión del visitante (no cacheable). */
 export const getCurrentUser = cache(async () => {
   try {

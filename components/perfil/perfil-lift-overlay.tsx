@@ -190,10 +190,10 @@ export function PerfilLiftOverlay({
 
   const label = absorb
     ? isRemove
-      ? "eliminado"
-      : "guardado"
+      ? "ELIMINADO"
+      : "GUARDADO"
     : overTarget
-      ? "soltar"
+      ? "SOLTAR"
       : "";
 
   const left = absorb ? absorb.tx : lift.x;
@@ -247,7 +247,7 @@ export function PerfilLiftOverlay({
         ) : (
           <CartonBoxIcon scale={0.85} className="brightness-0 invert" />
         )}
-        <span className="text-[18px] tracking-wide text-white">{label}</span>
+        <span className="text-[18px] uppercase tracking-wide text-white">{label}</span>
       </div>
     </div>,
     document.body,

@@ -28,6 +28,8 @@ const NEAR_REST_EPS = 0.55;
 
 /** Umbral (en carpetas) para hacer el snap final y detener la animación. */
 const SNAP_EPS = 0.0025;
+/** Un cambio de carpeta / contacto por gesto de rueda. */
+const WHEEL_SNAP_PIN_GAP_MS = 160;
 
 const IG_URL = "https://www.instagram.com/unjaaam/";
 const CONTACT_EMAIL = "unjam@info.es";
@@ -98,6 +100,9 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
   }, []);
 
   useEffect(() => {
+    const lastWheelAtRef = { current: 0 };
+    const wheelSnapConsumedRef = { current: false };
+
     const applyTransform = () => {
       const node = ribbonRef.current;
       if (!node) return;
@@ -188,16 +193,30 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
       const dir = Math.sign(detail.delta);
       if (dir === 0) return;
 
+      const now = performance.now();
+      const gap = now - lastWheelAtRef.current;
+      if (gap >= WHEEL_SNAP_PIN_GAP_MS) {
+        wheelSnapConsumedRef.current = false;
+      }
+      lastWheelAtRef.current = now;
+      if (wheelSnapConsumedRef.current) return;
+
+      const consumeWheelSnap = () => {
+        wheelSnapConsumedRef.current = true;
+      };
+
       // En contacto / saliendo: scroll arriba vuelve a carpetas.
       if (exitProgressRef.current > 0.02 || exitTargetRef.current > 0) {
         if (dir < 0) {
           startExitTo(0);
+          consumeWheelSnap();
           return;
         }
         if (exitTargetRef.current >= 1 || exitProgressRef.current > 0.85) {
           return;
         }
         startExitTo(1);
+        consumeWheelSnap();
         return;
       }
 
@@ -207,6 +226,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
       if (next < 0) {
         if (targetRef.current === 0 && positionRef.current < 0.05) {
           window.dispatchEvent(new Event(HERO_REQUEST_EVENT));
+          consumeWheelSnap();
           return;
         }
         next = 0;
@@ -217,6 +237,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
           positionRef.current > last - 0.08
         ) {
           startExitTo(1);
+          consumeWheelSnap();
         }
         return;
       }
@@ -239,6 +260,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
       );
 
       targetRef.current = next;
+      consumeWheelSnap();
 
       if (isSettledRef.current) {
         isSettledRef.current = false;
@@ -295,12 +317,12 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
         }}
         aria-hidden={exit > 0.75}
       >
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-end pb-[max(1rem,calc(var(--safe-bottom)+0.85rem))] md:items-center md:pb-0">
+        <div className="pointer-events-none absolute inset-0 z-10 hidden items-center md:flex">
           <div className="site-grid w-full items-center">
-            <div className="col-span-2 col-start-1 truncate text-[clamp(13px,2.8vw,18px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-2">
+            <div className="col-span-2 col-start-2 truncate text-[clamp(13px,2.8vw,18px)] font-normal uppercase leading-none tracking-wide">
               {current?.titulo}
             </div>
-            <div className="col-span-2 col-start-3 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide md:col-span-2 md:col-start-8">
+            <div className="col-span-2 col-start-8 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide">
               {current ? `#${formatRetoNumero(current.numero)}` : null}
             </div>
           </div>
@@ -340,7 +362,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                     transition: `opacity ${isSettled ? 200 : 80}ms ease-out`,
                   }}
                 >
-                  <div className="relative inline-block">
+                  <div className="relative flex flex-col items-center">
                     {isFocus ? (
                       <button
                         type="button"
@@ -355,6 +377,16 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                         <FolderIcon />
                       </div>
                     )}
+                    {isFocus ? (
+                      <div className="pointer-events-none mt-3 flex max-w-[min(88vw,20rem)] items-center justify-center gap-x-3 px-2 text-center md:hidden">
+                        <span className="min-w-0 truncate text-[clamp(13px,2.8vw,18px)] font-normal uppercase leading-none tracking-wide">
+                          {item.titulo}
+                        </span>
+                        <span className="shrink-0 whitespace-nowrap text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide">
+                          #{formatRetoNumero(item.numero)}
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               );
