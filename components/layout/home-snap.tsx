@@ -137,6 +137,8 @@ export function HomeSnap({
   /** Tras cerrar el vídeo, el mismo flick no mueve la descripción. */
   const pinHomeAfterVideoRef = useRef(false);
   const lastHomeWheelAtRef = useRef(0);
+  const videoAnimatingRef = useRef(false);
+  const videoAnimateRafRef = useRef(0);
 
   const clearTransitionTimers = useCallback(() => {
     for (const id of transitionTimersRef.current) {
@@ -580,6 +582,43 @@ export function HomeSnap({
     },
     [setVideoReveal],
   );
+
+  /**
+   * Anima el vídeo hasta desaparecer: un solo scroll dispara la transición
+   * completa y deja la descripción en pantalla.
+   */
+  const animateVideoOut = useCallback(
+    (durationMs = 480) => {
+      if (videoAnimatingRef.current) return;
+      if (videoRevealRef.current >= 0.999) return;
+      videoAnimatingRef.current = true;
+      const from = videoRevealRef.current;
+      const start = performance.now();
+      const step = () => {
+        const t = Math.min(1, (performance.now() - start) / durationMs);
+        // easeOutCubic
+        const eased = 1 - Math.pow(1 - t, 3);
+        const value = from + (1 - from) * eased;
+        setVideoReveal(value);
+        if (t < 1) {
+          videoAnimateRafRef.current = requestAnimationFrame(step);
+        } else {
+          videoAnimatingRef.current = false;
+          videoAnimateRafRef.current = 0;
+        }
+      };
+      videoAnimateRafRef.current = requestAnimationFrame(step);
+    },
+    [setVideoReveal],
+  );
+
+  const cancelVideoAnimation = useCallback(() => {
+    if (videoAnimateRafRef.current) {
+      cancelAnimationFrame(videoAnimateRafRef.current);
+      videoAnimateRafRef.current = 0;
+    }
+    videoAnimatingRef.current = false;
+  }, []);
 
   const wheelDeltaPx = (event: WheelEvent) => {
     if (event.deltaMode === 1) return event.deltaY * 16;
@@ -1098,8 +1137,19 @@ export function HomeSnap({
           tiempoProgressRef.current <= 0.002 &&
           archivosRevealTargetRef.current <= 0.001;
 
-        // Vídeo: sube/baja con el scroll (sin saltar de golpe).
-        if (videoRevealRef.current < 0.999 || (atHomeStart && delta < 0)) {
+        // Vídeo: un solo scroll hacia adelante dispara la animación al home.
+        // Hacia atrás sigue siendo scrub manual (permite rebobinar).
+        if (videoRevealRef.current < 0.999) {
+          if (delta > 0) {
+            if (!videoAnimatingRef.current) animateVideoOut();
+            return;
+          }
+          const capped =
+            Math.sign(raw) * Math.min(Math.abs(raw), VIDEO_WHEEL_CAP_PX);
+          scrollVideoBy(capped);
+          return;
+        }
+        if (atHomeStart && delta < 0) {
           const capped =
             Math.sign(raw) * Math.min(Math.abs(raw), VIDEO_WHEEL_CAP_PX);
           scrollVideoBy(capped);
@@ -1337,6 +1387,7 @@ export function HomeSnap({
     dispatchArchivoWheel,
     scrollIntroBy,
     scrollVideoBy,
+    animateVideoOut,
     scrollArchivosRevealBy,
     scrollTiempoBy,
     setHeroStep,
@@ -1363,7 +1414,6 @@ export function HomeSnap({
     let reenteredIntro = false;
     let openedCodigoThisTouch = false;
     let closedVideoThisTouch = false;
-    let returnedToTiempoThisTouch = false;
 
     const fromField = (target: EventTarget | null) =>
       target instanceof Element &&
@@ -1395,15 +1445,19 @@ export function HomeSnap({
       const frameDy = rawDy * TOUCH_MULT;
 
       if (mode === "video") {
+        // Un scroll hacia arriba dispara la animación completa; hacia abajo
+        // sigue siendo scrub manual (para poder rebobinar).
+        if (rawDy > 0) {
+          animateVideoOut();
+          mode = "intro";
+          closedVideoThisTouch = true;
+          return;
+        }
         const next = Math.min(
           1,
           Math.max(0, videoRevealRef.current + rawDy / VIDEO_SCROLL_PX_TOUCH),
         );
         setVideoReveal(next);
-        if (next >= 0.999) {
-          mode = "intro";
-          closedVideoThisTouch = true;
-        }
         return;
       }
 
@@ -1443,10 +1497,6 @@ export function HomeSnap({
       }
 
       if (mode === "tiempo") {
-        // Tras volver de código a tiempo en este gesto, ignoramos el resto
-        // del arrastre para no atropellar hasta la descripción.
-        if (returnedToTiempoThisTouch) return;
-
         const step = heroStepRef.current;
         if (step <= 1 && frameDy < 0 && tiempoProgressRef.current <= 0.002) {
           mode = "intro";
@@ -1471,10 +1521,7 @@ export function HomeSnap({
 
       if (mode === "codigo") {
         if (frameDy < 0) {
-          if (returnToTiempoFromCodigo()) {
-            mode = "tiempo";
-            returnedToTiempoThisTouch = true;
-          }
+          if (returnToTiempoFromCodigo()) mode = "tiempo";
           return;
         }
         if (
@@ -1526,7 +1573,6 @@ export function HomeSnap({
       reenteredIntro = false;
       openedCodigoThisTouch = false;
       closedVideoThisTouch = false;
-      returnedToTiempoThisTouch = false;
     };
 
     const onMove = (event: TouchEvent) => {
@@ -1585,6 +1631,7 @@ export function HomeSnap({
   }, [
     dispatchArchivoWheel,
     setVideoReveal,
+    animateVideoOut,
     scrollIntroBy,
     scrollTiempoBy,
     scrollArchivosRevealBy,
@@ -1592,6 +1639,8 @@ export function HomeSnap({
     goToCodigoFromTiempo,
     returnToTiempoFromCodigo,
   ]);
+
+  useEffect(() => cancelVideoAnimation, [cancelVideoAnimation]);
 
   const participarActive =
     panel === 0 &&
