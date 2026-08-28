@@ -1363,6 +1363,7 @@ export function HomeSnap({
     let reenteredIntro = false;
     let openedCodigoThisTouch = false;
     let closedVideoThisTouch = false;
+    let returnedToTiempoThisTouch = false;
 
     const fromField = (target: EventTarget | null) =>
       target instanceof Element &&
@@ -1442,6 +1443,10 @@ export function HomeSnap({
       }
 
       if (mode === "tiempo") {
+        // Tras volver de código a tiempo en este gesto, ignoramos el resto
+        // del arrastre para no atropellar hasta la descripción.
+        if (returnedToTiempoThisTouch) return;
+
         const step = heroStepRef.current;
         if (step <= 1 && frameDy < 0 && tiempoProgressRef.current <= 0.002) {
           mode = "intro";
@@ -1466,7 +1471,10 @@ export function HomeSnap({
 
       if (mode === "codigo") {
         if (frameDy < 0) {
-          if (returnToTiempoFromCodigo()) mode = "tiempo";
+          if (returnToTiempoFromCodigo()) {
+            mode = "tiempo";
+            returnedToTiempoThisTouch = true;
+          }
           return;
         }
         if (
@@ -1518,6 +1526,7 @@ export function HomeSnap({
       reenteredIntro = false;
       openedCodigoThisTouch = false;
       closedVideoThisTouch = false;
+      returnedToTiempoThisTouch = false;
     };
 
     const onMove = (event: TouchEvent) => {
