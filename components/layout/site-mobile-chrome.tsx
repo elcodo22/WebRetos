@@ -120,7 +120,11 @@ export function SiteMobileMenu({
           <div className="relative flex items-center justify-between">
             <Link
               href="/"
-              className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
+              className={`pointer-events-auto ui-btn-text font-normal leading-none tracking-wide ${
+                menuTone === "white"
+                  ? "site-chrome-link--on-white"
+                  : "site-chrome-link"
+              }`}
               onClick={(event) => goHome(event, pathname)}
             >
               [UNJAM]
@@ -132,7 +136,11 @@ export function SiteMobileMenu({
             ) : null}
             <button
               type="button"
-              className="pointer-events-auto ui-btn-text font-normal leading-none tracking-wide"
+              className={`pointer-events-auto ui-btn-text font-normal leading-none tracking-wide ${
+                menuTone === "white"
+                  ? "site-chrome-link--on-white"
+                  : "site-chrome-link"
+              }`}
               onClick={() => setMenuOpen(true)}
               aria-label="Abrir menú"
             >

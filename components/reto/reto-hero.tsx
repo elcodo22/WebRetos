@@ -64,8 +64,8 @@ function TitleBar({
 }) {
   const titleNumClass =
     "font-normal uppercase leading-none tracking-wide pointer-events-auto";
-  const tituloClass = `relative z-10 min-w-0 max-w-[11rem] truncate text-[clamp(13px,2.8vw,18px)] ${titleNumClass}`;
-  const numeroClass = `relative z-10 shrink-0 whitespace-nowrap text-[clamp(16px,3.8vw,25px)] ${titleNumClass}`;
+  const tituloClass = `reto-titulo-text relative z-10 min-w-0 max-w-[11rem] truncate ${titleNumClass}`;
+  const numeroClass = `reto-numero-text relative z-10 shrink-0 whitespace-nowrap ${titleNumClass}`;
   const descripcionClass =
     "w-full text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal]";
 
@@ -118,10 +118,10 @@ function TitleBar({
 
       <div className="absolute inset-x-0 top-1/2 hidden w-full -translate-y-1/2 px-[var(--grid-margin)] md:grid md:grid-cols-10 md:gap-x-[var(--grid-gutter)]">
         <div className="col-span-8 col-start-2 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide">
-          <span className="relative z-10 min-w-0 max-w-[34%] truncate text-[clamp(13px,2.8vw,18px)] pointer-events-auto">
+          <span className="reto-titulo-text relative z-10 min-w-0 max-w-[34%] truncate pointer-events-auto">
             <ClickableText text={titulo} enabled={visible} />
           </span>
-          <span className="relative z-10 shrink-0 whitespace-nowrap text-[clamp(16px,3.8vw,25px)]">
+          <span className="reto-numero-text relative z-10 shrink-0 whitespace-nowrap">
             #{formatRetoNumero(numero)}
           </span>
         </div>

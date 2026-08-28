@@ -244,6 +244,17 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
         </div>
 
         <div
+          className={`pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center bg-gradient-to-t from-black via-black/85 to-transparent px-[18px] pb-[max(1rem,var(--safe-bottom))] pt-10 transition-opacity duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            panel === 1 ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden={panel !== 1}
+        >
+          <div className="pointer-events-auto min-w-0 max-w-full text-center">
+            {hero}
+          </div>
+        </div>
+
+        <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black/40 via-black/10 to-transparent transition-opacity duration-300 max-md:from-black/25 max-md:via-transparent"
           style={{

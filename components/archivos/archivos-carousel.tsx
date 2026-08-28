@@ -319,10 +319,10 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
       >
         <div className="pointer-events-none absolute inset-0 z-10 hidden items-center md:flex">
           <div className="site-grid w-full items-center">
-            <div className="col-span-2 col-start-2 truncate text-[clamp(13px,2.8vw,18px)] font-normal uppercase leading-none tracking-wide">
+            <div className="col-span-2 col-start-2 truncate reto-titulo-text">
               {current?.titulo}
             </div>
-            <div className="col-span-2 col-start-8 whitespace-nowrap text-right text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide">
+            <div className="col-span-2 col-start-8 whitespace-nowrap text-right reto-numero-text">
               {current ? `#${formatRetoNumero(current.numero)}` : null}
             </div>
           </div>
@@ -379,10 +379,10 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                     )}
                     {isFocus ? (
                       <div className="pointer-events-none mt-3 flex max-w-[min(88vw,20rem)] items-center justify-center gap-x-3 px-2 text-center md:hidden">
-                        <span className="min-w-0 truncate text-[clamp(13px,2.8vw,18px)] font-normal uppercase leading-none tracking-wide">
+                        <span className="reto-titulo-text min-w-0 truncate">
                           {item.titulo}
                         </span>
-                        <span className="shrink-0 whitespace-nowrap text-[clamp(16px,3.8vw,25px)] font-normal uppercase leading-none tracking-wide">
+                        <span className="reto-numero-text shrink-0 whitespace-nowrap">
                           #{formatRetoNumero(item.numero)}
                         </span>
                       </div>

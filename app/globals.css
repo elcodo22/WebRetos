@@ -37,6 +37,67 @@
   letter-spacing: 0.025em;
 }
 
+/* Título + # del reto: home, archivos y pantalla reto (móvil y desktop). */
+.reto-titulo-text {
+  font-size: clamp(15px, 3.4vw, 22px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.reto-numero-text {
+  font-size: clamp(18px, 4.2vw, 28px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .reto-titulo-text {
+    font-size: clamp(13px, 2.8vw, 18px);
+  }
+
+  .reto-numero-text {
+    font-size: clamp(16px, 3.8vw, 25px);
+  }
+}
+
+/* Pantalla /reto/[id]: título y # mismo tamaño, un poco más grandes. */
+.reto-page-heading-text {
+  font-size: clamp(17px, 3.8vw, 24px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .reto-page-heading-text {
+    font-size: clamp(15px, 3.2vw, 20px);
+  }
+}
+
+/* Enlaces del chrome móvil: blanco puro (evita herencia atenuada). */
+.site-chrome-link {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.site-chrome-link:hover {
+  opacity: 0.8;
+}
+
+.site-chrome-link--on-white {
+  color: var(--background);
+  opacity: 1;
+}
+
+.site-chrome-link--on-white:hover {
+  opacity: 0.8;
+}
+
 *,
 *::before,
 *::after {
