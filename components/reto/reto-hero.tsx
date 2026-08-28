@@ -39,6 +39,16 @@ type RetoHeroProps = {
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const STEP_MS = 480;
+const KEYBOARD_INSET_THRESHOLD = 80;
+
+export function isVisualKeyboardOpen() {
+  const viewport = window.visualViewport;
+  if (!viewport) return false;
+  return (
+    window.innerHeight - viewport.height - viewport.offsetTop >
+    KEYBOARD_INSET_THRESHOLD
+  );
+}
 /** Móvil: título fijo y bloque debajo (descripción / código) con el mismo gap. */
 const MOBILE_TITLE_LIFT = "2.85rem";
 const MOBILE_BODY_BELOW_TITLE_TOP = "calc(50% - 0.65rem)";
@@ -175,11 +185,23 @@ export function RetoHero({
   }, []);
 
   const tryDismissFromInteraction = useCallback(
-    (target: EventTarget | null) => {
+    (
+      target: EventTarget | null,
+      opts?: { keyboardOpenAtTouchStart?: boolean },
+    ) => {
       if (!codigoFocusedRef.current) return;
       const el = target as Element | null;
       if (el?.closest("[data-codigo-field]")) return;
       if (el?.closest("[data-codigo-actions]")) return;
+
+      const keyboardWasOpen =
+        opts?.keyboardOpenAtTouchStart === true || isVisualKeyboardOpen();
+
+      if (keyboardWasOpen) {
+        codigoInputRef.current?.blur();
+        return;
+      }
+
       dismissCodigoEntry();
     },
     [dismissCodigoEntry],
@@ -249,16 +271,32 @@ export function RetoHero({
   useEffect(() => {
     if (!codigoFocused || step !== 3) return;
 
-    const onTouchEnd = (event: TouchEvent) => {
-      tryDismissFromInteraction(event.target);
+    let keyboardOpenAtTouchStart = false;
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (!codigoFocusedRef.current) return;
+      const el = event.target as Element | null;
+      if (el?.closest("[data-codigo-field]")) return;
+      if (el?.closest("[data-codigo-actions]")) return;
+      keyboardOpenAtTouchStart = isVisualKeyboardOpen();
     };
 
+    const onTouchEnd = (event: TouchEvent) => {
+      tryDismissFromInteraction(event.target, { keyboardOpenAtTouchStart });
+      keyboardOpenAtTouchStart = false;
+    };
+
+    document.addEventListener("touchstart", onTouchStart, {
+      capture: true,
+      passive: true,
+    });
     document.addEventListener("touchend", onTouchEnd, {
       capture: true,
       passive: true,
     });
 
     return () => {
+      document.removeEventListener("touchstart", onTouchStart, { capture: true });
       document.removeEventListener("touchend", onTouchEnd, { capture: true });
     };
   }, [codigoFocused, step, tryDismissFromInteraction]);

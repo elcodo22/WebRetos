@@ -15,6 +15,7 @@ import { ARCHIVOS_CONTACT_EVENT } from "@/components/archivos/archivos-carousel"
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import {
   HERO_INTRO_SCROLL_SELECTOR,
+  isVisualKeyboardOpen,
   RETO_CODIGO_DISMISS_EVENT,
   RETO_CODIGO_FOCUS_EVENT,
   RETO_DETALLE_EVENT,
@@ -1619,6 +1620,12 @@ export function HomeSnap({
           !target.closest("[data-codigo-field]") &&
           !target.closest("[data-codigo-actions]")
         ) {
+          if (isVisualKeyboardOpen()) {
+            if (document.activeElement instanceof HTMLInputElement) {
+              document.activeElement.blur();
+            }
+            return;
+          }
           setCodigoFocused(false);
           window.dispatchEvent(new CustomEvent(RETO_CODIGO_DISMISS_EVENT));
           return;
