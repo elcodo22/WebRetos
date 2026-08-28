@@ -172,7 +172,12 @@ export function RetoTimeBar({
   const compactLabel =
     unit.suffix === "d" ? String(unit.value) : pad(unit.value);
 
-  const unitsLabel = `${display.dias}D ${pad(display.horas)}H ${pad(display.minutos)}M ${pad(display.segundos)}S`;
+  const unitsParts = [
+    { key: "d", value: String(display.dias), letter: "D" },
+    { key: "h", value: pad(display.horas), letter: "H" },
+    { key: "m", value: pad(display.minutos), letter: "M" },
+    { key: "s", value: pad(display.segundos), letter: "S" },
+  ];
 
   const phraseParts = [
     { key: "d", text: `${display.dias} ${labelFor(display.dias, "DÍA", "DÍAS")}` },
@@ -198,7 +203,12 @@ export function RetoTimeBar({
           </span>
         ))
       ) : format === "units" ? (
-        <span className="whitespace-nowrap">{unitsLabel}</span>
+        unitsParts.map((part) => (
+          <span key={part.key} className="whitespace-nowrap">
+            <span>{part.value}</span>
+            <span className="ml-[0.28em]">{part.letter}</span>
+          </span>
+        ))
       ) : (
         <span>
           {compactLabel}
