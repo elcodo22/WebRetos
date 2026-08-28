@@ -188,7 +188,9 @@ export function RetoTimeBar({
 
   return (
     <p
-      className={`flex flex-wrap items-baseline gap-x-[0.45em] gap-y-1 tabular-nums text-inherit [word-spacing:normal] ${
+      className={`flex flex-wrap items-baseline gap-y-1 tabular-nums text-inherit [word-spacing:normal] ${
+        format === "units" ? "gap-x-[0.22em]" : "gap-x-[0.45em]"
+      } ${
         align === "start"
           ? "justify-start text-left"
           : align === "end"
@@ -206,7 +208,7 @@ export function RetoTimeBar({
         unitsParts.map((part) => (
           <span key={part.key} className="whitespace-nowrap">
             <span>{part.value}</span>
-            <span className="ml-[0.28em]">{part.letter}</span>
+            <span className="ml-[0.1em]">{part.letter}</span>
           </span>
         ))
       ) : (
