@@ -15,6 +15,7 @@ import {
   setChromeTheme,
 } from "@/components/layout/crt-shell";
 import { categoryLabel, type DiccionarioResult } from "@/lib/diccionario";
+import { GeistMono } from "geist/font/mono";
 
 type HoverWordState = {
   text: string;
@@ -212,25 +213,31 @@ export function DiccionarioProvider({ children }: { children: ReactNode }) {
                 </p>
 
                 {state.phase === "loading" ? (
-                  <p className="mt-8 text-[20px] font-normal leading-relaxed tracking-wide text-black/50">
+                  <p
+                    className={`${GeistMono.className} mt-8 text-[15px] font-normal leading-relaxed tracking-wide text-black/50 md:text-[16px]`}
+                  >
                     …
                   </p>
                 ) : null}
 
                 {state.phase === "error" ? (
-                  <p className="mt-8 text-[20px] font-normal leading-relaxed tracking-wide">
+                  <p
+                    className={`${GeistMono.className} mt-8 text-[15px] font-normal leading-relaxed tracking-wide md:text-[16px]`}
+                  >
                     {state.message}
                   </p>
                 ) : null}
 
                 {state.phase === "ready" ? (
-                  <ul className="mt-8 list-none space-y-5 p-0">
+                  <ul
+                    className={`${GeistMono.className} mt-8 list-none space-y-5 p-0`}
+                  >
                     {state.data.senses.map((sense) => {
                       const cat = categoryLabel(sense.category);
                       return (
                         <li
                           key={`${sense.n}-${sense.description}`}
-                          className="text-[20px] font-normal leading-relaxed tracking-wide md:text-[21px]"
+                          className="text-[15px] font-normal leading-relaxed tracking-wide md:text-[16px]"
                         >
                           <span className="text-black/55">
                             {sense.n}.

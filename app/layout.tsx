@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import { CrtShell } from "@/components/layout/crt-shell";
 import { CrtPowerProvider } from "@/components/layout/crt-power-transition";
 import { BootSplash } from "@/components/layout/boot-splash";
@@ -51,7 +53,10 @@ export default async function RootLayout({
   const fechaFin = await getRetoActivoFechaFin();
 
   return (
-    <html lang="es" className={`${ppNeueBit.variable} h-full`}>
+    <html
+      lang="es"
+      className={`${ppNeueBit.variable} ${GeistMono.variable} ${GeistSans.variable} h-full`}
+    >
       <body className={`${ppNeueBit.className} crt-body antialiased`}>
         <CrtShell>
           <CrtPowerProvider>

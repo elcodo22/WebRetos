@@ -58,6 +58,16 @@ export function setChromeTheme(chrome: "blue" | "white" | "black") {
   applyStatusBarStyle(chrome);
 }
 
+export const CRT_FILTERS_EVENT = "crt-filters";
+
+/** Activa/desactiva scanlines, grano y demás filtros CRT (el marco sigue visible). */
+export function setCrtFiltersActive(active: boolean) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(CRT_FILTERS_EVENT, { detail: { active } }),
+  );
+}
+
 /** Contenido útil de la tele: overlays internos deben ir aquí para heredar marco y filtros. */
 export function getCrtScreenElement(): HTMLElement | null {
   return document.querySelector(".crt-screen");
@@ -65,18 +75,35 @@ export function getCrtScreenElement(): HTMLElement | null {
 
 export function CrtShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isFlatScreen =
-    pathname.startsWith("/u/") || pathname.startsWith("/reto/");
+  const isHome = pathname === "/";
   const blackScreen =
     pathname.startsWith("/reto/") ||
     pathname.startsWith("/u/") ||
     pathname.startsWith("/ajustes") ||
     pathname.startsWith("/admin");
   const [perf, setPerf] = useState(false);
+  const [filtersActive, setFiltersActive] = useState(isHome);
 
   useEffect(() => {
     setPerf(shouldUsePerfCrt());
   }, []);
+
+  useEffect(() => {
+    const onFilters = (event: Event) => {
+      const active = (event as CustomEvent<{ active: boolean }>).detail.active;
+      setFiltersActive(active);
+    };
+    window.addEventListener(CRT_FILTERS_EVENT, onFilters);
+    return () => window.removeEventListener(CRT_FILTERS_EVENT, onFilters);
+  }, []);
+
+  useEffect(() => {
+    if (!isHome) {
+      setFiltersActive(false);
+      return;
+    }
+    setFiltersActive(true);
+  }, [isHome]);
 
   useEffect(() => {
     if (pathname === "/") return;
@@ -86,7 +113,6 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
   const shellClass = [
     "crt-shell",
     blackScreen ? "crt-shell--black" : "",
-    isFlatScreen ? "crt-shell--flat" : "",
     perf ? "crt-shell--perf" : "",
   ]
     .filter(Boolean)
@@ -96,7 +122,7 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
     <div className={shellClass}>
       <div className="crt-glass">
         <div className="crt-screen">{children}</div>
-        {!isFlatScreen ? (
+        {filtersActive ? (
           <>
             <div className="crt-phosphor" aria-hidden />
             <div className="crt-scanlines" aria-hidden />

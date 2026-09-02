@@ -9,7 +9,7 @@ export const RETO_DESCRIPCION_CLASS =
   `text-center ${RETO_DESCRIPCION_TEXT_SIZE} font-normal uppercase leading-snug tracking-normal [word-spacing:normal]`;
 
 export const RETO_DESCRIPCION_TEXT_SIZE_HERO =
-  "text-[clamp(12px,2vw,15px)]";
+  "text-[clamp(10px,1.65vw,12px)]";
 
 export const RETO_DESCRIPCION_CLASS_HERO =
   `w-full text-center ${RETO_DESCRIPCION_TEXT_SIZE_HERO} font-normal uppercase leading-snug tracking-normal [word-spacing:normal]`;

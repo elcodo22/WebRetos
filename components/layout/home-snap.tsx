@@ -25,7 +25,7 @@ import {
   RETO_PARTICIPAR_EVENT,
   type HeroStep,
 } from "@/components/reto/reto-hero";
-import { setChromeTheme } from "@/components/layout/crt-shell";
+import { setChromeTheme, setCrtFiltersActive } from "@/components/layout/crt-shell";
 import { HomeIntroVideo } from "@/components/layout/home-intro-video";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
@@ -1169,6 +1169,10 @@ export function HomeSnap({
   useEffect(() => {
     panelRef.current = panel;
   }, [panel]);
+
+  useEffect(() => {
+    setCrtFiltersActive(videoReveal < 0.999);
+  }, [videoReveal]);
 
   useEffect(() => {
     if (window.location.hash === "#archivos") {

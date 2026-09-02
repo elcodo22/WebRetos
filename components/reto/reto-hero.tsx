@@ -8,9 +8,11 @@ import {
 } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
 import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
 import {
   RETO_DESCRIPCION_CLASS_HERO,
   RETO_DESCRIPCION_MAX_W,
+  RETO_DESCRIPCION_TEXT_SIZE_HERO,
 } from "@/lib/reto-descripcion";
 import { formatRetoNumero } from "@/lib/format-reto-numero";
 import { VideoThumbnail } from "@/components/video/video-thumbnail";
@@ -87,7 +89,8 @@ function TitleBar({
   descripcionOffsetVh: number;
   showCodigo?: boolean;
 }) {
-  const titleNumClass = `${GeistMono.className} !text-[15px] !font-semibold uppercase leading-none tracking-wide pointer-events-auto`;
+  const titleNumClass =
+    "font-normal uppercase leading-none tracking-wide pointer-events-auto";
   const tituloClass = `reto-heading-titulo relative z-10 min-w-0 max-w-[11rem] truncate ${titleNumClass}`;
   const numeroClass = `reto-heading-text relative z-10 shrink-0 whitespace-nowrap ${titleNumClass}`;
   const descripcionClass = `${GeistMono.className} ${RETO_DESCRIPCION_CLASS_HERO} ${RETO_DESCRIPCION_MAX_W}`;
@@ -140,11 +143,11 @@ function TitleBar({
       </div>
 
       <div className="absolute inset-x-0 top-1/2 hidden w-full -translate-y-1/2 px-[var(--grid-margin)] md:grid md:grid-cols-10 md:gap-x-[var(--grid-gutter)]">
-        <div className={`col-span-8 col-start-2 flex min-w-0 items-center justify-between gap-4 ${titleNumClass}`}>
-          <span className={`reto-heading-titulo relative z-10 min-w-0 max-w-[34%] truncate ${titleNumClass}`}>
+        <div className="col-span-8 col-start-2 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide">
+          <span className="reto-heading-titulo relative z-10 min-w-0 max-w-[34%] truncate pointer-events-auto">
             <ClickableText text={titulo} enabled={visible} />
           </span>
-          <span className={`reto-heading-text relative z-10 shrink-0 whitespace-nowrap ${titleNumClass}`}>
+          <span className="reto-heading-text relative z-10 shrink-0 whitespace-nowrap">
             #{formatRetoNumero(numero)}
           </span>
         </div>
@@ -535,7 +538,7 @@ export function RetoHero({
                 autoCorrect="off"
                 spellCheck={false}
                 size={38}
-                className={`w-full min-w-0 bg-transparent text-center text-[clamp(16px,3vw,22px)] font-normal uppercase leading-none tracking-normal outline-none ${
+                className={`${GeistSans.className} ${RETO_DESCRIPCION_TEXT_SIZE_HERO} w-full min-w-0 bg-transparent text-center font-medium uppercase leading-snug tracking-normal [word-spacing:normal] outline-none ${
                   codigoMode
                     ? "text-[var(--background)] placeholder:text-[var(--background)]/55"
                     : "text-white placeholder:text-white/70"
