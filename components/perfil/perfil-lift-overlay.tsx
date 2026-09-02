@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { PerfilObra } from "@/lib/mocks/perfil";
+import { useVideoThumbnail } from "@/hooks/use-video-thumbnail";
 import { CartonBoxIcon } from "@/components/perfil/carton-box-icon";
 import { PixelXIcon } from "@/components/perfil/pixel-x-icon";
 
@@ -73,6 +74,7 @@ export function PerfilLiftOverlay({
   const overRef = useRef(false);
 
   const isRemove = mode === "remove";
+  const thumbnailSrc = useVideoThumbnail(lift.obra.videoUrl, lift.obra.videoUid);
 
   useEffect(() => {
     setMounted(true);
@@ -214,7 +216,7 @@ export function PerfilLiftOverlay({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
-        src={lift.obra.imageUrl}
+        src={thumbnailSrc ?? undefined}
         alt=""
         draggable={false}
         className="pointer-events-none fixed object-cover shadow-[0_12px_40px_rgba(0,0,0,0.65)]"

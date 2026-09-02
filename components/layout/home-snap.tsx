@@ -13,13 +13,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSearchOverlay } from "@/components/archivos/search-overlay-provider";
 import { ARCHIVOS_CONTACT_EVENT } from "@/components/archivos/archivos-carousel";
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
+import { ParticiparSubmitScreen, type ObraEnviadaState } from "@/components/reto/participar-submit-screen";
 import {
   HERO_INTRO_SCROLL_SELECTOR,
-  isVisualKeyboardOpen,
   RETO_CODIGO_DISMISS_EVENT,
+  RETO_CODIGO_ENGAGED_ATTR,
   RETO_CODIGO_FOCUS_EVENT,
   RETO_DETALLE_EVENT,
   RETO_HERO_STEP_EVENT,
+  RETO_OBRA_ENVIADA_EVENT,
+  RETO_PARTICIPAR_EVENT,
   type HeroStep,
 } from "@/components/reto/reto-hero";
 import { setChromeTheme } from "@/components/layout/crt-shell";
@@ -81,6 +84,12 @@ type HomeSnapProps = {
   hero: ReactNode;
   archivos: ReactNode;
   fechaFin?: string | null;
+  retoId?: string;
+  retoTitulo?: string;
+  retoNumero?: string;
+  retoDescripcion?: string;
+  maxVideoDurationSeconds?: number;
+  obraInicial?: ObraEnviadaState | null;
 };
 
 export function HomeSnap({
@@ -88,6 +97,12 @@ export function HomeSnap({
   hero,
   archivos,
   fechaFin = null,
+  retoId = "",
+  retoTitulo = "",
+  retoNumero = "",
+  retoDescripcion = "",
+  maxVideoDurationSeconds = 90,
+  obraInicial = null,
 }: HomeSnapProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -105,6 +120,11 @@ export function HomeSnap({
   const [archivosContact, setArchivosContact] = useState(0);
   const [videoReveal, setVideoRevealState] = useState(0);
   const [codigoFocused, setCodigoFocused] = useState(false);
+  const [participarOpen, setParticiparOpen] = useState(false);
+  const [participarCodigo, setParticiparCodigo] = useState("");
+  const [obraEnviada, setObraEnviada] = useState<ObraEnviadaState | null>(
+    obraInicial,
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const panelRef = useRef(0);
   const lockedRef = useRef(false);
@@ -251,14 +271,34 @@ export function HomeSnap({
     };
   }, []);
 
+  useEffect(() => {
+    function onParticipar(event: Event) {
+      const codigo =
+        (event as CustomEvent<{ codigo?: string }>).detail?.codigo ?? "";
+      setParticiparCodigo(codigo);
+      setParticiparOpen(true);
+      setCodigoFocused(false);
+      setMobileMenuOpen(false);
+    }
+
+    window.addEventListener(RETO_PARTICIPAR_EVENT, onParticipar);
+    return () =>
+      window.removeEventListener(RETO_PARTICIPAR_EVENT, onParticipar);
+  }, []);
+
   const homeWhiteMode =
-    panel === 1 ||
-    (panel === 0 && codigoFocused) ||
-    (panel === 0 && archivosReveal >= 0.92);
+    !participarOpen &&
+    (panel === 1 ||
+      (panel === 0 && codigoFocused) ||
+      (panel === 0 && archivosReveal >= 0.92));
 
   useEffect(() => {
+    if (participarOpen) {
+      setChromeTheme("black");
+      return;
+    }
     setChromeTheme(homeWhiteMode ? "white" : "blue");
-  }, [homeWhiteMode]);
+  }, [participarOpen, homeWhiteMode]);
 
   useEffect(() => {
     const onContact = (event: Event) => {
@@ -1620,15 +1660,16 @@ export function HomeSnap({
           !target.closest("[data-codigo-field]") &&
           !target.closest("[data-codigo-actions]")
         ) {
-          if (isVisualKeyboardOpen()) {
-            if (document.activeElement instanceof HTMLInputElement) {
-              document.activeElement.blur();
+          const codigoEngaged = rootRef.current?.querySelector(
+            `[${RETO_CODIGO_ENGAGED_ATTR}]`,
+          );
+          if (codigoEngaged) {
+            const active = document.activeElement;
+            if (active instanceof HTMLInputElement) {
+              active.blur();
             }
             return;
           }
-          setCodigoFocused(false);
-          window.dispatchEvent(new CustomEvent(RETO_CODIGO_DISMISS_EVENT));
-          return;
         }
       }
 
@@ -1719,6 +1760,33 @@ export function HomeSnap({
   useEffect(() => cancelVideoAnimation, [cancelVideoAnimation]);
   useEffect(() => cancelIntroAnimation, [cancelIntroAnimation]);
 
+  const handleObraUploadSuccess = useCallback((obra: ObraEnviadaState) => {
+    setObraEnviada(obra);
+    setParticiparOpen(false);
+    setCodigoFocused(false);
+
+    heroStepRef.current = 3;
+    setHeroStepState(3);
+    introProgressRef.current = 0;
+    setIntroProgressState(0);
+    tiempoProgressRef.current = 0;
+    setTiempoProgressState(0);
+    codigoPlantedAtRef.current = performance.now();
+    pinCodigoAfterArchivosRef.current = false;
+
+    window.dispatchEvent(
+      new CustomEvent(RETO_OBRA_ENVIADA_EVENT, { detail: obra }),
+    );
+    window.dispatchEvent(
+      new CustomEvent(RETO_HERO_STEP_EVENT, { detail: { step: 3 } }),
+    );
+    window.dispatchEvent(
+      new CustomEvent(RETO_DETALLE_EVENT, {
+        detail: { open: true, step: 3 },
+      }),
+    );
+  }, []);
+
   const participarActive =
     panel === 0 &&
     videoReveal >= 0.999 &&
@@ -1727,7 +1795,8 @@ export function HomeSnap({
     !diccionarioOpen &&
     !mobileMenuOpen;
 
-  const mobileMenuWhite = panel === 1 || archivosReveal >= 0.92;
+  const mobileMenuWhite =
+    !participarOpen && (panel === 1 || archivosReveal >= 0.92);
   const reveal = panel === 1 ? 1 : archivosReveal;
   const archivosInteractive = reveal >= 0.97 || panel === 1;
 
@@ -1738,12 +1807,18 @@ export function HomeSnap({
     panel?: 0 | 1;
     introProgress?: number;
     tiempoProgress?: number;
+    obraVideoUid?: string | null;
+    obraPreviewUrl?: string | null;
+    obraTitulo?: string | null;
   }>(hero)
     ? cloneElement(hero, {
         step: heroStep,
         panel: panel as 0 | 1,
         introProgress,
         tiempoProgress,
+        obraVideoUid: obraEnviada?.videoUid ?? null,
+        obraPreviewUrl: obraEnviada?.previewUrl ?? null,
+        obraTitulo: obraEnviada?.titulo ?? null,
       })
     : hero;
 
@@ -1774,7 +1849,7 @@ export function HomeSnap({
       <div
         data-site-chrome=""
         className={`pointer-events-none fixed inset-x-0 top-0 z-[70] bg-transparent ${
-          codigoFocused ? "hidden" : "hidden md:block"
+          codigoFocused || participarOpen ? "hidden" : "hidden md:block"
         }`}
         style={{
           color: homeWhiteMode ? "var(--background)" : "#fff",
@@ -1788,8 +1863,8 @@ export function HomeSnap({
       <SiteMobileMenu
         user={user}
         center={headerTime}
-        menuTone={mobileMenuWhite ? "white" : "blue"}
-        hideMenu={codigoFocused}
+        menuTone={participarOpen ? "black" : mobileMenuWhite ? "white" : "blue"}
+        hideMenu={codigoFocused || participarOpen}
         menuOpen={mobileMenuOpen}
         onMenuOpenChange={setMobileMenuOpen}
       />
@@ -1846,6 +1921,20 @@ export function HomeSnap({
           </div>
         </section>
       </div>
+
+      {retoId ? (
+        <ParticiparSubmitScreen
+          open={participarOpen}
+          onClose={() => setParticiparOpen(false)}
+          onUploadSuccess={handleObraUploadSuccess}
+          retoId={retoId}
+          retoTitulo={retoTitulo}
+          retoNumero={retoNumero}
+          retoDescripcion={retoDescripcion}
+          codigo={participarCodigo}
+          maxVideoDurationSeconds={maxVideoDurationSeconds}
+        />
+      ) : null}
     </div>
   );
 }

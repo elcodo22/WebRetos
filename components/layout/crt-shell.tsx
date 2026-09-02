@@ -65,6 +65,8 @@ export function getCrtScreenElement(): HTMLElement | null {
 
 export function CrtShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isFlatScreen =
+    pathname.startsWith("/u/") || pathname.startsWith("/reto/");
   const blackScreen =
     pathname.startsWith("/reto/") ||
     pathname.startsWith("/u/") ||
@@ -84,6 +86,7 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
   const shellClass = [
     "crt-shell",
     blackScreen ? "crt-shell--black" : "",
+    isFlatScreen ? "crt-shell--flat" : "",
     perf ? "crt-shell--perf" : "",
   ]
     .filter(Boolean)
@@ -93,14 +96,18 @@ export function CrtShell({ children }: { children: React.ReactNode }) {
     <div className={shellClass}>
       <div className="crt-glass">
         <div className="crt-screen">{children}</div>
-        <div className="crt-phosphor" aria-hidden />
-        <div className="crt-scanlines" aria-hidden />
-        <div className="crt-grain" aria-hidden />
-        <div className="crt-sheen" aria-hidden />
-        {!perf ? (
+        {!isFlatScreen ? (
           <>
-            <div className="crt-beam crt-beam--a" aria-hidden />
-            <div className="crt-beam crt-beam--b" aria-hidden />
+            <div className="crt-phosphor" aria-hidden />
+            <div className="crt-scanlines" aria-hidden />
+            <div className="crt-grain" aria-hidden />
+            <div className="crt-sheen" aria-hidden />
+            {!perf ? (
+              <>
+                <div className="crt-beam crt-beam--a" aria-hidden />
+                <div className="crt-beam crt-beam--b" aria-hidden />
+              </>
+            ) : null}
           </>
         ) : null}
       </div>

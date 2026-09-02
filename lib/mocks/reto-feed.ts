@@ -1,11 +1,38 @@
 export type RetoFeedItem = {
   id: string;
   username: string;
+  /** Nombre visible del autor (sin @). */
+  displayName?: string;
   titulo: string;
   descripcion: string;
-  imageUrl: string;
   videoUrl: string;
+  videoUid?: string;
+  /** Imágenes de la ficha de descripción. */
+  imagenes?: string[];
 };
+
+export const OBRA_DESC_DEFAULT_IMAGES = [
+  "/images/obra-desc-1.png",
+  "/images/obra-desc-2.png",
+] as const;
+
+const DISPLAY_NAMES = [
+  "Luna Verde",
+  "Pixel Mar",
+  "Cinta VHS",
+  "Neon Río",
+  "Sombra Azul",
+  "Faro Roto",
+  "Vinilo Crudo",
+  "Astro Papel",
+  "Tren Nocturno",
+  "Cristal Humo",
+  "Mar Cobre",
+  "Reloj Vacío",
+  "Bosque Ácido",
+  "Puerto Rojo",
+  "Memoria Lata",
+];
 
 const USERNAMES = [
   "luna.verde",
@@ -46,32 +73,30 @@ const DESCRIPCIONES = [
   "montaje rápido a partir de planos fallidos que acabaron siendo el material bueno",
 ];
 
-/**
- * Pósters verticales locales (formato cine ~2:3).
- */
-const FRAMES_PELICULA = Array.from(
-  { length: 28 },
-  (_, i) => `/posters/poster-${String(i + 1).padStart(2, "0")}.png`,
-);
-
-/** Clip de ejemplo local para todas las miniaturas del mock. */
-const SAMPLE_VIDEO = "/videos/six-men-getting-sick.mp4";
+/** Clips de ejemplo locales para el mock (alternados en el feed). */
+const SAMPLE_VIDEOS = [
+  "/videos/videoplayback.mp4?v=4",
+  "/videos/videoplayback-2.mp4?v=4",
+  "/videos/videoplayback-3.mp4?v=4",
+] as const;
 
 /**
- * Genera un feed inventado con frames estáticos y clips de muestra.
+ * Genera un feed inventado con clips de muestra (miniatura = frame del vídeo).
  */
 export function generarFeedRetoMock(retoId: string, count = 40): RetoFeedItem[] {
-  const offset = hashSeed(retoId) % FRAMES_PELICULA.length;
+  const offset = hashSeed(retoId) % USERNAMES.length;
 
   return Array.from({ length: count }, (_, index) => {
-    const frame = FRAMES_PELICULA[(offset + index) % FRAMES_PELICULA.length];
+    const userIndex = (offset + index) % USERNAMES.length;
     return {
       id: `${retoId}-obra-${index}`,
-      username: `@${USERNAMES[index % USERNAMES.length]}`,
+      username: `@${USERNAMES[userIndex]}`,
+      displayName: DISPLAY_NAMES[userIndex],
       titulo: TITULOS[index % TITULOS.length],
       descripcion: DESCRIPCIONES[index % DESCRIPCIONES.length],
-      imageUrl: frame,
-      videoUrl: SAMPLE_VIDEO,
+      videoUrl: SAMPLE_VIDEOS[index % SAMPLE_VIDEOS.length],
+      imagenes:
+        index === 0 ? [] : [...OBRA_DESC_DEFAULT_IMAGES],
     };
   });
 }

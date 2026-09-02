@@ -6,6 +6,8 @@ export type PerfilObra = RetoFeedItem & {
   retoNumero: string;
   /** Título del reto (no el de la obra). */
   retoTitulo: string;
+  /** Descripción del reto. */
+  retoDescripcion?: string;
   /** Id del reto en archivo (`/reto/[id]`). */
   retoId?: string;
 };
@@ -125,7 +127,7 @@ function perfilMeta(username: string): { nombre: string; count: number } {
   };
 }
 
-type RetoRef = { numero: string; titulo: string; id?: string };
+type RetoRef = { numero: string; titulo: string; id?: string; descripcion?: string };
 
 type GetPerfilMockOptions = {
   /** Fuerza un mínimo de obras mock (p. ej. perfil propio). */
@@ -153,6 +155,7 @@ export function getPerfilMock(
           id: r.id,
           numero: r.numero,
           titulo: r.titulo,
+          descripcion: r.descripcion,
         }))
       : RETOS_FALLBACK;
 
@@ -183,9 +186,10 @@ export function getPerfilMock(
         ...frame,
         id: `${username}-obra-${reto.numero}-${i}`,
         username: formatUsername(username),
-        imageUrl: frame.imageUrl,
+        displayName: meta.nombre,
         retoNumero: reto.numero,
         retoTitulo: reto.titulo,
+        retoDescripcion: reto.descripcion,
         retoId: reto.id,
       });
     }

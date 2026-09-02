@@ -14,6 +14,7 @@ import { useSearchOverlay } from "@/components/archivos/search-overlay-provider"
 import { useDiccionario } from "@/components/diccionario/diccionario-provider";
 import { SiteMobileMenu } from "@/components/layout/site-mobile-chrome";
 import { useHeaderCenter } from "@/components/layout/header-time";
+import { RetoFeedTitleBar } from "@/components/reto/reto-title-nav";
 
 const TRANSITION_MS = 480;
 const WHEEL_THRESHOLD = 12;
@@ -28,6 +29,8 @@ type RetoFeedNavCtx = {
   feedSession: number;
   /** Solo true en el panel del feed (pan/rueda activos). */
   feedActive: boolean;
+  /** 0 = título centrado, 1 = feed. */
+  panel: number;
 };
 
 const RetoFeedNavContext = createContext<RetoFeedNavCtx | null>(null);
@@ -45,12 +48,14 @@ type RetoSnapProps = {
   header: ReactNode;
   hero: ReactNode;
   feed: ReactNode;
+  titulo?: string;
+  numero?: string;
 };
 
 /**
  * Snap título ↔ feed. El feed es un lienzo 2D (pan infinito).
  */
-export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
+export function RetoSnap({ user, header, hero, feed, titulo, numero }: RetoSnapProps) {
   const { isOpen: searchOpen } = useSearchOverlay();
   const { isOpen: diccionarioOpen } = useDiccionario();
   const mobileCenter = useHeaderCenter();
@@ -61,6 +66,7 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
 
   const [panel, setPanel] = useState(0);
   const [feedSession, setFeedSession] = useState(0);
+  const [snapLocked, setSnapLocked] = useState(false);
   const [peekVh, setPeekVh] = useState(() => {
     if (typeof window === "undefined") return PEEK_VH_DESKTOP;
     return window.matchMedia("(max-width: 767px)").matches
@@ -101,6 +107,7 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
     if (next < 0 || next > 1) return;
 
     lockedRef.current = true;
+    setSnapLocked(true);
     panelRef.current = next;
     setPanel(next);
 
@@ -110,6 +117,7 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
 
     window.setTimeout(() => {
       lockedRef.current = false;
+      setSnapLocked(false);
     }, TRANSITION_MS + 40);
   }, []);
 
@@ -189,7 +197,8 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
         setAtTop,
         requestExitToTitle,
         feedSession,
-        feedActive: panel === 1,
+        feedActive: panel === 1 && !snapLocked,
+        panel,
       }}
     >
       <div className="relative h-full overflow-hidden bg-black text-white pb-[var(--safe-bottom)]">
@@ -244,17 +253,6 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
         </div>
 
         <div
-          className={`pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center bg-gradient-to-t from-black via-black/85 to-transparent px-[18px] pb-[max(1rem,var(--safe-bottom))] pt-10 transition-opacity duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            panel === 1 ? "opacity-100" : "opacity-0"
-          }`}
-          aria-hidden={panel !== 1}
-        >
-          <div className="pointer-events-auto min-w-0 max-w-full text-center">
-            {hero}
-          </div>
-        </div>
-
-        <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 z-40 bg-gradient-to-t from-black/40 via-black/10 to-transparent transition-opacity duration-300 max-md:from-black/25 max-md:via-transparent"
           style={{
@@ -262,6 +260,14 @@ export function RetoSnap({ user, header, hero, feed }: RetoSnapProps) {
             opacity: panel === 0 ? 1 : 0,
           }}
         />
+
+        {titulo != null && numero != null ? (
+          <RetoFeedTitleBar
+            titulo={titulo}
+            numero={numero}
+            visible={panel === 1}
+          />
+        ) : null}
       </div>
     </RetoFeedNavContext.Provider>
   );

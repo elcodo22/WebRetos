@@ -1,8 +1,11 @@
 import { ArchivosCarousel } from "@/components/archivos/archivos-carousel";
+import type { ObraEnviadaState } from "@/components/reto/participar-submit-screen";
 import { HomeSnap } from "@/components/layout/home-snap";
 import { RetoHero } from "@/components/reto/reto-hero";
+import { getMaxVideoDurationSeconds } from "@/lib/cloudflare/stream";
 import { getCurrentUser, getRetoActivoHome } from "@/lib/home-data";
 import { loadRetosArchivo } from "@/lib/retos-archivo-data";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Home: espera a datos reales (sin timer/números inventados).
@@ -18,6 +21,24 @@ export default async function Home() {
   const descripcionLarga = retoActivo
     ? `Graba una pieza audiovisual de entre 30 segundos y 4 minutos usando únicamente planos fijos. Sin mover la cámara, haz que todo pase dentro del encuadre. Sube tu pieza antes de que termine el tiempo del reto y, tranqui, puedes hacer scroll por la web para participar. ¿Qué puedes contar sin mover la cámara?`
     : "";
+
+  let obraInicial: ObraEnviadaState | null = null;
+  if (user && retoActivo) {
+    const supabase = await createClient();
+    const { data: obra } = await supabase
+      .from("obras")
+      .select("titulo, id_cloudflare")
+      .eq("id_reto", retoActivo.id)
+      .eq("id_usuario", user.id)
+      .maybeSingle();
+
+    if (obra?.id_cloudflare) {
+      obraInicial = {
+        videoUid: obra.id_cloudflare,
+        titulo: obra.titulo,
+      };
+    }
+  }
 
   const hero = retoActivo ? (
     <RetoHero
@@ -41,6 +62,12 @@ export default async function Home() {
       <HomeSnap
         user={user}
         fechaFin={retoActivo?.fecha_fin ?? null}
+        retoId={retoActivo?.id}
+        retoTitulo={retoActivo?.titulo ?? ""}
+        retoNumero={retoActivo?.numero ?? ""}
+        retoDescripcion={descripcionLarga}
+        maxVideoDurationSeconds={getMaxVideoDurationSeconds()}
+        obraInicial={obraInicial}
         hero={hero}
         archivos={<ArchivosCarousel retos={retosArchivo} />}
       />

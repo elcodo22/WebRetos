@@ -25,6 +25,7 @@ type RetoFeedProps = {
   items: RetoFeedItem[];
   retoNumero: string;
   retoTitulo: string;
+  retoDescripcion?: string;
   retoId: string;
   user?: User | null;
 };
@@ -34,11 +35,13 @@ function toPerfilObra(
   retoNumero: string,
   retoTitulo: string,
   retoId: string,
+  retoDescripcion?: string,
 ): PerfilObra {
   return {
     ...item,
     retoNumero,
     retoTitulo,
+    retoDescripcion,
     retoId,
   };
 }
@@ -50,6 +53,7 @@ export function RetoFeed({
   items,
   retoNumero,
   retoTitulo,
+  retoDescripcion,
   retoId,
   user = null,
 }: RetoFeedProps) {
@@ -69,7 +73,7 @@ export function RetoFeed({
       setActive(null);
       setLiftMode(user && isObraSaved(item.id) ? "remove" : "save");
       setLift({
-        obra: toPerfilObra(item, retoNumero, retoTitulo, retoId),
+        obra: toPerfilObra(item, retoNumero, retoTitulo, retoId, retoDescripcion),
         x: rect.left,
         y: rect.top,
         w: rect.width,
@@ -78,7 +82,7 @@ export function RetoFeed({
         grabY: clientY - rect.top,
       });
     },
-    [retoId, retoNumero, retoTitulo, user, viewerUsername],
+    [retoId, retoNumero, retoTitulo, retoDescripcion, user, viewerUsername],
   );
 
   const onLiftCancel = useCallback(() => setLift(null), []);
@@ -128,8 +132,13 @@ export function RetoFeed({
       {active && !lift ? (
         <RetoVideoPlayer
           item={active}
+          items={items}
+          onChangeItem={setActive}
           retoNumero={retoNumero}
           retoTitulo={retoTitulo}
+          retoDescripcion={retoDescripcion}
+          retoId={retoId}
+          user={user}
           onClose={() => setActive(null)}
         />
       ) : null}

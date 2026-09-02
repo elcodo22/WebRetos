@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useCrtPower } from "@/components/layout/crt-power-transition";
+import { useRouter } from "next/navigation";
 import { formatRetoNumero } from "@/lib/format-reto-numero";
 import {
   formatUsername,
@@ -24,7 +24,7 @@ type Resultado =
 export function ArchivosSearchScreen({ retos, usuarios, onClose }: Props) {
   const [busqueda, setBusqueda] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const { powerOffTo } = useCrtPower();
+  const router = useRouter();
 
   const resultados = useMemo(() => {
     const raw = busqueda.trim();
@@ -74,12 +74,12 @@ export function ArchivosSearchScreen({ retos, usuarios, onClose }: Props) {
 
   function openReto(id: string) {
     onClose?.();
-    powerOffTo(`/reto/${id}`);
+    router.push(`/reto/${id}`);
   }
 
   function openUsuario(username: string) {
     onClose?.();
-    powerOffTo(perfilHref(username));
+    router.push(perfilHref(username));
   }
 
   return (
@@ -123,12 +123,12 @@ export function ArchivosSearchScreen({ retos, usuarios, onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => openReto(item.id)}
-                      className="flex max-w-full items-baseline justify-center gap-x-3 text-center text-[clamp(15px,2.9vw,18px)] font-normal tracking-wide text-white transition-opacity hover:opacity-80"
+                      className="flex max-w-full items-baseline justify-center gap-x-3 text-center font-normal tracking-wide text-white transition-opacity hover:opacity-80"
                     >
-                      <span className="shrink-0 tabular-nums">
+                      <span className="reto-heading-text shrink-0 tabular-nums">
                         #{item.numero}
                       </span>
-                      <span className="min-w-0 truncate uppercase">
+                      <span className="reto-heading-titulo min-w-0 truncate">
                         {item.titulo}
                       </span>
                     </button>

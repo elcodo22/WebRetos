@@ -23,11 +23,13 @@ import {
 } from "@/components/perfil/perfil-lift-overlay";
 import { saveObraToCaja, type SavedCaja } from "@/lib/perfil-caja";
 import { AuthRequiredPopup } from "@/components/auth/auth-required-popup";
+import { PerfilCardMedia } from "@/components/perfil/perfil-card-media";
 
 /** Ancho del póster vertical centrado. */
-const CARD_VW_DESKTOP = 20;
-const CARD_VW_MOBILE = 48;
-const GAP_VW_DESKTOP = 7;
+export const CARD_VW_DESKTOP = 34;
+export const CARD_VW_MOBILE = 64;
+export const CARD_MAX_VH = 56;
+const GAP_VW_DESKTOP = 6;
 const GAP_VW_MOBILE = 4;
 
 function cardMetricsForWidth(width: number) {
@@ -46,10 +48,13 @@ const WHEEL_LOCK_MS = 420;
 const DRAG_LIFT_PX = 16;
 const TOUCH_SLOP_PX = 14;
 const LIFT_HOLD_MS = 420;
+const FOCUS_SCALE = 1.1;
+const SIDE_SCALE = 0.8;
 
 export type PerfilFocusMeta = {
   retoNumero?: string;
   retoTitulo?: string;
+  obraTitulo?: string;
   retoId?: string;
   guardados?: boolean;
 } | null;
@@ -96,6 +101,10 @@ export function PerfilCarousel({
 
   const [index, setIndex] = useState(lastParticipationIndex);
   const [active, setActive] = useState<PerfilObra | null>(null);
+  const [profileEntry, setProfileEntry] = useState<{
+    fromRect: DOMRect;
+    currentTime: number;
+  } | null>(null);
   const [openGuardados, setOpenGuardados] = useState(false);
   const [lift, setLift] = useState<LiftState | null>(null);
   const [authPopup, setAuthPopup] = useState(false);
@@ -123,6 +132,8 @@ export function PerfilCarousel({
   const wheelLockUntil = useRef(0);
   const goToRef = useRef<(next: number) => void>(() => {});
   const liftRef = useRef(false);
+  const activeRef = useRef(false);
+  const focusedVideoRef = useRef<HTMLVideoElement | null>(null);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dragStartRef = useRef<{
@@ -154,6 +165,10 @@ export function PerfilCarousel({
   }, [lift, onLiftChange]);
 
   useEffect(() => {
+    activeRef.current = active != null;
+  }, [active]);
+
+  useEffect(() => {
     indexRef.current = index;
     const item = items[index];
     if (!item) {
@@ -167,6 +182,7 @@ export function PerfilCarousel({
     onFocusChange?.({
       retoNumero: item.obra.retoNumero,
       retoTitulo: item.obra.retoTitulo,
+      obraTitulo: item.obra.titulo,
       retoId: item.obra.retoId,
     });
   }, [index, items, onFocusChange]);
@@ -202,6 +218,7 @@ export function PerfilCarousel({
       setOpenGuardados(false);
       setLift(null);
       setActive(null);
+      setProfileEntry(null);
       window.requestAnimationFrame(() => {
         goToRef.current(lastParticipationIndex);
       });
@@ -258,7 +275,7 @@ export function PerfilCarousel({
         cardEl?.offsetWidth ||
         Math.min(
           (cvw / 100) * window.innerWidth,
-          0.42 * window.innerHeight,
+          (CARD_MAX_VH / 100) * window.innerHeight,
         );
       const gap = (gvw / 100) * window.innerWidth;
       metricsRef.current = {
@@ -327,7 +344,7 @@ export function PerfilCarousel({
     goToRef.current = goTo;
 
     const onWheel = (event: WheelEvent) => {
-      if (liftRef.current) return;
+      if (liftRef.current || activeRef.current) return;
       if (totalRef.current === 0) return;
       event.preventDefault();
       const now = performance.now();
@@ -390,19 +407,24 @@ export function PerfilCarousel({
 
   useEffect(() => () => clearDrag(), [clearDrag]);
 
+  const openObra = useCallback(
+    (obra: PerfilObra, fromRect: DOMRect, currentTime: number) => {
+      setActive(obra);
+      setProfileEntry({ fromRect, currentTime });
+    },
+    [],
+  );
+
   const onObraPointerDown = (
     event: ReactPointerEvent<HTMLButtonElement>,
     obra: PerfilObra,
     isFocus: boolean,
   ) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || active) return;
     clickOriginRef.current = { x: event.clientX, y: event.clientY };
     window.getSelection()?.removeAllRanges();
     if (!isFocus) return;
-    if (isOwnUsername(obra.username, viewerUsernameFromUser(user))) return;
 
-    const isTouch =
-      event.pointerType === "touch" || event.pointerType === "pen";
     dragStartRef.current = {
       x: event.clientX,
       y: event.clientY,
@@ -410,6 +432,11 @@ export function PerfilCarousel({
       el: event.currentTarget,
     };
     clearHold();
+
+    if (isOwnUsername(obra.username, viewerUsernameFromUser(user))) return;
+
+    const isTouch =
+      event.pointerType === "touch" || event.pointerType === "pen";
     if (isTouch) {
       holdTimerRef.current = setTimeout(() => {
         holdTimerRef.current = null;
@@ -446,9 +473,8 @@ export function PerfilCarousel({
     obra: PerfilObra,
     i: number,
   ) => {
-    if (lift) return;
+    if (lift || active) return;
     const origin = clickOriginRef.current;
-    const wasDragging = dragStartRef.current != null;
     clearDrag();
     clickOriginRef.current = null;
     try {
@@ -456,18 +482,28 @@ export function PerfilCarousel({
     } catch {
       /* ignore */
     }
-    if (!wasDragging) return;
 
-    if (Math.round(targetRef.current) !== i) {
-      goToRef.current(i);
+    const isTap =
+      origin != null &&
+      Math.hypot(event.clientX - origin.x, event.clientY - origin.y) < 10;
+
+    const isFocused = Math.round(targetRef.current) === i;
+
+    if (isTap) {
+      if (!isFocused) {
+        goToRef.current(i);
+        return;
+      }
+      openObra(
+        obra,
+        event.currentTarget.getBoundingClientRect(),
+        focusedVideoRef.current?.currentTime ?? 0,
+      );
       return;
     }
 
-    if (
-      origin &&
-      Math.hypot(event.clientX - origin.x, event.clientY - origin.y) < 10
-    ) {
-      setActive(obra);
+    if (!isFocused) {
+      goToRef.current(i);
     }
   };
 
@@ -494,7 +530,7 @@ export function PerfilCarousel({
           className="relative min-h-0 w-full flex-1 overflow-hidden touch-none select-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
           onContextMenu={(event) => event.preventDefault()}
           onTouchStart={(event) => {
-            if (lift) return;
+            if (lift || active) return;
             touchStartX.current = event.touches[0]?.clientX ?? null;
             touchStartY.current = event.touches[0]?.clientY ?? null;
             touchStartPos.current = positionRef.current;
@@ -505,7 +541,7 @@ export function PerfilCarousel({
             }
           }}
           onTouchMove={(event) => {
-            if (lift || touchStartX.current == null || !ribbonRef.current)
+            if (lift || active || touchStartX.current == null || !ribbonRef.current)
               return;
             const x = event.touches[0]?.clientX;
             const y = event.touches[0]?.clientY;
@@ -537,7 +573,7 @@ export function PerfilCarousel({
             }
           }}
           onTouchEnd={() => {
-            if (lift) return;
+            if (lift || active) return;
             if (touchStartX.current == null) return;
             touchStartX.current = null;
             goToRef.current(
@@ -556,8 +592,8 @@ export function PerfilCarousel({
                   <div
                     key={item.key}
                     data-perfil-card
-                    className="aspect-[2/3] shrink-0"
-                    style={{ width: `min(${cardVw}vw, 42vh)` }}
+                    className="aspect-video shrink-0"
+                    style={{ width: `min(${cardVw}vw, ${CARD_MAX_VH}vh)` }}
                     aria-hidden
                   />
                 );
@@ -566,55 +602,64 @@ export function PerfilCarousel({
               const dist = Math.abs(i - index);
               const isFocus = dist < 0.5;
               const opacity = isFocus ? 1 : dist < 1.5 ? 0.45 : 0;
-              const scale = isFocus ? 1 : 0.82;
+              const scale = isFocus ? FOCUS_SCALE : SIDE_SCALE;
               const cardStyle = {
-                width: `min(${cardVw}vw, 42vh)`,
+                width: `min(${cardVw}vw, ${CARD_MAX_VH}vh)`,
                 opacity,
                 transform: `scale(${scale})`,
               } as const;
 
               if (item.kind === "caja") {
                 return (
-                  <button
+                  <div
                     key={item.key}
-                    type="button"
-                    data-perfil-card
-                    onClick={() => onCajaClick(i, isFocus)}
-                    className="relative flex aspect-[2/3] shrink-0 flex-col items-center justify-center px-2 transition-[opacity,transform] duration-300 touch-manipulation"
+                    className="flex shrink-0 flex-col items-center transition-[opacity,transform] duration-300"
                     style={cardStyle}
-                    aria-label="Guardados"
                   >
-                    <CartonBoxIcon scale={isFocus ? 1.05 : 0.9} />
-                  </button>
+                    <button
+                      type="button"
+                      data-perfil-card
+                      onClick={() => onCajaClick(i, isFocus)}
+                      className="relative flex aspect-video w-full flex-col items-center justify-center px-2 touch-manipulation"
+                      aria-label="Guardados"
+                    >
+                      <CartonBoxIcon scale={isFocus ? 1.05 : 0.9} />
+                    </button>
+                  </div>
                 );
               }
 
               const { obra } = item;
+              const isOpeningThis = active?.id === obra.id;
               return (
-                <button
+                <div
                   key={item.key}
-                  type="button"
-                  data-perfil-card
-                  onPointerDown={(e) => onObraPointerDown(e, obra, isFocus)}
-                  onPointerMove={onObraPointerMove}
-                  onPointerUp={(e) => onObraPointerUp(e, obra, i)}
-                  onPointerCancel={clearDrag}
-                  onContextMenu={(e) => e.preventDefault()}
-                  onClick={(e) => e.preventDefault()}
-                  className="relative aspect-[2/3] shrink-0 overflow-hidden text-left transition-[opacity,transform] duration-300 select-none touch-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
-                  style={cardStyle}
-                  aria-label={`#${obra.retoNumero} ${obra.retoTitulo}. Arrastra para guardar.`}
+                  className="flex shrink-0 flex-col items-center transition-[opacity,transform] duration-300"
+                  style={{
+                    ...cardStyle,
+                    opacity: isOpeningThis ? 0 : opacity,
+                  }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={obra.imageUrl}
-                    alt=""
-                    className="pointer-events-none h-full w-full object-cover select-none [-webkit-touch-callout:none]"
-                    draggable={false}
-                    loading={isFocus ? "eager" : "lazy"}
-                    decoding="async"
-                  />
-                </button>
+                  <button
+                    type="button"
+                    data-perfil-card
+                    onPointerDown={(e) => onObraPointerDown(e, obra, isFocus)}
+                    onPointerMove={onObraPointerMove}
+                    onPointerUp={(e) => onObraPointerUp(e, obra, i)}
+                    onPointerCancel={clearDrag}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onClick={(e) => e.preventDefault()}
+                    className="relative aspect-video w-full overflow-hidden text-left select-none touch-none [-webkit-touch-callout:none] [-webkit-user-select:none]"
+                    aria-label={`#${obra.retoNumero} ${obra.retoTitulo}. Pulsa para ver el vídeo.`}
+                  >
+                    <PerfilCardMedia
+                      ref={isFocus ? focusedVideoRef : null}
+                      videoUrl={obra.videoUrl}
+                      videoUid={obra.videoUid}
+                      playing={isFocus && !active}
+                    />
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -623,9 +668,22 @@ export function PerfilCarousel({
         {active && !lift ? (
           <RetoVideoPlayer
             item={active}
+            items={obras}
+            onChangeItem={(next) => {
+              const found = obras.find((obra) => obra.id === next.id);
+              if (found) setActive(found);
+            }}
             retoNumero={active.retoNumero}
             retoTitulo={active.retoTitulo}
-            onClose={() => setActive(null)}
+            retoDescripcion={active.retoDescripcion}
+            retoId={active.retoId}
+            user={user}
+            skipEnterFade
+            profileEntry={profileEntry}
+            onClose={() => {
+              setActive(null);
+              setProfileEntry(null);
+            }}
           />
         ) : null}
       </div>

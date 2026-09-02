@@ -27,6 +27,7 @@ export async function getRetoActivo(supabase: Supabase) {
 export type RetoArchivo = {
   id: string;
   titulo: string;
+  descripcion?: string;
   numero: string;
   fechaLabel: string;
   fechaOrden: number;
@@ -56,7 +57,7 @@ function formatearFechaArchivo(iso: string) {
 export async function getRetosArchivo(supabase: Supabase): Promise<RetoArchivo[]> {
   const { data, error } = await supabase
     .from("retos")
-    .select("id, titulo, fecha_fin, fecha_inicio, creado_en")
+    .select("id, titulo, descripcion, fecha_fin, fecha_inicio, creado_en")
     .neq("estado", "eliminado")
     .order("creado_en", { ascending: true });
 
@@ -67,6 +68,7 @@ export async function getRetosArchivo(supabase: Supabase): Promise<RetoArchivo[]
     return {
       id: reto.id,
       titulo: reto.titulo,
+      descripcion: reto.descripcion ?? undefined,
       numero: (index + 1).toString().padStart(2, "0"),
       fechaLabel: formatearFechaArchivo(fechaIso),
       fechaOrden: new Date(fechaIso).getTime(),

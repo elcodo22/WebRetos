@@ -6,12 +6,15 @@ export type SavedObra = Pick<
   PerfilObra,
   | "id"
   | "username"
+  | "displayName"
   | "titulo"
   | "descripcion"
-  | "imageUrl"
   | "videoUrl"
+  | "videoUid"
+  | "imagenes"
   | "retoNumero"
   | "retoTitulo"
+  | "retoDescripcion"
   | "retoId"
 > & {
   /** Momento en que se guardó este vídeo. */
@@ -38,7 +41,7 @@ function isSavedObra(item: unknown): item is SavedObra {
     item != null &&
     typeof item === "object" &&
     typeof (item as SavedObra).id === "string" &&
-    typeof (item as SavedObra).imageUrl === "string" &&
+    typeof (item as SavedObra).videoUrl === "string" &&
     typeof (item as SavedObra).retoNumero === "string"
   );
 }
@@ -159,11 +162,6 @@ const FAKE_TITULOS = [
   "Garaje eléctrico húmedo",
 ];
 
-const FAKE_POSTERS = Array.from(
-  { length: 28 },
-  (_, i) => `/posters/poster-${String(i + 1).padStart(2, "0")}.png`,
-);
-
 /** Genera carpetas falsas para probar la UI de Guardados. */
 export function buildFakeSavedCajas(count = FAKE_SAVED_FOLDER_COUNT): SavedCaja[] {
   const now = Date.now();
@@ -177,8 +175,11 @@ export function buildFakeSavedCajas(count = FAKE_SAVED_FOLDER_COUNT): SavedCaja[
       username: `@demo${(oi % 9) + 1}`,
       titulo: `Obra ${oi + 1}`,
       descripcion: "Mock de guardado",
-      imageUrl: FAKE_POSTERS[(index + oi) % FAKE_POSTERS.length],
-      videoUrl: "/videos/six-men-getting-sick.mp4",
+      videoUrl: [
+        "/videos/videoplayback.mp4?v=4",
+        "/videos/videoplayback-2.mp4?v=4",
+        "/videos/videoplayback-3.mp4?v=4",
+      ][oi % 3],
       retoNumero,
       retoTitulo,
       retoId: `fake-reto-${n}`,
@@ -228,12 +229,15 @@ export function saveObraToCaja(obra: PerfilObra) {
     const next: SavedObra = {
       id: obra.id,
       username: obra.username,
+      displayName: obra.displayName,
       titulo: obra.titulo,
       descripcion: obra.descripcion,
-      imageUrl: obra.imageUrl,
       videoUrl: obra.videoUrl,
+      videoUid: obra.videoUid,
+      imagenes: obra.imagenes,
       retoNumero: obra.retoNumero,
       retoTitulo: obra.retoTitulo,
+      retoDescripcion: obra.retoDescripcion,
       retoId: obra.retoId,
       savedAt: now,
     };

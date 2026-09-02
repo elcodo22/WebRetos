@@ -1,4 +1,5 @@
 import type { RetoArchivo } from "@/lib/supabase/retos";
+import { RETO_DESCRIPCION_EJEMPLO } from "@/lib/reto-descripcion";
 
 /**
  * Retos ficticios para poblar el archivo mientras la base está vacía.
@@ -19,6 +20,8 @@ const TITULOS = [
   "Cielo Cobre Ardiente",
   "Vinilo Túnel Álgido",
 ];
+
+const DESCRIPCIONES = TITULOS.map(() => RETO_DESCRIPCION_EJEMPLO);
 
 const MESES = [
   "Enero",
@@ -49,6 +52,7 @@ export function generarRetosArchivoMock(): RetoArchivo[] {
     return {
       id: `mock-${index}`,
       titulo,
+      descripcion: DESCRIPCIONES[index % DESCRIPCIONES.length],
       numero: "00",
       fechaLabel: formatearFecha(fecha),
       fechaOrden: fecha.getTime(),

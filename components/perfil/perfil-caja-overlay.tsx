@@ -2,17 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import type { PerfilObra } from "@/lib/mocks/perfil";
 import { perfilHref } from "@/lib/mocks/perfil";
 import { FolderIcon } from "@/components/archivos/folder-icon";
-import { useCrtPower } from "@/components/layout/crt-power-transition";
 import { SiteMobileChrome } from "@/components/layout/site-mobile-chrome";
 import {
   PerfilLiftOverlay,
   type LiftState,
 } from "@/components/perfil/perfil-lift-overlay";
 import { RetoVideoPlayer } from "@/components/reto/reto-video-player";
+import { VideoThumbnail } from "@/components/video/video-thumbnail";
+import { VIDEO_THUMBNAIL_CLASS } from "@/lib/portada-format";
 import {
   readSavedCajasForUi,
   removeObraFromCaja,
@@ -32,12 +34,15 @@ function toPerfilObra(obra: SavedObra): PerfilObra {
   return {
     id: obra.id,
     username: obra.username,
+    displayName: obra.displayName,
     titulo: obra.titulo,
     descripcion: obra.descripcion,
-    imageUrl: obra.imageUrl,
     videoUrl: obra.videoUrl,
+    videoUid: obra.videoUid,
+    imagenes: obra.imagenes,
     retoNumero: obra.retoNumero,
     retoTitulo: obra.retoTitulo,
+    retoDescripcion: obra.retoDescripcion,
     retoId: obra.retoId,
   };
 }
@@ -52,7 +57,7 @@ export function PerfilCajaOverlay({
   user?: User | null;
   onClose: () => void;
 }) {
-  const { powerOffTo } = useCrtPower();
+  const router = useRouter();
   const [openFolder, setOpenFolder] = useState<SavedCaja | null>(null);
   const [active, setActive] = useState<SavedObra | null>(null);
   const [lift, setLift] = useState<LiftState | null>(null);
@@ -195,7 +200,7 @@ export function PerfilCajaOverlay({
         return (
           <button
             type="button"
-            onClick={() => powerOffTo(`/reto/${retoId}`)}
+            onClick={() => router.push(`/reto/${retoId}`)}
             className="transition-opacity hover:opacity-80"
           >
             {label}
@@ -222,7 +227,7 @@ export function PerfilCajaOverlay({
         <>
           {/* Lienzo a pantalla completa: las portadas pasan bajo header y pie */}
           <div className="absolute inset-0 overflow-y-auto scrollbar-none">
-            <ul className="m-0 box-border grid w-full list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-28 pt-[max(1.25rem,var(--safe-top))] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-8 md:gap-y-14 md:px-6 md:pt-[100px]">
+            <ul className="m-0 box-border grid w-full list-none grid-cols-2 gap-x-4 gap-y-10 p-0 px-4 pb-28 pt-[max(1.25rem,var(--safe-top))] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-4 md:gap-x-8 md:gap-y-14 md:px-6 md:pt-[100px]">
               {folderObras.map((obra) => (
                 <li key={obra.id} className="relative min-w-0">
                   <button
@@ -300,17 +305,13 @@ export function PerfilCajaOverlay({
                       if (suppressClickRef.current) return;
                       setActive(obra);
                     }}
-                    className="group relative z-0 block w-full cursor-pointer overflow-visible text-left hover:z-10"
+                    className="group relative z-0 block aspect-video w-full cursor-pointer overflow-hidden text-left hover:z-10"
                     aria-label={`Ver ${obra.titulo} de ${obra.username}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={obra.imageUrl}
-                      alt=""
-                      className="pointer-events-none aspect-[2/3] w-full origin-bottom rounded-none object-cover transition-transform duration-200 ease-out group-hover:scale-[1.07] select-none"
+                    <VideoThumbnail
+                      videoUrl={obra.videoUrl}
+                      videoUid={obra.videoUid}
                       loading="lazy"
-                      decoding="async"
-                      draggable={false}
                     />
                   </button>
                   <Link
@@ -345,7 +346,7 @@ export function PerfilCajaOverlay({
                 </p>
               </div>
             ) : (
-              <ul className="grid w-full grid-cols-2 justify-items-center gap-x-4 gap-y-10 overflow-visible px-[14px] pb-28 pt-[max(1.25rem,var(--safe-top))] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-5 md:gap-x-6 md:px-[18px] md:pt-[100px]">
+              <ul className="grid w-full grid-cols-2 justify-items-center gap-x-4 gap-y-10 overflow-visible px-[14px] pb-28 pt-[max(1.25rem,var(--safe-top))] sm:grid-cols-3 sm:gap-x-6 md:grid-cols-4 md:gap-x-6 md:px-[18px] md:pt-[100px]">
                 {cajas.map((caja) => {
                   const key = retoKey(caja.retoNumero, caja.retoTitulo);
                   const label = `#${caja.retoNumero} ${caja.retoTitulo}`;
@@ -424,9 +425,17 @@ export function PerfilCajaOverlay({
 
       {active && !lift ? (
         <RetoVideoPlayer
-          item={active as PerfilObra}
+          item={toPerfilObra(active)}
+          items={folderObras.map(toPerfilObra)}
+          onChangeItem={(next) => {
+            const found = folderObras.find((obra) => obra.id === next.id);
+            if (found) setActive(found);
+          }}
           retoNumero={active.retoNumero}
           retoTitulo={active.retoTitulo}
+          retoDescripcion={active.retoDescripcion}
+          retoId={active.retoId}
+          user={user}
           onClose={() => setActive(null)}
         />
       ) : null}

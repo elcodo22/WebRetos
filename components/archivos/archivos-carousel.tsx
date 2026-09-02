@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { RetoArchivo } from "@/lib/supabase/retos";
 import { formatRetoNumero } from "@/lib/format-reto-numero";
-import { useCrtPower } from "@/components/layout/crt-power-transition";
 import { FolderIcon } from "@/components/archivos/folder-icon";
 
 const ARCHIVO_WHEEL_EVENT = "archivo-wheel";
@@ -48,7 +48,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
      el reto más reciente primero. */
   const items = useMemo(() => [...retos].reverse(), [retos]);
   const total = items.length;
-  const { powerOffTo } = useCrtPower();
+  const router = useRouter();
 
   const [index, setIndex] = useState(0);
   const [isSettled, setIsSettled] = useState(true);
@@ -368,7 +368,7 @@ export function ArchivosCarousel({ retos }: { retos: RetoArchivo[] }) {
                         type="button"
                         className="pointer-events-auto relative z-[2] block border-0 bg-transparent p-0 text-inherit"
                         aria-label={`Abrir reto #${item.numero}: ${item.titulo}`}
-                        onClick={() => powerOffTo(`/reto/${item.id}`)}
+                        onClick={() => router.push(`/reto/${item.id}`)}
                       >
                         <FolderIcon />
                       </button>

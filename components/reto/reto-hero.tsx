@@ -7,13 +7,34 @@ import {
   useState,
 } from "react";
 import { ClickableText } from "@/components/diccionario/clickable-text";
+import { GeistMono } from "geist/font/mono";
+import {
+  RETO_DESCRIPCION_CLASS_HERO,
+  RETO_DESCRIPCION_MAX_W,
+} from "@/lib/reto-descripcion";
 import { formatRetoNumero } from "@/lib/format-reto-numero";
+import { VideoThumbnail } from "@/components/video/video-thumbnail";
 
 export type HeroStep = 0 | 1 | 2 | 3;
 
 export const RETO_HERO_STEP_EVENT = "reto-hero-step";
 export const RETO_CODIGO_FOCUS_EVENT = "reto-codigo-focus";
 export const RETO_CODIGO_DISMISS_EVENT = "reto-codigo-dismiss";
+export const RETO_CODIGO_ENGAGED_ATTR = "data-codigo-engaged";
+export const RETO_PARTICIPAR_EVENT = "reto-participar";
+export const RETO_OBRA_ENVIADA_EVENT = "reto-obra-enviada";
+
+export type ObraHeroState = {
+  videoUid: string;
+  previewUrl?: string;
+  titulo: string;
+};
+
+function dispatchParticipar(codigo: string) {
+  window.dispatchEvent(
+    new CustomEvent(RETO_PARTICIPAR_EVENT, { detail: { codigo } }),
+  );
+}
 /** @deprecated Usar RETO_HERO_STEP_EVENT con step >= 1 */
 export const RETO_DETALLE_EVENT = "reto-detalle";
 /** Contenedor de scroll del intro (título → descripción). */
@@ -35,20 +56,13 @@ type RetoHeroProps = {
   /** 0 = QUEDAN abajo, 1 = centrado. */
   tiempoProgress?: number;
   panel?: 0 | 1;
+  obraVideoUid?: string | null;
+  obraPreviewUrl?: string | null;
+  obraTitulo?: string | null;
 };
 
 const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 const STEP_MS = 480;
-const KEYBOARD_INSET_THRESHOLD = 80;
-
-export function isVisualKeyboardOpen() {
-  const viewport = window.visualViewport;
-  if (!viewport) return false;
-  return (
-    window.innerHeight - viewport.height - viewport.offsetTop >
-    KEYBOARD_INSET_THRESHOLD
-  );
-}
 /** Móvil: título fijo y bloque debajo (descripción / código) con el mismo gap. */
 const MOBILE_TITLE_LIFT = "2.85rem";
 const MOBILE_BODY_BELOW_TITLE_TOP = "calc(50% - 0.65rem)";
@@ -73,12 +87,10 @@ function TitleBar({
   descripcionOffsetVh: number;
   showCodigo?: boolean;
 }) {
-  const titleNumClass =
-    "font-normal uppercase leading-none tracking-wide pointer-events-auto";
+  const titleNumClass = `${GeistMono.className} !text-[15px] !font-semibold uppercase leading-none tracking-wide pointer-events-auto`;
   const tituloClass = `reto-heading-titulo relative z-10 min-w-0 max-w-[11rem] truncate ${titleNumClass}`;
   const numeroClass = `reto-heading-text relative z-10 shrink-0 whitespace-nowrap ${titleNumClass}`;
-  const descripcionClass =
-    "w-full text-center text-[clamp(14px,2.6vw,19px)] font-normal uppercase leading-snug tracking-normal [word-spacing:normal]";
+  const descripcionClass = `${GeistMono.className} ${RETO_DESCRIPCION_CLASS_HERO} ${RETO_DESCRIPCION_MAX_W}`;
 
   return (
     <div
@@ -128,11 +140,11 @@ function TitleBar({
       </div>
 
       <div className="absolute inset-x-0 top-1/2 hidden w-full -translate-y-1/2 px-[var(--grid-margin)] md:grid md:grid-cols-10 md:gap-x-[var(--grid-gutter)]">
-        <div className="col-span-8 col-start-2 flex min-w-0 items-center justify-between gap-4 font-normal uppercase leading-none tracking-wide">
-          <span className="reto-heading-titulo relative z-10 min-w-0 max-w-[34%] truncate pointer-events-auto">
+        <div className={`col-span-8 col-start-2 flex min-w-0 items-center justify-between gap-4 ${titleNumClass}`}>
+          <span className={`reto-heading-titulo relative z-10 min-w-0 max-w-[34%] truncate ${titleNumClass}`}>
             <ClickableText text={titulo} enabled={visible} />
           </span>
-          <span className="reto-heading-text relative z-10 shrink-0 whitespace-nowrap">
+          <span className={`reto-heading-text relative z-10 shrink-0 whitespace-nowrap ${titleNumClass}`}>
             #{formatRetoNumero(numero)}
           </span>
         </div>
@@ -164,47 +176,65 @@ export function RetoHero({
   introProgress: introProgressProp = 0,
   tiempoProgress: tiempoProgressProp = 0,
   panel = 0,
+  obraVideoUid = null,
+  obraPreviewUrl = null,
+  obraTitulo = null,
 }: RetoHeroProps) {
   const [step, setStep] = useState<HeroStep>(stepProp ?? 0);
   const [tiempoProgress, setTiempoProgress] = useState(tiempoProgressProp);
   const [codigo, setCodigo] = useState("");
   const [codigoFocused, setCodigoFocused] = useState(false);
+  const [obraLocal, setObraLocal] = useState<ObraHeroState | null>(null);
   const [portH, setPortH] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const codigoInputRef = useRef<HTMLInputElement>(null);
   const codigoFocusedRef = useRef(false);
+  const codigoFieldEngagedRef = useRef(false);
+  const skipDismissThisGestureRef = useRef(false);
+  const lastTouchGestureEndRef = useRef(0);
+  const heroRootRef = useRef<HTMLDivElement>(null);
+
+  const setCodigoFieldEngaged = useCallback((engaged: boolean) => {
+    codigoFieldEngagedRef.current = engaged;
+    const root = heroRootRef.current;
+    if (!root) return;
+    if (engaged) {
+      root.setAttribute(RETO_CODIGO_ENGAGED_ATTR, "");
+    } else {
+      root.removeAttribute(RETO_CODIGO_ENGAGED_ATTR);
+    }
+  }, []);
 
   const dismissCodigoEntry = useCallback(() => {
     if (!codigoFocusedRef.current) return;
     codigoFocusedRef.current = false;
+    setCodigoFieldEngaged(false);
     codigoInputRef.current?.blur();
     setCodigo("");
     setCodigoFocused(false);
     dispatchCodigoFocus(false);
     window.dispatchEvent(new CustomEvent(RETO_CODIGO_DISMISS_EVENT));
-  }, []);
+  }, [setCodigoFieldEngaged]);
 
-  const tryDismissFromInteraction = useCallback(
-    (
-      target: EventTarget | null,
-      opts?: { keyboardOpenAtTouchStart?: boolean },
-    ) => {
+  const tryHandleCodigoOutsideInteraction = useCallback(
+    (target: EventTarget | null) => {
       if (!codigoFocusedRef.current) return;
       const el = target as Element | null;
       if (el?.closest("[data-codigo-field]")) return;
       if (el?.closest("[data-codigo-actions]")) return;
 
-      const keyboardWasOpen =
-        opts?.keyboardOpenAtTouchStart === true || isVisualKeyboardOpen();
-
-      if (keyboardWasOpen) {
+      if (codigoFieldEngagedRef.current) {
+        setCodigoFieldEngaged(false);
         codigoInputRef.current?.blur();
+        skipDismissThisGestureRef.current = true;
         return;
       }
 
+      if (skipDismissThisGestureRef.current) return;
+
       dismissCodigoEntry();
     },
-    [dismissCodigoEntry],
+    [dismissCodigoEntry, setCodigoFieldEngaged],
   );
 
   useEffect(() => {
@@ -254,6 +284,22 @@ export function RetoHero({
   }, [introProgressProp, portH]);
 
   useEffect(() => {
+    function onObraEnviada(event: Event) {
+      const obra = (event as CustomEvent<ObraHeroState>).detail;
+      if (!obra?.videoUid) return;
+      setObraLocal(obra);
+      setCodigo("");
+      setCodigoFocused(false);
+      codigoFocusedRef.current = false;
+      setCodigoFieldEngaged(false);
+    }
+
+    window.addEventListener(RETO_OBRA_ENVIADA_EVENT, onObraEnviada);
+    return () =>
+      window.removeEventListener(RETO_OBRA_ENVIADA_EVENT, onObraEnviada);
+  }, [setCodigoFieldEngaged]);
+
+  useEffect(() => {
     if (step !== 3 && codigoFocused) {
       dismissCodigoEntry();
     }
@@ -271,19 +317,24 @@ export function RetoHero({
   useEffect(() => {
     if (!codigoFocused || step !== 3) return;
 
-    let keyboardOpenAtTouchStart = false;
+    const resetGesture = () => {
+      skipDismissThisGestureRef.current = false;
+    };
 
-    const onTouchStart = (event: TouchEvent) => {
-      if (!codigoFocusedRef.current) return;
-      const el = event.target as Element | null;
-      if (el?.closest("[data-codigo-field]")) return;
-      if (el?.closest("[data-codigo-actions]")) return;
-      keyboardOpenAtTouchStart = isVisualKeyboardOpen();
+    const onTouchStart = () => {
+      resetGesture();
     };
 
     const onTouchEnd = (event: TouchEvent) => {
-      tryDismissFromInteraction(event.target, { keyboardOpenAtTouchStart });
-      keyboardOpenAtTouchStart = false;
+      tryHandleCodigoOutsideInteraction(event.target);
+      lastTouchGestureEndRef.current = Date.now();
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      if (Date.now() - lastTouchGestureEndRef.current < 400) return;
+      resetGesture();
+      tryHandleCodigoOutsideInteraction(event.target);
     };
 
     document.addEventListener("touchstart", onTouchStart, {
@@ -294,12 +345,14 @@ export function RetoHero({
       capture: true,
       passive: true,
     });
+    document.addEventListener("pointerdown", onPointerDown, { capture: true });
 
     return () => {
       document.removeEventListener("touchstart", onTouchStart, { capture: true });
       document.removeEventListener("touchend", onTouchEnd, { capture: true });
+      document.removeEventListener("pointerdown", onPointerDown, { capture: true });
     };
-  }, [codigoFocused, step, tryDismissFromInteraction]);
+  }, [codigoFocused, step, tryHandleCodigoOutsideInteraction]);
 
   useEffect(() => {
     return () => dispatchCodigoFocus(false);
@@ -363,7 +416,13 @@ export function RetoHero({
   const descripcionOffsetVh = step <= 2 ? -descMotion * 70 : -70;
   const introOpacity = showIntro ? 1 : 0;
   const showCodigo = step === 3;
-  const codigoMode = showCodigo && codigoFocused && panel === 0;
+  const mergedPreviewUrl =
+    obraLocal?.previewUrl ?? obraPreviewUrl;
+  const mergedVideoUid = obraLocal?.videoUid ?? obraVideoUid;
+  const mergedTitulo = obraLocal?.titulo ?? obraTitulo;
+  const obraEnviada = Boolean(mergedVideoUid || mergedPreviewUrl);
+  const codigoMode =
+    showCodigo && codigoFocused && panel === 0 && !obraEnviada;
   const showTitleBar = panel === 0 && step <= 3;
 
   const layerClass = (visible: boolean) =>
@@ -383,14 +442,11 @@ export function RetoHero({
 
   return (
     <div
+      ref={heroRootRef}
       className={`relative h-full w-full overflow-hidden transition-colors duration-[380ms] ease-[cubic-bezier(0.33,1,0.68,1)] ${
         codigoMode ? "bg-white text-[var(--background)]" : ""
       }`}
       data-codigo-focus={codigoMode ? "" : undefined}
-      onPointerDownCapture={(event) => {
-        if (!codigoMode) return;
-        tryDismissFromInteraction(event.target);
-      }}
     >
       <div className="absolute inset-0 [word-spacing:0.45em]">
         {/* # + título: suben con el scroll y se fijan en el centro */}
@@ -447,31 +503,45 @@ export function RetoHero({
         >
           <label
             data-codigo-field=""
-            className="flex w-full max-w-[92%] cursor-text items-center justify-center [word-spacing:normal] md:max-w-[80%]"
+            className={`flex w-full max-w-[92%] items-center justify-center [word-spacing:normal] md:max-w-[80%] ${
+              obraEnviada ? "pointer-events-none" : "cursor-text"
+            }`}
           >
-            <input
-              ref={codigoInputRef}
-              type="text"
-              name="codigo"
-              value={codigo}
-              onChange={(event) => setCodigo(event.target.value)}
-              onFocus={() => {
-                codigoFocusedRef.current = true;
-                setCodigoFocused(true);
-                dispatchCodigoFocus(true);
-              }}
-              placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
-              aria-label="Introducir codigo de participación"
-              autoComplete="off"
-              autoCorrect="off"
-              spellCheck={false}
-              size={38}
-              className={`w-full min-w-0 bg-transparent text-center text-[clamp(16px,3vw,22px)] font-normal uppercase leading-none tracking-normal outline-none ${
-                codigoMode
-                  ? "text-[var(--background)] placeholder:text-[var(--background)]/55"
-                  : "text-white placeholder:text-white/70"
-              }`}
-            />
+            {obraEnviada ? (
+              <div className="relative aspect-video w-[min(92vw,22rem)] md:w-[20rem]">
+                <VideoThumbnail
+                  videoUrl={mergedPreviewUrl ?? ""}
+                  videoUid={mergedVideoUid}
+                  alt={mergedTitulo ?? "Tu obra"}
+                  loading="eager"
+                />
+              </div>
+            ) : (
+              <input
+                ref={codigoInputRef}
+                type="text"
+                name="codigo"
+                value={codigo}
+                onChange={(event) => setCodigo(event.target.value)}
+                onFocus={() => {
+                  codigoFocusedRef.current = true;
+                  setCodigoFieldEngaged(true);
+                  setCodigoFocused(true);
+                  dispatchCodigoFocus(true);
+                }}
+                placeholder="INTRODUCIR CODIGO DE PARTICIPACIÓN"
+                aria-label="Introducir codigo de participación"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                size={38}
+                className={`w-full min-w-0 bg-transparent text-center text-[clamp(16px,3vw,22px)] font-normal uppercase leading-none tracking-normal outline-none ${
+                  codigoMode
+                    ? "text-[var(--background)] placeholder:text-[var(--background)]/55"
+                    : "text-white placeholder:text-white/70"
+                }`}
+              />
+            )}
           </label>
         </div>
       </div>
@@ -488,8 +558,10 @@ export function RetoHero({
           transitionDuration: `${STEP_MS}ms`,
           transitionTimingFunction: EASE,
         }}
-        aria-hidden={!codigoMode}
+        aria-hidden={!codigoMode || obraEnviada}
       >
+        {!obraEnviada ? (
+          <>
         <button
           type="button"
           className="text-left ui-btn-text font-normal leading-snug tracking-normal text-[var(--background)]"
@@ -499,9 +571,16 @@ export function RetoHero({
         <button
           type="button"
           className="shrink-0 ui-btn-text font-normal tracking-wide text-[var(--background)]"
+          onClick={() => {
+            const value = codigo;
+            dismissCodigoEntry();
+            dispatchParticipar(value);
+          }}
         >
           [PARTICIPAR]
         </button>
+          </>
+        ) : null}
       </div>
     </div>
   );
